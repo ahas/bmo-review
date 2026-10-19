@@ -1,0 +1,56 @@
+# The code review as one service: reading the workers' checkouts at a commit, the reviews pinned to them, their
+# talks and the items filed from them, in one binary. The only manifest at the root; the console plugin bundle
+# keeps its own under `client/`.
+[package]
+name = "bmo-review"
+description = "The code review over the workers' checkouts: reading at a commit, reviews, their talks and filed items."
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+test = false
+
+[[bin]]
+name = "bmo-review"
+path = "src/main.rs"
+test = false
+
+[dependencies]
+axum = "0.8.9"
+# Text handling the base library serves: a body and an excerpt cut on a character boundary.
+bmo-markup = { version = "0.1.0", path = "../../base/markup" }
+# The moment an item's parts name, as an instant.
+chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
+clap = { version = "4.6.7", features = ["derive"] }
+# The settings: the built-in defaults, the deployment's files and the environment, layered in that order.
+config = { version = "0.15", default-features = false, features = ["toml"] }
+# The event stream's items as they are sent.
+futures-util = "0.3.34"
+# Each route registers itself beside its own answer.
+inventory = "0.3.24"
+# A definition search's patterns, read again on the lines git found.
+regex = "1.13.1"
+# The calls to bmo-job and the receiver.
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "query"] }
+serde = { version = "1.0.229", features = ["derive"] }
+# Answers keep their fields in the order they are written.
+serde_json = { version = "1.0.151", features = ["preserve_order"] }
+# The Korean pack's parts, read into typed structs that deny an unknown key.
+serde-saphyr = { version = "2.0.0", default-features = false, features = ["deserialize"] }
+# The reviews' store, one SQLite file.
+sqlx = { version = "0.8.6", default-features = false, features = ["sqlite", "runtime-tokio", "macros", "migrate"] }
+thiserror = "2.0.21"
+tokio = { version = "1.53.2", features = ["io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+# The event ring's live part, a broadcast read as a stream.
+tokio-stream = { version = "0.1.19", default-features = false, features = ["sync"] }
+
+# Build output kept small: line tables alone for a backtrace, split out, and no incremental cache.
+[profile.dev]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
+incremental = false
+
+[profile.release]
+debug = false
+strip = "debuginfo"

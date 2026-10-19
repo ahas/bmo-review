@@ -1,0 +1,53 @@
+# How the testbed checks, builds and deploys this repository, in the testbed's declaration format. The
+# tests are deferred (README.md), so the suite gathers nothing yet.
+
+testbed = 0
+name = "bmo-review"
+
+[test]
+languages = []
+
+[check]
+# The sweeps that read the tree before anything runs: Korean in the code, the README's folder table and the
+# dependencies the manifests name. The ledger names each Korean pack file with its count of Hangul lines; a
+# code file it does not name is allowed none.
+quick = ["korean", "layout", "dependencies"]
+korean_ledger = "korean-ledger.json"
+base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-ui", "bmo-markup"]
+
+[[check.step]]
+id = "check"
+command = "cargo check --all-targets"
+lane = "wide"
+
+[[check.step]]
+id = "clippy"
+command = "cargo clippy --all-targets -- -D warnings"
+lane = "wide"
+
+[[check.step]]
+id = "fmt"
+command = "cargo fmt --all --check"
+
+# The console plugin bundle is a project of its own under client/, typechecked against its own install.
+[[check.step]]
+id = "client-typecheck"
+dir = "client"
+command = "bun install --frozen-lockfile && bun run typecheck"
+when = ["client/**"]
+
+[build]
+binaries = ["bmo-review"]
+
+# The service's own deploy tree, and the data root its settings stand under: the data root's env/review.toml,
+# which each release links to as settings.local.toml, the file the service reads beside settings.toml
+# (docs/api.md, 「Settings」).
+[deploy]
+root = "~/.local/share/bmo-review"
+link = "deploy"
+data_root = "~/.local/share/bmo/data"
+env_links = [{ link = "settings.local.toml", target = "env/review.toml" }]
+# The service's user unit, marked bot: the repository's one service, whose health the deployment waits on.
+units = ["deploy/*.service"]
+# Answers 0 once the service the deployed settings name answers ready (docs/api.md, 「Health」).
+health = "~/.local/share/bmo-review/deploy/bin/bmo-review health"
