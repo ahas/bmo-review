@@ -109,7 +109,7 @@ async fn take_turn(standing: &Standing, review: &Review, said: &str) -> Result<(
     };
 
     standing.talking.end(id, failure);
-    standing.events.send(Kind::Talk, id);
+    standing.events.send(Kind::TalkEnded { failure }, id);
   });
 
   Ok(())

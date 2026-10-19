@@ -36,9 +36,9 @@ deployment gives.
   copy stands in `client/vendor/`;
 - its i18n module, loading the bundle's own Korean pack beside the host's: the screen's words and
   `code.error.<code>` for each code of `docs/api.md` are the bundle's, not the host's;
-- the components `MarkdownText`, `ItemTip`, `DeployMark`, `TodoOpenButton` and `UsageMeters`, declared in
-  `client/host/` by the props the screen hands them, the tab-state store the screen keeps its open tabs in, and
-  the TODO panel an item's number opens;
+- the components `MarkdownText`, `ItemTip`, `DeployMark`, `TodoOpenButton` and `UsageMeters`, and the functions
+  `copyText`, `loadMarkdownRenderer` and `useKeptTabs`, declared in `client/host/` by what the screen hands them
+  and asks of them, and the TODO panel an item's number opens;
 - every route under `/api/code/`, the event stream included, passed on to this service behind the console's
   sign-in (`docs/api.md`, 「What the console does」).
 

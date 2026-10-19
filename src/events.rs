@@ -26,8 +26,10 @@ const KEEP_ALIVE: Duration = Duration::from_secs(15);
 pub enum Kind {
   /// A review was made, or an item was filed from it.
   Review,
-  /// A turn of a review's thread was written, answered or failed.
+  /// The owner's words of a review's thread were written and a turn went out.
   Talk,
+  /// A review's turn ended: answered, or with the code it failed with.
+  TalkEnded { failure: Option<&'static str> },
 }
 
 impl Kind {
@@ -35,7 +37,7 @@ impl Kind {
   pub fn name(self) -> &'static str {
     match self {
       Self::Review => "code-review",
-      Self::Talk => "code-review-talk",
+      Self::Talk | Self::TalkEnded { .. } => "code-review-talk",
     }
   }
 }
@@ -50,10 +52,16 @@ pub struct Event {
 
 impl Event {
   fn sent(self) -> Sent {
+    let mut data = json!({ "review": self.review });
+
+    if let Kind::TalkEnded { failure } = self.kind {
+      data["detail"] = json!(failure);
+    }
+
     Sent::default()
       .id(self.cursor.to_string())
       .event(self.kind.name())
-      .data(json!({ "review": self.review }).to_string())
+      .data(data.to_string())
   }
 }
 

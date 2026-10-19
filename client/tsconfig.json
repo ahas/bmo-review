@@ -1,0 +1,11 @@
+{
+  // Nuxt's own project configs carry the layer's code; the host's declarations are read with the screen through
+  // the module nuxt.config.ts adds where the bundle is the project prepared.
+  "files": [],
+  "references": [
+    { "path": "./.nuxt/tsconfig.app.json" },
+    { "path": "./.nuxt/tsconfig.server.json" },
+    { "path": "./.nuxt/tsconfig.shared.json" },
+    { "path": "./.nuxt/tsconfig.node.json" }
+  ]
+}

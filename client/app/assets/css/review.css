@@ -1,0 +1,58 @@
+/* The code review's marks in the editor's margin (docs/screen.md, 「Reviewing」). The editor draws
+   its margin itself and takes a class name for a line, so what a mark looks like is said here, in
+   the console's own colours: a plus where a review can be written, a speech bubble where one
+   stands, and a tint over the lines a review covers or the lines being chosen for one. Both marks
+   are drawn out of boxes and gradients in the text colour of the theme standing, so this sheet
+   names no file. */
+.code-review-glyph-add,
+.code-review-glyph-mark {
+  position: relative;
+  cursor: pointer;
+}
+
+.code-review-glyph-add {
+  color: var(--ui-text-toned);
+  background:
+    linear-gradient(currentColor, currentColor) center / 2px 10px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 10px 2px no-repeat;
+}
+
+.code-review-glyph-mark {
+  color: var(--ui-text-highlighted);
+}
+
+/* The bubble: a rounded box, and a tail at its lower left corner. The margin starts at the very
+   edge of the editor's rounded frame, so both stand a few pixels in from the left of the mark. */
+.code-review-glyph-mark::before,
+.code-review-glyph-mark::after {
+  content: "";
+  position: absolute;
+  box-sizing: border-box;
+  border: 1.5px solid currentColor;
+}
+
+.code-review-glyph-mark::before {
+  top: 2px;
+  left: 4px;
+  width: 11px;
+  height: 9px;
+  border-radius: 2.5px;
+}
+
+.code-review-glyph-mark::after {
+  top: 10px;
+  left: 6.5px;
+  width: 0;
+  height: 4px;
+  border-width: 0 0 0 1.5px;
+  transform: skewX(-35deg);
+  transform-origin: top;
+}
+
+.code-review-lines {
+  background-color: color-mix(in oklab, var(--ui-primary) 8%, transparent);
+}
+
+.code-review-chosen {
+  background-color: color-mix(in oklab, var(--ui-primary) 18%, transparent);
+}

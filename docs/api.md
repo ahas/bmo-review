@@ -89,12 +89,13 @@ rule (「Versions」).
 
 `GET /api/code/events` is a server-sent event stream: the events kept in a ring are replayed after the cursor
 the `Last-Event-ID` header names, then every new one as it is sent. Each event carries its cursor as its id, its
-kind as its name, and `review` (the review's number) as its JSON data.
+kind as its name, and as its JSON data `review` (the review's number) and, where a turn ended, `detail`.
 
 | Event | When |
 |---|---|
 | `code-review` | a review was made, or an item was filed from it |
-| `code-review-talk` | a turn of a review's thread was written, answered or failed |
+| `code-review-talk` without `detail` | the owner's words were written and a turn of the review went out |
+| `code-review-talk` with `detail` | the turn ended: `detail` is null where it was answered, else the thread's failure code |
 
 ## Refusals
 
@@ -237,8 +238,10 @@ These are bmo-web's to carry; this repository holds none of them.
   `/code`.
 - **Owe the bundle what it asks of the host:** bmo-ui at the version the bundle's peer names, an i18n module that
   loads the bundle's own Korean pack beside the host's, the components `MarkdownText`, `ItemTip`, `DeployMark`,
-  `TodoOpenButton` and `UsageMeters` declared in `client/host/` by the props the screen hands them, the console's
-  tab-state store the screen keeps its open tabs in, and the TODO panel an item's number opens.
+  `TodoOpenButton` and `UsageMeters`, and the functions `copyText` (the clipboard), `loadMarkdownRenderer` (the
+  console's markdown renderer, for a file read as a document) and `useKeptTabs` (the screen's open tabs kept for
+  the account), all declared in `client/host/` by what the screen hands them and asks of them; and the TODO panel
+  an item's number opens.
 - **The words are the bundle's own:** the screen's keys and `code.error.<code>` for each code above stand in the
   bundle's pack, not the host's.
 

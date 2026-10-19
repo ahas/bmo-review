@@ -140,8 +140,10 @@ Read with `git show 3e4c032:<file>` and the names the 32 files import from them.
 
 | Module | Count | Here |
 |---|---|---|
-| `closing`, `code-copy`, `errors`, `file-icons`, `monaco`, `numbers`, `screen`, `side-parts`, `tabs`, the shared wording | 10 | bmo-ui's, imported from it |
-| `domain/copy` (100 lines), `domain/attachments` for `fileSizeText` (124), `domain/graph` for `hasRenderedForm` (804), `domain/markdown-load` (36), `domain/events` (1,123), `domain/tab-state` (92) | 6 | carried into the bundle, only the parts the screen uses; the events onto this service's own stream, the tab state onto the host console's tab-state store |
+| `closing`, `code-copy`, `errors`, `file-icons`, `monaco`, `numbers`, `screen`, `side-parts`, `tabs`, the shared wording | 10 | bmo-ui's, imported from it; two parts are the bundle's own: the review view of the old `monaco` (its review marks, zones, line choice and code points, which bmo-ui's editor does not carry) as `domain/review-view` on bmo-ui's editor, and the refusals, which the service answers as codes, worded by `domain/refusals` in place of `errors`' reading of a sentence |
+| `domain/copy` for `copyText` (100 lines), `domain/markdown-load` (36), `domain/tab-state` for `useKeptTabs` (92) | 3 | the host console's: functions the bundle declares in `client/host/`, as the code graph's bundle does |
+| `domain/attachments` for `fileSizeText` (124), `domain/graph` for `hasRenderedForm` (804) | 2 | the bundle's own `domain/files`, the two functions alone, the size in the screen's own locale |
+| `domain/events` (1,123) | 1 | the bundle's own `domain/events`, on this service's own stream rather than the console's |
 | `server/utils/checkouts` (44 lines) | 1 | ported to the service: the checkouts read from bmo-job's worker list |
 | `#shared/config`, `#shared/types` | 2 | the bundle's own (above) |
 
