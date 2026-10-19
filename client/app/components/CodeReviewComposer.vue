@@ -27,7 +27,7 @@
     <p v-if="props.failure !== ''" class="text-sm text-error" role="alert">{{ props.failure }}</p>
 
     <div class="flex items-center justify-end gap-2">
-      <UButton size="sm" color="neutral" variant="ghost" :label="$t('common.action.cancel')" @click="emit('cancel')" />
+      <UButton size="sm" color="neutral" variant="ghost" :label="$t('code.shared.action.cancel')" @click="emit('cancel')" />
       <UButton type="submit" size="sm" icon="i-material-symbols-send-outline" :label="$t('code.action.add_review')" :disabled="text.trim() === ''" :loading="props.busy" />
     </div>
   </form>

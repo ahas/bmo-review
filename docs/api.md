@@ -25,6 +25,11 @@ rule (「Versions」).
 
 `GET /health` answers `pid`, `version` and `ready`: the store is open and migrated.
 
+## Names
+
+`GET /api/code/names` answers `owner` and `agent`, the names the settings give (「Settings」, `filing`): the
+screen fills its pack's `{owner}` and `{agent}` marks with them, so no name stands in the bundle or its pack.
+
 ## Reading a checkout
 
 | Route | Query | Answer |

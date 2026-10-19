@@ -161,15 +161,17 @@ The component tags of the 9 `.vue` files that are neither Nuxt UI's nor the code
 | `ActionGroup`, `ContentSkeleton`, `GrowingTextarea`, `SkeletonBar`, `SkeletonLine`, `SkeletonText`, `TabBar`, `TabSwitch`, `ToolBar` | 9 | bmo-ui's |
 | `MarkdownText`, `ItemTip`, `DeployMark`, `TodoOpenButton`, `UsageMeters` | 5 | the host console's, declared in the bundle's `client/host/` by the props the screen hands them |
 
-### The language pack keys: 157
+### The language pack keys: 156
 
 `git show 3e4c032:client/i18n/locales/ko.yaml`, its `code` section's leaves read with a YAML reader; and the keys
 the 25 non-test files ask outside it, found by the literal keys they pass to the translation calls.
 
 | Keys | Count | Here |
 |---|---|---|
-| `code.title` 2, `code.label` 46, `code.action` 14, `code.placeholder` 5, `code.aria` 12, `code.status` 17, `code.message` 4, `code.error` 28 | 128 | the bundle's own Korean pack, carried as they stand, with a `code.error.<code>` for every code of `docs/api.md` |
-| `common.action` (`cancel`, `clear_search`, `close`, `refresh`, `send`), `common.aria.search_scope`, `common.error` (`editor_failed`, `file_read_failed`, `renderer_failed`, `say_to_bmo_empty`, `send_failed`, `too_long`), `common.label` (`code`, `count`, `line_number`, `line_range`, `link`, `name`, `path`, `rendered`, `size`, `speaker_bmo`, `speaker_owner`, `view`), `common.status` (`bmo_answering`, `head_only`, `source_loading`), `screens.label.code` | 29 | the bundle's own Korean pack under its own keys; a key or value naming the agent is renamed and worded with the agent's mark |
+| `code.title` 2, `code.label` 46, `code.action` 14, `code.placeholder` 5, `code.aria` 12, `code.status` 17, `code.message` 4, `code.error` 28 | 128 | the bundle's own Korean pack, carried as they stand, with a `code.error.<code>` for every code of `docs/api.md`; `code.placeholder.say_to_bmo` and `code.aria.say_to_bmo` stand as `code.placeholder.talk` and `code.aria.talk`, worded with the `{agent}` mark |
+| `common.action` (`cancel`, `clear_search`, `close`, `refresh`, `send`), `common.aria.search_scope`, `common.error` (`editor_failed`, `file_read_failed`, `renderer_failed`, `send_failed`), `common.label` (`code`, `count`, `line_number`, `line_range`, `link`, `name`, `path`, `rendered`, `size`, `speaker_bmo`, `speaker_owner`, `view`), `common.status` (`bmo_answering`, `head_only`, `source_loading`) | 25 | the bundle's own pack under `code.shared` with the same group and name, `speaker_bmo` as `speaker_agent` and `bmo_answering` as `agent_answering`; the speakers and the answering line are worded with the `{owner}` and `{agent}` marks the screen fills from `GET /api/code/names` |
+| `screens.label.code` | 1 | `code.title.screen` |
+| `common.error.say_to_bmo_empty`, `common.error.too_long` | 2 | the old console server's refusals: the service's codes `talk_empty` and `too_long`, under `code.error` |
 
 ## The tests: 9, deferred
 

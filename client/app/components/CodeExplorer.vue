@@ -41,13 +41,13 @@
           :ui="{ trailing: 'pe-1' }"
         >
           <template v-if="query !== ''" #trailing>
-            <UTooltip :text="$t('common.action.clear_search')">
-              <UButton size="sm" color="neutral" variant="link" icon="i-material-symbols-close" :aria-label="$t('common.action.clear_search')" @click="query = ''" />
+            <UTooltip :text="$t('code.shared.action.clear_search')">
+              <UButton size="sm" color="neutral" variant="link" icon="i-material-symbols-close" :aria-label="$t('code.shared.action.clear_search')" @click="query = ''" />
             </UTooltip>
           </template>
         </UInput>
 
-        <USelect :content="{ align: 'start' }" v-model="mode" :items="MODES" size="sm" class="shrink-0" :aria-label="$t('common.aria.search_scope')" />
+        <USelect :content="{ align: 'start' }" v-model="mode" :items="MODES" size="sm" class="shrink-0" :aria-label="$t('code.shared.aria.search_scope')" />
       </div>
 
       <ContentSkeleton v-if="props.tree === null && props.failure === ''" class="px-3" :rows="10" listClass="flex flex-col" :label="$t('code.status.files_loading')">
@@ -60,7 +60,7 @@
       </ContentSkeleton>
       <div v-else-if="props.failure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
         <p class="text-sm text-error">{{ props.failure }}</p>
-        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('common.action.refresh')" @click="emit('retry')" />
+        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" @click="emit('retry')" />
       </div>
 
       <template v-else-if="props.tree !== null">
@@ -124,7 +124,7 @@
               <span class="flex min-w-0 items-center gap-2">
                 <span class="truncate" :class="(item as CodeTreeItem).entry.kind === 'file' ? '' : 'font-medium'" :title="(item as CodeTreeItem).entry.path">{{ (item as CodeTreeItem).label }}</span>
                 <span v-if="(item as CodeTreeItem).entry.kind === 'submodule'" class="shrink-0 text-sm text-muted">{{ $t("code.label.submodule", { commit: shortSha((item as CodeTreeItem).entry.pinned ?? "") }) }}</span>
-                <span v-else-if="(item as CodeTreeItem).entry.kind === 'link'" class="shrink-0 text-sm text-muted">{{ $t("common.label.link") }}</span>
+                <span v-else-if="(item as CodeTreeItem).entry.kind === 'link'" class="shrink-0 text-sm text-muted">{{ $t("code.shared.label.link") }}</span>
               </span>
             </template>
 
@@ -197,7 +197,7 @@ const emit = defineEmits<{
 const NAMES_SHOWN = 200;
 
 const MODES = [
-  { value: "name", label: t("common.label.name") },
+  { value: "name", label: t("code.shared.label.name") },
   { value: "content", label: t("code.label.search_content") }
 ];
 

@@ -103,7 +103,7 @@
       </ContentSkeleton>
       <div v-else-if="threadFailure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
         <p class="text-sm text-error">{{ threadFailure }}</p>
-        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('common.action.refresh')" @click="load" />
+        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" @click="load" />
       </div>
 
       <template v-if="thread !== null">
@@ -115,14 +115,14 @@
         <ol ref="list" class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3" :aria-label="$t('code.aria.review_thread')">
           <li v-for="turn in thread.turns" :key="turn.id" class="flex flex-col gap-1">
             <p class="text-sm">
-              <span class="font-medium" :class="turn.speaker === 'owner' ? 'text-highlighted' : 'text-muted'">{{ turn.speaker === "owner" ? $t("common.label.speaker_owner") : $t("common.label.speaker_bmo") }}</span>
+              <span class="font-medium" :class="turn.speaker === 'owner' ? 'text-highlighted' : 'text-muted'">{{ turn.speaker === "owner" ? $t("code.shared.label.speaker_owner", names) : $t("code.shared.label.speaker_agent", names) }}</span>
               <span class="text-muted"> · {{ timeText(turn.saidAt) }}</span>
             </p>
             <MarkdownText :text="turn.text" class="text-sm text-highlighted" />
           </li>
         </ol>
 
-        <p v-if="thread.answering" class="px-3 text-sm text-muted" role="status">{{ $t("common.status.bmo_answering") }}</p>
+        <p v-if="thread.answering" class="px-3 text-sm text-muted" role="status">{{ $t("code.shared.status.agent_answering", names) }}</p>
         <p v-else-if="thread.failure !== null" class="px-3 text-sm text-warning" role="status">{{ $t(`code.error.${thread.failure}`) }}</p>
         <p v-if="sendFailure !== ''" class="px-3 text-sm text-error" role="alert">{{ sendFailure }}</p>
 
@@ -135,12 +135,12 @@
             :maxrows="8"
             :maxlength="TALK_LIMIT"
             :disabled="thread.answering"
-            :placeholder="$t('code.placeholder.talk')"
-            :aria-label="$t('code.aria.talk')"
+            :placeholder="$t('code.placeholder.talk', names)"
+            :aria-label="$t('code.aria.talk', names)"
             @keydown.meta.enter.prevent="send"
             @keydown.ctrl.enter.prevent="send"
           />
-          <UButton type="submit" size="sm" class="self-end" icon="i-material-symbols-send-outline" :label="$t('common.action.send')" :disabled="text.trim() === '' || thread.answering" :loading="sending" />
+          <UButton type="submit" size="sm" class="self-end" icon="i-material-symbols-send-outline" :label="$t('code.shared.action.send')" :disabled="text.trim() === '' || thread.answering" :loading="sending" />
         </form>
 
         <CodeReviewTodo
@@ -159,6 +159,7 @@
 <script setup lang="ts">
 import { TALK_LIMIT } from "../../shared/config";
 import { reviewGroups, reviewPlace, SCOPE_LABELS, shortSha } from "../domain/code";
+import { useNames } from "../domain/names";
 import { refusalText } from "../domain/refusals";
 import { useReviewRefresh } from "../domain/events";
 
@@ -180,6 +181,8 @@ interface Props {
 
 const { t } = useI18n();
 const props = defineProps<Props>();
+// The owner's and the agent's names the thread's words are filled with.
+const names = useNames();
 const emit = defineEmits<{
   open: [id: number];
   close: [];
@@ -251,7 +254,7 @@ async function send(): Promise<void> {
     await load();
   } catch (error) {
     // Words the bot refused were not written down, so they stay in the box to send again.
-    sendFailure.value = refusalText(t, error, t("common.error.send_failed"));
+    sendFailure.value = refusalText(t, error, t("code.shared.error.send_failed"));
   } finally {
     sending.value = false;
   }

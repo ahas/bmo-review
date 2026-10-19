@@ -9,8 +9,8 @@
         <div class="flex items-center gap-2 border-b border-default px-4 py-3">
           <UIcon name="i-material-symbols-playlist-add" class="size-4 shrink-0 text-muted" />
           <p class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted">{{ $t("code.action.file_todo") }}</p>
-          <UTooltip :text="$t('common.action.close')">
-            <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-close" :aria-label="$t('common.action.close')" @click="emit('update:open', false)" />
+          <UTooltip :text="$t('code.shared.action.close')">
+            <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-close" :aria-label="$t('code.shared.action.close')" @click="emit('update:open', false)" />
           </UTooltip>
         </div>
 
@@ -42,7 +42,7 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-2 border-t border-default px-4 py-3">
-          <UButton size="sm" color="neutral" variant="ghost" :label="$t('common.action.cancel')" @click="emit('update:open', false)" />
+          <UButton size="sm" color="neutral" variant="ghost" :label="$t('code.shared.action.cancel')" @click="emit('update:open', false)" />
           <UButton
             type="submit"
             size="sm"

@@ -14,7 +14,7 @@
       @pin="(id: string, on: boolean) => emit('pin-tab', id, on)"
     >
       <template v-if="readable" #switch>
-        <TabSwitch v-model="showing" :items="SIDES" :label="$t('common.label.view')" :compact="props.narrow" />
+        <TabSwitch v-model="showing" :items="SIDES" :label="$t('code.shared.label.view')" :compact="props.narrow" />
       </template>
     </TabBar>
 
@@ -68,7 +68,7 @@
         </USelectMenu>
       </span>
 
-      <span v-if="source?.cut === true && !reading" class="text-warning" role="status">{{ $t("common.status.head_only") }}</span>
+      <span v-if="source?.cut === true && !reading" class="text-warning" role="status">{{ $t("code.shared.status.head_only") }}</span>
 
       <span class="ms-auto !px-1">
         <ActionGroup :actions="actions" :properties="properties" :properties-title="props.path" :label="$t('code.aria.file_menu')" />
@@ -104,12 +104,12 @@
         <UButton size="sm" color="neutral" variant="subtle" :label="$t('code.action.to_current')" @click="emit('commit', null)" />
       </div>
 
-      <ContentSkeleton v-if="reading || (source !== null && source.text !== null && !asDocument && !editorReady)" class="p-3" :label="$t('common.status.source_loading')">
+      <ContentSkeleton v-if="reading || (source !== null && source.text !== null && !asDocument && !editorReady)" class="p-3" :label="$t('code.shared.status.source_loading')">
         <SkeletonText :lines="10" size="sm" lastWidth="w-1/3" />
       </ContentSkeleton>
       <div v-else-if="failed !== ''" role="alert" class="flex flex-col items-start gap-2 p-3">
         <p class="text-sm text-error">{{ failed }}</p>
-        <UButton size="sm" color="neutral" variant="subtle" :label="$t('common.action.refresh')" @click="retry" />
+        <UButton size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" @click="retry" />
       </div>
       <p v-else-if="source !== null && source.text === null" class="p-3 text-sm text-muted">
         {{ $t("code.status.binary_file", { n: countText(source.size) }) }}
@@ -129,7 +129,7 @@
         v-show="standing && !asDocument && editorReady"
         ref="box"
         class="min-h-0 flex-1 overflow-hidden"
-        :aria-label="$t('common.label.code')"
+        :aria-label="$t('code.shared.label.code')"
         @pointerdown.capture="notePointer"
         @contextmenu.capture="noteMenu"
       />
@@ -190,7 +190,7 @@
       <span class="min-w-0 flex-1 truncate text-sm text-highlighted">
         <span class="font-mono">{{ narrowPlace }}</span>
       </span>
-      <UButton size="sm" color="neutral" variant="ghost" :label="$t('common.action.cancel')" @click="clearChoice" />
+      <UButton size="sm" color="neutral" variant="ghost" :label="$t('code.shared.action.cancel')" @click="clearChoice" />
       <UButton size="sm" icon="i-material-symbols-add-comment-outline" :label="$t('code.action.add_review')" @click="openSheet" />
     </div>
 
@@ -322,8 +322,8 @@ const readable = computed(() => props.path !== null && hasRenderedForm(props.pat
 const asDocument = computed(() => readable.value && showing.value === "rendered");
 
 const SIDES: SwitchItem<"rendered" | "code">[] = [
-  { value: "rendered", label: t("common.label.rendered"), icon: "i-material-symbols-menu-book-outline" },
-  { value: "code", label: t("common.label.code"), icon: "i-material-symbols-code" }
+  { value: "rendered", label: t("code.shared.label.rendered"), icon: "i-material-symbols-menu-book-outline" },
+  { value: "code", label: t("code.shared.label.code"), icon: "i-material-symbols-code" }
 ];
 
 const barTabs = computed<BarTab[]>(() => {
@@ -387,12 +387,12 @@ const properties = computed<BarProperty[] | null>(() => {
   const commit = shownCommit.value;
 
   return [
-    { label: t("common.label.path"), value: props.path, mono: true },
+    { label: t("code.shared.label.path"), value: props.path, mono: true },
     ...(props.project === null ? [] : [{ label: t("code.label.project"), value: props.project }]),
     { label: t("code.label.commit"), value: commit === null ? shortSha(props.commit ?? "") : `${shortSha(commit.commit)} ${commit.subject}` },
     ...(commit === null ? [] : [{ label: t("code.label.authored"), value: `${commit.author} · ${dateText.format(new Date(commit.at * 1000))}` }]),
-    ...(source.value === null ? [] : [{ label: t("common.label.size"), value: fileSizeText(source.value.size, locale.value) }]),
-    ...(props.dirty > 0 ? [{ label: t("code.label.uncommitted"), value: t("common.label.count", { n: countText(props.dirty) }) }] : [])
+    ...(source.value === null ? [] : [{ label: t("code.shared.label.size"), value: fileSizeText(source.value.size, locale.value) }]),
+    ...(props.dirty > 0 ? [{ label: t("code.label.uncommitted"), value: t("code.shared.label.count", { n: countText(props.dirty) }) }] : [])
   ];
 });
 
@@ -431,8 +431,8 @@ const narrowPlace = computed(() => {
   if (lines === null) return "";
 
   return lines.start === lines.end
-    ? t("common.label.line_number", { n: lines.start })
-    : t("common.label.line_range", { from: lines.start, to: lines.end });
+    ? t("code.shared.label.line_number", { n: lines.start })
+    : t("code.shared.label.line_range", { from: lines.start, to: lines.end });
 });
 
 interface ZoneItem {
@@ -699,7 +699,7 @@ async function load(): Promise<void> {
 
     source.value = null;
     shownKey = null;
-    failed.value = refusalText(t, error, t("common.error.file_read_failed"));
+    failed.value = refusalText(t, error, t("code.shared.error.file_read_failed"));
   }
 
   reading.value = false;
@@ -747,7 +747,7 @@ async function showDocument(): Promise<void> {
     }
 
     if (renderer === null) {
-      failed.value = t("common.error.renderer_failed");
+      failed.value = t("code.shared.error.renderer_failed");
 
       return;
     }
@@ -756,7 +756,7 @@ async function showDocument(): Promise<void> {
     documentReady.value = true;
   } catch (error) {
     if (mine === asked) {
-      failed.value = refusalText(t, error, t("common.error.renderer_failed"));
+      failed.value = refusalText(t, error, t("code.shared.error.renderer_failed"));
     }
   }
 }
@@ -812,7 +812,7 @@ async function prepareEditor(): Promise<void> {
     editorReady.value = true;
     showSource();
   } catch (error) {
-    failed.value = refusalText(t, error, t("common.error.editor_failed"));
+    failed.value = refusalText(t, error, t("code.shared.error.editor_failed"));
   }
 }
 

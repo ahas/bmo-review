@@ -1,9 +1,11 @@
+import { currentNames } from "./names";
+
 import type { Translate } from "bmo-ui/shared/wording";
 
 // What the screen says of a call the service refused (docs/api.md, 「Refusals」): the service answers an English
 // sentence and a code, with a field or two beside it, and the screen says the code in its own pack's words under
-// `code.error.<code>`, a ceiling's `limit` read as the pack's `n`. A call that failed with no code of the
-// service's says the caller's own words.
+// `code.error.<code>`, a ceiling's `limit` read as the pack's `n` and the names filling `{owner}` and `{agent}`.
+// A call that failed with no code of the service's says the caller's own words.
 export function refusalText(t: Translate, error: unknown, fallback: string): string {
   const body = (error as { data?: Record<string, unknown> } | null)?.data;
   const code = body?.code;
@@ -15,5 +17,9 @@ export function refusalText(t: Translate, error: unknown, fallback: string): str
   const limit = typeof body?.limit === "number" ? body.limit : undefined;
   const worker = typeof body?.worker === "string" ? body.worker : undefined;
 
-  return t(`code.error.${code}`, { ...(limit === undefined ? {} : { n: limit }), ...(worker === undefined ? {} : { worker }) });
+  return t(`code.error.${code}`, {
+    ...currentNames(),
+    ...(limit === undefined ? {} : { n: limit }),
+    ...(worker === undefined ? {} : { worker })
+  });
 }

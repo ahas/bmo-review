@@ -4,6 +4,7 @@ code:
   title:
     review_compose: 리뷰 작성
     reviews: 리뷰
+    screen: 코드 리뷰
   label:
     authored: 작성
     commit: 커밋
@@ -71,7 +72,7 @@ code:
     find_content: 내용 찾기
     find_file: 파일 이름 찾기
     review: 리뷰 작성
-    talk: 메시지 보내기
+    talk: '{agent}에게 메시지 보내기'
   aria:
     choose_commit: 커밋 선택
     choose_worker: 워커 선택
@@ -84,7 +85,7 @@ code:
     review_thread: 리뷰 스레드
     reviews_of: 커밋 {commit}의 리뷰
     reviews_of_commit: 이 커밋의 리뷰
-    talk: 이 리뷰로 메시지 보내기
+    talk: 이 리뷰로 {agent}에게 메시지 보내기
   status:
     answering: 답하는 중
     binary_file: 이진 파일 ({n}바이트)
@@ -139,7 +140,7 @@ code:
     workers_failed: 워커 목록을 읽지 못했습니다.
     bad_request: 요청 형식이 맞지 않습니다.
     unauthorized: 코드 리뷰 서비스에 들어갈 수 없습니다.
-    talk_empty: 보낼 메시지를 입력해 주세요.
+    talk_empty: '{agent}에게 보낼 메시지를 입력해 주세요.'
     too_long: 메시지가 너무 깁니다. {n}자까지 보낼 수 있습니다.
     review_busy: 이 리뷰에 아직 답하는 중이라, 답이 온 뒤에 올릴 수 있습니다.
     no_worker: '{worker} 워커가 더는 없어 올릴 수 없습니다.'
@@ -152,3 +153,34 @@ code:
     outage: API가 응답하지 않아 이번 말에는 답하지 못했습니다.
     talk_failed: 이번 말에는 답이 오지 않았습니다.
     no_answer: 이번 말에는 아무 답도 돌아오지 않았습니다.
+  shared:
+    action:
+      cancel: 취소
+      clear_search: 검색어 삭제
+      close: 닫기
+      refresh: 새로고침
+      send: 보내기
+    aria:
+      search_scope: 찾을 범위
+    error:
+      editor_failed: 코드 편집기를 불러오지 못했습니다.
+      file_read_failed: 파일을 읽지 못했습니다.
+      renderer_failed: 문서 렌더러를 불러오지 못했습니다.
+      send_failed: 메시지를 보내지 못했습니다.
+    label:
+      code: 코드
+      count: '{n}개'
+      line_number: '{n}번 줄'
+      line_range: '{from}~{to}번 줄'
+      link: 링크
+      name: 이름
+      path: 경로
+      rendered: 렌더링
+      size: 크기
+      speaker_agent: '{agent}'
+      speaker_owner: '{owner}'
+      view: 보기
+    status:
+      head_only: 앞부분만 표시
+      source_loading: 소스 불러오는 중…
+      agent_answering: '{agent}가 답을 쓰는 중…'

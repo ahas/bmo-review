@@ -5,7 +5,7 @@
        edge. -->
   <UDashboardPanel id="code" :ui="{ body: 'p-0 sm:p-0 gap-0 sm:gap-0 overflow-y-hidden [&>*]:max-w-none' }">
     <template #header>
-      <UDashboardNavbar :title="$t('screens.label.code')" icon="i-material-symbols-rate-review-outline">
+      <UDashboardNavbar :title="$t('code.title.screen')" icon="i-material-symbols-rate-review-outline">
         <template #right>
           <DeployMark />
           <TodoOpenButton />
@@ -215,7 +215,7 @@ const reviewsTool = computed<BarAction>(() =>
 
 // What the screen offers beside the file's own actions: a fresh read.
 const tools = computed<BarAction[]>(() => [
-  { id: "reread", label: t("common.action.refresh"), icon: "i-material-symbols-refresh", loading: projectsLoading.value || treeLoading.value, onSelect: () => void reread() }
+  { id: "reread", label: t("code.shared.action.refresh"), icon: "i-material-symbols-refresh", loading: projectsLoading.value || treeLoading.value, onSelect: () => void reread() }
 ]);
 
 const sides = useTemplateRef<{ panelsRef: Array<{ collapse: () => void; expand: () => void; isCollapsed: boolean }> }>("sides");
