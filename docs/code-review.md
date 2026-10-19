@@ -19,8 +19,10 @@
   directory (its `cwd`). A worker naming none is no project.
 - **No separate list:** the worker name is the project name, and the worker's label is its display name, the
   name where it has no label.
+- **A support worker is no project of its own.** Its worktree is its base's repository on a job's branch, so the
+  base's checkout stands for it.
 - **The directory** is taken as a path standing on its own: its `.` and `..` parts are read away without asking
-  the disk.
+  the disk, a relative one read from where the service runs.
 - **Shared checkouts:** when two workers point at one checkout, it stands once, under the name of the worker
   listed first.
 

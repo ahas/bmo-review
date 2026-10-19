@@ -14,6 +14,7 @@ use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{MethodFilter, MethodRouter};
 use serde_json::{Map, Value, json};
 
+use crate::clients::job::Job;
 use crate::events::Events;
 use crate::settings::Settings;
 use crate::store::Store;
@@ -151,14 +152,19 @@ pub struct Standing {
   pub store: Store,
   /// The event stream every reader of `GET /api/code/events` hears.
   pub events: Events,
+  /// bmo-job, at the address the settings name.
+  pub job: Job,
 }
 
 impl Standing {
   pub fn new(settings: Settings, store: Store) -> Self {
+    let job = Job::new(&settings.job.address, &settings.job.token);
+
     Self {
       settings: Arc::new(settings),
       store,
       events: Events::new(),
+      job,
     }
   }
 }

@@ -1,9 +1,11 @@
 //! The review service: the workers' checkouts read at a commit, the reviews pinned to them, the talk under each
 //! review and the items filed from them (`docs/code-review.md`, `docs/api.md`).
 
+pub mod clients;
 pub mod events;
 pub mod health;
 pub mod http;
+pub mod review;
 pub mod settings;
 pub mod store;
 
