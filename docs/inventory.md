@@ -69,7 +69,7 @@ The old tables held no rows when they were listed, so no data moves.
 | `requester` | 1 | the setting `filing.requester`, a deployment's value; the old value was a person's name |
 | `places.whole`, `places.line`, `places.range`, `places.file`, `places.folder` | 5 | the Korean pack's place part, `lang/ko/place.yaml` |
 | `talk.words`, `talk.head`, `talk.lines`, `talk.folder_reading`, `talk.file_reading`, `talk.excerpt`, `talk.excerpt_end` | 7 | not carried: the receiver words the talk's turn and carries its own copy, in English, under its `code-review.toml` |
-| `filing.source`, `filing.his`, `filing.owner_turn`, `filing.bmo_turn`, `filing.what`, `filing.pinned`, `filing.excerpt`, `filing.conclusion` | 8 | the Korean pack's filing part, `lang/ko/filing.yaml`, with the owner's and the agent's names as the marks `{owner}` and `{agent}` the settings fill |
+| `filing.source`, `filing.his`, `filing.owner_turn`, `filing.bmo_turn`, `filing.what`, `filing.pinned`, `filing.excerpt`, `filing.conclusion` | 8 | the Korean pack's filing part, `lang/ko/filing.yaml`, with the owner's and the agent's names as the marks `{owner}` and `{agent}` the settings fill, and the two keys that named a person renamed `owner_filed` and `agent_turn` |
 
 The old readers were the bot's control route and talk module; the receiver reads its own copy. No other unit reads
 these keys.

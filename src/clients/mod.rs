@@ -2,3 +2,4 @@
 //! makes (`docs/api.md`, 「Calls this service makes」).
 
 pub mod job;
+pub mod receiver;

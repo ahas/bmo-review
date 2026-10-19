@@ -59,11 +59,11 @@ rule (「Versions」).
 | Route | Request | Answer |
 |---|---|---|
 | `GET /api/code/reviews` | query `project` | `[summaries]`, newest first |
-| `POST /api/code/reviews` | `project`, `commit`, `scope`, `path`, `startLine?`, `endLine?`, `text` | 202 `review` (its number) |
+| `POST /api/code/reviews` | `project`, `commit`, `scope`, `path`, `startLine?`, `endLine?`, `text` | 202 `ok`, `review` (its number) |
 | `GET /api/code/reviews/{id}` | | a thread |
 | `GET /api/code/reviews/{id}/talk` | | `answering`, `failure` |
-| `POST /api/code/reviews/{id}/talk` | `text` | 202 |
-| `POST /api/code/reviews/{id}/todo` | `title`, `toDo`, `conclusion?` | `raised` (the filed item's number) |
+| `POST /api/code/reviews/{id}/talk` | `text` | 202 `ok` |
+| `POST /api/code/reviews/{id}/todo` | `title`, `toDo`, `conclusion?` | `ok`, `raised` (the filed item's number) |
 
 - **A summary:** `id`, `worker`, `commit`, `scope` (`line`, `range`, `file` or `folder`), `path`, `startLine`,
   `endLine`, `createdAt`, `first` (the thread's first words), `turns` (their count), `lastAt` (the last words'
@@ -126,7 +126,7 @@ kind as its name, and `review` (the review's number) as its JSON data.
 | 400 | `title_too_long` | the title is empty or over `limit`; carries `limit` |
 | 400 | `todo_too_long` | what to do is empty or over `limit`; carries `limit` |
 | 400 | `conclusion_too_long` | the conclusion is over `limit`; carries `limit` |
-| 409 | `no_worker` | the review's worker is gone from the catalogue, as bmo-job answers it |
+| 409 | `no_worker` | the review's worker is gone from the catalogue, as bmo-job answers it; carries `worker` |
 | 501 | `job_filing_unsupported` | bmo-job carries no route for this service to file an item (「What the siblings lack」) |
 | 502 | `job_failed` | a call on bmo-job failed for another reason |
 | 500 | `database` | the store failed |
@@ -213,6 +213,7 @@ in.
 | `store` | `path` | the SQLite file the reviews and threads stand in |
 | `job` | `address`, `token` | bmo-job's base address and the token it takes |
 | `receiver` | `address`, `token` | the receiver's base address and the token it takes |
+| `filing` | `language` | the language of this repository's pack the item's parts are worded in, by its folder under `lang/`: `ko` |
 | `filing` | `owner` | the owner's name, filling `{owner}` in the item's parts |
 | `filing` | `agent` | the chat agent's name, filling `{agent}` in the item's parts |
 | `filing` | `requester` | who an item filed from a review is requested by |

@@ -22,6 +22,8 @@ address = "http://127.0.0.1:3212"
 token = ""
 
 [filing]
+# The language of this repository's pack the item's parts are worded in, by its folder under lang/.
+language = "ko"
 # The names the item's parts are worded with, filling {owner} and {agent} in the Korean pack. A deployment
 # names its own.
 owner = "owner"

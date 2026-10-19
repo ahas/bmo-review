@@ -21,7 +21,7 @@ use crate::store::Store;
 pub async fn serve(settings: Settings) -> Result<(), String> {
   let store = Store::open(&settings.store.path).await.map_err(|why| why.to_string())?;
   let listen = settings.server.listen;
-  let router = http::router(Standing::new(settings, store)).map_err(|faults| faults.join("; "))?;
+  let router = http::router(Standing::new(settings, store)?).map_err(|faults| faults.join("; "))?;
   let listener = TcpListener::bind(listen)
     .await
     .map_err(|why| format!("{listen} could not be listened on: {why}"))?;

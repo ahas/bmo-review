@@ -15,7 +15,10 @@ use axum::routing::{MethodFilter, MethodRouter};
 use serde_json::{Map, Value, json};
 
 use crate::clients::job::Job;
+use crate::clients::receiver::Receiver;
 use crate::events::Events;
+use crate::review::talking::Talking;
+use crate::review::words::Words;
 use crate::settings::Settings;
 use crate::store::Store;
 
@@ -154,18 +157,30 @@ pub struct Standing {
   pub events: Events,
   /// bmo-job, at the address the settings name.
   pub job: Job,
+  /// The receiver, at the address the settings name.
+  pub receiver: Receiver,
+  /// Where each review's talk stands.
+  pub talking: Talking,
+  /// This repository's own words, in the language the settings name.
+  pub words: Arc<Words>,
 }
 
 impl Standing {
-  pub fn new(settings: Settings, store: Store) -> Self {
+  /// What the service stands on, or why its pack does not read.
+  pub fn new(settings: Settings, store: Store) -> Result<Self, String> {
     let job = Job::new(&settings.job.address, &settings.job.token);
+    let receiver = Receiver::new(&settings.receiver.address, &settings.receiver.token);
+    let words = Arc::new(Words::of(&settings.filing)?);
 
-    Self {
+    Ok(Self {
       settings: Arc::new(settings),
       store,
       events: Events::new(),
       job,
-    }
+      receiver,
+      talking: Talking::default(),
+      words,
+    })
   }
 }
 

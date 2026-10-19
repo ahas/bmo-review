@@ -8,6 +8,8 @@ use std::path::{Path, PathBuf};
 use config::{Config, Environment, File, FileFormat};
 use serde::Deserialize;
 
+use crate::review::words::Language;
+
 /// The defaults, as the repository's own settings file states them.
 const DEFAULTS: &str = include_str!("../settings.toml");
 /// The settings file a deployment may give.
@@ -56,6 +58,8 @@ pub struct Peer {
 /// What an item filed from a review is worded and requested with.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Filing {
+  /// The language of this repository's pack the item's parts are worded in.
+  pub language: Language,
   /// The owner's name, filling `{owner}` in the item's parts.
   pub owner: String,
   /// The chat agent's name, filling `{agent}` in the item's parts.

@@ -2,8 +2,8 @@
 
 use axum::http::StatusCode;
 use reqwest::{Client, Url};
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 
 use crate::http::Refused;
 
@@ -90,6 +90,56 @@ impl Job {
     self.get(&["workers", name]).await
   }
 }
+
+/// What a filing part is, as bmo-job's `FilingPart` kinds name it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PartKind {
+  Title,
+  What,
+  Do,
+  Conclusion,
+  /// The messages that asked for it: the owner's words in the thread.
+  Instruction,
+  /// The reply: the agent's answers in the thread.
+  Reply,
+}
+
+/// One part of an item: its kind, the line naming where its words came from, and the words.
+#[derive(Clone, Debug, Serialize)]
+pub struct FilingPart {
+  pub kind: PartKind,
+  pub source: String,
+  pub text: String,
+}
+
+/// An item filed from a review: its parts, the worker it is assigned to and who requests it, waiting for
+/// approval at the end of the queue.
+#[derive(Clone, Debug, Serialize)]
+pub struct Filing {
+  pub worker: String,
+  pub requester: String,
+  pub parts: Vec<FilingPart>,
+}
+
+impl Job {
+  /// Files an item, answering its number. bmo-job documents no route by which another unit files a fresh item
+  /// (`docs/api.md`, 「What the siblings lack」), so every filing is refused until one stands.
+  pub async fn file(&self, filing: &Filing) -> Result<i64, Refused> {
+    Err(Refused::new(
+      StatusCode::NOT_IMPLEMENTED,
+      JOB_FILING_UNSUPPORTED,
+      format!(
+        "bmo-job carries no route for this service to file an item of {} parts for {}",
+        filing.parts.len(),
+        filing.worker
+      ),
+    ))
+  }
+}
+
+/// The code of a filing bmo-job carries no route for.
+pub const JOB_FILING_UNSUPPORTED: &str = "job_filing_unsupported";
 
 fn failed(why: impl Into<String>) -> Refused {
   Refused::new(StatusCode::BAD_GATEWAY, JOB_FAILED, why)
