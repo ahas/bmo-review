@@ -1,0 +1,47 @@
+[
+  {
+    "id": "api/bundle",
+    "title": "Console bundle API",
+    "what": "The bmo-review-client layer a console extends: its manifest, its Nuxt configuration with its own Korean pack, and what it owes its host and asks of it.",
+    "files": [
+      "client/package.json",
+      "client/nuxt.config.ts",
+      "client/host/host.d.ts",
+      "README.md",
+      "docs/api.md"
+    ],
+    "symbols": [],
+    "aliases": [],
+    "needs": [
+      "console/screen"
+    ],
+    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd",
+    "boundary": {
+      "side": "exposes"
+    }
+  },
+  {
+    "id": "api/http",
+    "title": "HTTP API",
+    "what": "The service's routes behind its token: the checkout reading, the reviews, their talk and filing, the names, the event stream and health, with their refusal codes, as docs/api.md states them.",
+    "files": [
+      "src/review/reading.rs",
+      "src/review/reviews.rs",
+      "src/review/names.rs",
+      "src/events.rs",
+      "src/health.rs",
+      "docs/api.md"
+    ],
+    "symbols": [],
+    "aliases": [],
+    "needs": [
+      "review/reading",
+      "review/reviews",
+      "service/plumbing"
+    ],
+    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd",
+    "boundary": {
+      "side": "exposes"
+    }
+  }
+]

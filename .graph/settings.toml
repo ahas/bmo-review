@@ -1,0 +1,7 @@
+repository = "bmo-review"
+base = false
+
+[coverage]
+# Every tracked Rust, TypeScript and Vue file outside the tests, but this one: the declarations of the shapes the
+# screen reads, types alone.
+unindexed = ["client/shared/types.ts"]

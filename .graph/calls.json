@@ -1,0 +1,49 @@
+[
+  {
+    "id": "calls/job-workers",
+    "title": "bmo-job worker catalogue",
+    "what": "The calls on bmo-job: its worker list and one worker, which the checkouts are read from, and the filing of an item, held in src/clients/job.rs.",
+    "files": [
+      "src/clients/job.rs",
+      "src/clients/mod.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "Job",
+      "Worker",
+      "Filing",
+      "FilingPart"
+    ],
+    "aliases": [],
+    "needs": [],
+    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd",
+    "boundary": {
+      "side": "calls",
+      "repository": "bmo-job",
+      "api": "api/http"
+    }
+  },
+  {
+    "id": "calls/receiver-talks",
+    "title": "Receiver talks",
+    "what": "The call on the receiver's POST /talks with a code-review topic, the talk under a review, held in src/clients/receiver.rs.",
+    "files": [
+      "src/clients/receiver.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "Receiver",
+      "Talk",
+      "Topic",
+      "Failure"
+    ],
+    "aliases": [],
+    "needs": [],
+    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd",
+    "boundary": {
+      "side": "calls",
+      "repository": "bmo-receiver",
+      "api": "api/http"
+    }
+  }
+]

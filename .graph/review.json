@@ -1,0 +1,76 @@
+[
+  {
+    "id": "review/reading",
+    "title": "Checkout reading",
+    "what": "A worker's checkout read at one commit for the code review: the projects, the tree, a file, the commits, the content and definition searches, fenced by the tracked tree and the secret exclusions, under src/review/.",
+    "files": [
+      "src/review/mod.rs",
+      "src/review/checkouts.rs",
+      "src/review/request.rs",
+      "src/review/workspace.rs",
+      "src/review/git.rs",
+      "src/review/secrets.rs",
+      "src/review/definitions.rs",
+      "src/review/reading.rs",
+      "docs/code-review.md"
+    ],
+    "symbols": [
+      "checkouts_of",
+      "require_checkout",
+      "require_commit",
+      "checkout_state",
+      "list_tree",
+      "read_tree_file",
+      "list_commits",
+      "search_tree",
+      "find_definitions",
+      "is_secret_path",
+      "definition_pattern",
+      "git"
+    ],
+    "aliases": [],
+    "needs": [
+      "calls/job-workers",
+      "service/plumbing"
+    ],
+    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd"
+  },
+  {
+    "id": "review/reviews",
+    "title": "Reviews and their talk",
+    "what": "Reviews pinned to a place of a commit, their thread with the chat agent through the receiver, and the TODO item filed from one in this repository's Korean pack, under src/review/ and lang/ko/.",
+    "files": [
+      "src/review/reviews.rs",
+      "src/review/records.rs",
+      "src/review/talking.rs",
+      "src/review/filing.rs",
+      "src/review/words.rs",
+      "src/review/names.rs",
+      "lang/ko/place.yaml",
+      "lang/ko/filing.yaml",
+      "korean-ledger.json",
+      "docs/code-review.md"
+    ],
+    "symbols": [
+      "MakeReview",
+      "Reviews",
+      "OneReview",
+      "TalkTurnRoute",
+      "FileItem",
+      "Talking",
+      "Words",
+      "filing",
+      "Names"
+    ],
+    "aliases": [
+      "투두로 리팩토링 지시"
+    ],
+    "needs": [
+      "review/reading",
+      "calls/job-workers",
+      "calls/receiver-talks",
+      "service/plumbing"
+    ],
+    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd"
+  }
+]

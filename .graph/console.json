@@ -1,0 +1,48 @@
+[
+  {
+    "id": "console/screen",
+    "title": "Code review screen",
+    "what": "The console's code review screen in the bundle under client/: the explorer, the read-only editor with review marks, the review pane and thread, filing a TODO, and the screen's own Korean pack.",
+    "files": [
+      "client/app/pages/code.vue",
+      "client/app/components/CodeExplorer.vue",
+      "client/app/components/CodeViewer.vue",
+      "client/app/components/CodeReviewPane.vue",
+      "client/app/components/CodeReviewRow.vue",
+      "client/app/components/CodeReviewComposer.vue",
+      "client/app/components/CodeReviewSheet.vue",
+      "client/app/components/CodeReviewTodo.vue",
+      "client/app/components/CodeDefinitionList.vue",
+      "client/app/domain/code.ts",
+      "client/app/domain/review-view.ts",
+      "client/app/domain/events.ts",
+      "client/app/domain/files.ts",
+      "client/app/domain/names.ts",
+      "client/app/domain/refusals.ts",
+      "client/app/assets/css/review.css",
+      "client/shared/config.ts",
+      "client/shared/definitions.ts",
+      "client/i18n/locales/ko.yaml",
+      "docs/screen.md"
+    ],
+    "symbols": [
+      "openReviewView",
+      "useReviewEvents",
+      "useReviewRefresh",
+      "refusalText",
+      "useNames",
+      "searchNames",
+      "definitionName"
+    ],
+    "aliases": [
+      "코드 뷰어",
+      "탐색기",
+      "탭&독 레이아웃",
+      "코드 리뷰",
+      "코드리뷰 페이지",
+      "Go to definition"
+    ],
+    "needs": [],
+    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd"
+  }
+]
