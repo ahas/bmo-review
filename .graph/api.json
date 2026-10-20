@@ -86,10 +86,10 @@
   {
     "id": "api/mcp",
     "title": "Harness plugin",
-    "what": "The ahas-review harness plugin: the MCP server bmo-review mcp starts, its eight tools each calling routes through the service client, and the skill under plugin/skills/.",
+    "what": "The bmo-review harness plugin: the MCP server bmo-review mcp starts, its eight tools each calling routes through the service client, and the skill under plugin/skills/.",
     "files": [
       "src/mcp.rs",
-      "plugin/skills/ahas-review/SKILL.md",
+      "plugin/skills/bmo-review/SKILL.md",
       "docs/api.md"
     ],
     "symbols": [
@@ -106,7 +106,7 @@
       "api/client"
     ],
     "base": "1c669c0e6202392ca4288b2ff05d56c1c295b54e",
-    "changed": 1792519111719,
+    "changed": 1792529689586,
     "boundary": {
       "side": "exposes"
     }

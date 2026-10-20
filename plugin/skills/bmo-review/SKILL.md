@@ -1,9 +1,9 @@
 ---
-name: ahas-review
+name: bmo-review
 description: Review a change in a git checkout through the bmo-review MCP server: read a commit's diff, open a review of a revision, write findings as comments on its lines, files or folders, and file a follow-up item into the job service. Use when asked to review a commit or a branch of a project registered with the graph service, to read or answer an open review, or to turn a review's findings into an item of work.
 ---
 
-# ahas-review
+# bmo-review
 
 The review service reads the checkouts the graph service registers, as projects, always at a revision: a
 commit's own git objects, never the work tree. It keeps reviews, each a titled conversation about one revision

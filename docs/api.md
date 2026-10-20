@@ -171,8 +171,8 @@ back as its status, code and sentence. It carries the contract and no caller's p
 
 ## The harness plugin
 
-The plugin is `ahas-review`: the MCP server `bmo-review mcp` starts on standard input and output, and the skill
-`plugin/skills/ahas-review/SKILL.md`. The server reaches the service at the address and with the token the
+The plugin is `bmo-review`: the MCP server `bmo-review mcp` starts on standard input and output, and the skill
+`plugin/skills/bmo-review/SKILL.md`. The server reaches the service at the address and with the token the
 settings name (`http://` and `server.listen`, `server.token`), or those `--address` and `--token` give. Each
 tool is a thin call of one route through the client; a tool's failure is the error shape with the status, or the
 sentence alone where nothing answered.

@@ -23,7 +23,7 @@
     "graph"
   ],
   "x-harness": {
-    "plugin": "ahas-review",
+    "plugin": "bmo-review",
     "mcp": "bmo-review mcp",
     "entry": "A harness reads a change with review_diff, writes its findings with review_create and review_comment, and files a follow-up item with review_file_item."
   },

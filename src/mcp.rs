@@ -24,7 +24,7 @@ use crate::wire::{
 };
 
 /// The plugin a harness takes the review service in, and the command that starts its MCP server.
-pub const PLUGIN: &str = "ahas-review";
+pub const PLUGIN: &str = "bmo-review";
 pub const MCP: &str = "bmo-review mcp";
 
 /// What a harness does first with it, which the server tells a harness when it starts.

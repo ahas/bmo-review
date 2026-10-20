@@ -7,7 +7,7 @@ review into the job service. Nothing is written to a checkout. The graph service
 only through the clients they publish, as `docs/api.md` lists.
 
 The service publishes its own client (`bmo_review::client`), its OpenAPI document (`docs/openapi.json`, printed
-by `bmo-review openapi`), and its harness plugin: the MCP server `bmo-review mcp` and the `ahas-review` skill
+by `bmo-review openapi`), and its harness plugin: the MCP server `bmo-review mcp` and the `bmo-review` skill
 under `plugin/skills/`.
 
 ## Tests
@@ -24,7 +24,7 @@ the bundle's typecheck.
 |---|---|
 | `src/` | The service, its client, its OpenAPI document and its MCP server, one crate split into its own modules |
 | `migrations/` | The store, its tables made by these statements in order |
-| `plugin/` | The harness plugin's skill, `ahas-review` |
+| `plugin/` | The harness plugin's skill, `bmo-review` |
 | `client/` | The console bundle: the code review screen and its own Korean pack, a project of its own |
 | `deploy/` | The service's user unit |
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
