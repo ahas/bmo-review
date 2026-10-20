@@ -1,11 +1,11 @@
-# How the testbed checks, builds and deploys this repository, in the testbed's declaration format. The
-# tests are deferred (README.md), so the suite gathers nothing yet.
+# How the testbed checks, builds and deploys this repository, in the testbed's declaration format. The suite
+# runs the repository-wide personal-data check (PERSONAL-DATA.md); the behaviour tests are deferred (README.md).
 
 testbed = 0
 name = "bmo-review"
 
 [test]
-languages = []
+languages = ["cargo"]
 
 [check]
 # The sweeps that read the tree before anything runs: Korean in the code, the README's folder table and the

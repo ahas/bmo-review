@@ -57,8 +57,9 @@ These hold every bmo-next repository, and every change here (archive document #3
   `korean-ledger.json` with its count of Hangul lines; a code file the ledger does not name holds none.
 - What the service answers is an English sentence for a log and a kebab-case code the screen shows in
   its pack's words (`docs/api.md`, 「Codes」). No model prompt is written here.
-- No personal data: no user names, home directories, machine names, internal addresses or names of any
-  agent. What the service reaches comes from its settings, never from the code or a pack.
+- No personal data: no user names, home directories, machine names, internal addresses, mail addresses or
+  names of any agent (`PERSONAL-DATA.md`). What the service reaches comes from its settings, never from the
+  code or a pack.
 
 ## Layout
 
@@ -67,7 +68,8 @@ These hold every bmo-next repository, and every change here (archive document #3
 - The console bundle stands in `client/`, a project of its own; the harness plugin's skill in `plugin/`.
 - **`.graph/` is the code dependency graph,** written only by `bmo graph` run in this checkout; a change
   that moves a feature's files, symbols or edges updates its node in the same commit.
-- Tests live in `tests/`; no test module stands in `src/`. The tests are deferred for now (README.md).
+- Tests live in `tests/`; no test module stands in `src/`. The repository carries the personal-data check
+  there; the behaviour tests are deferred for now (README.md).
 
 ## The stages of a change
 
@@ -75,4 +77,4 @@ These hold every bmo-next repository, and every change here (archive document #3
 2. **Review:** read the whole diff against the document governing it, then `cargo fmt --all --check`
    and `cargo clippy --all-targets -- -D warnings`.
 3. **Verification:** the tests touched, then the whole suite once, output written to a file and the
-   file read. Until the deferred tests stand, a change reaches stage 2 and is reported as such.
+   file read. The behaviour tests are deferred, so the suite holds the personal-data check alone.

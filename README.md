@@ -10,11 +10,13 @@ The service publishes its own client (`bmo_review::client`), its OpenAPI documen
 by `bmo-review openapi`), and its harness plugin: the MCP server `bmo-review mcp` and the `ahas-review` skill
 under `plugin/skills/`.
 
-## Tests are deferred
+## Tests
 
-No test is carried, written or run in this repository yet. The tests are written and run here once the minimal
-services stand on the new repositories; until then the only check is the build check, `cargo check
---all-targets` and the bundle's typecheck. `docs/inventory.md` lists the tests the old behaviour was held to.
+The repository carries one test, the repository-wide personal-data check in `tests/personal_data.rs`
+(`PERSONAL-DATA.md`), and runs it with `cargo test --test personal_data`. The behaviour tests are deferred:
+they are written and run here once the minimal services stand on the new repositories, and `docs/inventory.md`
+lists what the old behaviour was held to. Until they stand, the build check is `cargo check --all-targets` and
+the bundle's typecheck.
 
 ## Layout
 
@@ -26,11 +28,12 @@ services stand on the new repositories; until then the only check is the build c
 | `client/` | The console bundle: the code review screen and its own Korean pack, a project of its own |
 | `deploy/` | The service's user unit |
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
+| `tests/` | The repository-wide personal-data check, `personal_data.rs` |
 | `.graph/` | The repository's code dependency graph |
 
 At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
-`korean-ledger.json`, `settings.toml` and `settings.local.toml.example`, the example of the local settings a
-deployment gives.
+`PERSONAL-DATA.md`, `korean-ledger.json`, `settings.toml` and `settings.local.toml.example`, the example of the
+local settings a deployment gives.
 
 ## The console bundle
 
@@ -51,6 +54,7 @@ in `client/vendor/`. Its types are generated from the OpenAPI document by `bun r
 | `docs/api.md` | The routes, their answers and codes, the events, the calls to other units, the client, the harness plugin, the console bundle and the settings |
 | `docs/openapi.json` | The same routes, bodies and tools as the OpenAPI 3.1 document generated from the service's types |
 | `docs/inventory.md` | What this repository takes from the old repository, with each set's count and source |
+| `PERSONAL-DATA.md` | What may never stand in this repository: a person's name, address, path, device or network details, a room member's, a company's, or a line of an actual conversation, and the check that holds it |
 
 ## Version
 

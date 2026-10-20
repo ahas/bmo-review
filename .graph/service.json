@@ -36,5 +36,21 @@
     "needs": [],
     "base": "1c669c0e6202392ca4288b2ff05d56c1c295b54e",
     "changed": 1792519111825
+  },
+  {
+    "id": "service/repository-checks",
+    "title": "Personal-data check",
+    "what": "The repository-wide check over every tracked file: no mail address outside the reserved example domains and the two values the repository allows, no home path of a person, no telephone number, token or private network address, as PERSONAL-DATA.md states it.",
+    "files": [
+      "tests/personal_data.rs",
+      "PERSONAL-DATA.md"
+    ],
+    "symbols": [],
+    "aliases": [
+      "개인정보"
+    ],
+    "needs": [],
+    "base": "e12f2048c6cf0294765e657a38cffab7f9a99698",
+    "changed": 1792525755458
   }
 ]
