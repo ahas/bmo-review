@@ -8,8 +8,6 @@ use std::path::{Path, PathBuf};
 use config::{Config, Environment, File, FileFormat};
 use serde::Deserialize;
 
-use crate::review::words::Language;
-
 /// The defaults, as the repository's own settings file states them.
 const DEFAULTS: &str = include_str!("../settings.toml");
 /// The settings file a deployment may give.
@@ -26,9 +24,8 @@ pub const ENVIRONMENT_PREFIX: &str = "BMO_REVIEW";
 pub struct Settings {
   pub server: Server,
   pub store: Store,
+  pub graph: Peer,
   pub job: Peer,
-  pub receiver: Peer,
-  pub filing: Filing,
   pub limits: Limits,
 }
 
@@ -41,7 +38,7 @@ pub struct Server {
   pub token: String,
 }
 
-/// The reviews' store.
+/// The store.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Store {
   /// The SQLite file; a relative one is read from where the process starts.
@@ -55,32 +52,17 @@ pub struct Peer {
   pub token: String,
 }
 
-/// What an item filed from a review is worded and requested with.
-#[derive(Clone, Debug, Deserialize)]
-pub struct Filing {
-  /// The language of this repository's pack the item's parts are worded in.
-  pub language: Language,
-  /// The owner's name, filling `{owner}` in the item's parts.
-  pub owner: String,
-  /// The chat agent's name, filling `{agent}` in the item's parts.
-  pub agent: String,
-  /// Who the item is requested by.
-  pub requester: String,
-  /// How much of the reviewed lines an item carries, in characters.
-  pub excerpt_clip: usize,
-}
-
-/// The ceilings of reading a checkout and of what a review and a filing take (`docs/code-review.md`).
+/// The ceilings of reading a checkout and of what a review and a comment take (`docs/code-review.md`).
 #[derive(Clone, Debug, Deserialize)]
 pub struct Limits {
   /// A file's body past this many bytes carries only its beginning.
   pub file_bytes: usize,
   /// A NUL within this many bytes from the start marks a file binary.
   pub binary_probe: usize,
-  /// A tree's entries.
+  /// The most entries one page of a tree holds.
   pub tree_entries: usize,
-  /// A commit list's commits.
-  pub commits: usize,
+  /// A commit's diff past this many bytes carries only its beginning.
+  pub diff_bytes: usize,
   /// The content search's words, in characters.
   pub search_query: usize,
   /// The content search's lines from one file.
@@ -99,16 +81,14 @@ pub struct Limits {
   pub definition_timeout_ms: u64,
   /// How much of a matched line comes back, in characters.
   pub match_line: usize,
-  /// How much of the reviewed lines a review keeps, in characters.
+  /// How much of the lines a comment points at it keeps, in characters.
   pub excerpt: usize,
-  /// A turn's words, in characters.
-  pub talk: usize,
-  /// A filing's title, in characters.
+  /// A review's title, in characters.
   pub title: usize,
-  /// A filing's what to do, in characters.
-  pub to_do: usize,
-  /// A filing's conclusion, in characters.
-  pub conclusion: usize,
+  /// A comment's text, in characters.
+  pub comment: usize,
+  /// An author's name, in characters.
+  pub author_name: usize,
 }
 
 impl Settings {

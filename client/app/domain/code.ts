@@ -3,28 +3,27 @@ import { openInTabs } from "bmo-ui/app/domain/tabs";
 
 import type { TreeItem } from "@nuxt/ui";
 
-import type { DefinitionKind } from "../../shared/definitions";
-import type { CodeReviewScope, CodeReviewSummary, CodeReviewTurn, CodeTreeEntry } from "../../shared/types";
+import type { Comment, Commit, DefinitionKind, PlacedComment, Review, ReviewState, TreeEntry } from "../../shared/types";
 import type { Translate } from "bmo-ui/shared/wording";
 
-// What the code review screen works out for itself (docs/screen.md;
-// docs/code-review.md): the explorer's tree out of one commit's entries, the name search over it,
-// which reviews stand where, and the words a review is called by.
+// What the code review screen works out for itself (docs/screen.md; docs/code-review.md): the explorer's tree
+// out of one revision's entries, the name search over it, which comments stand where, how the reviews are
+// grouped, and the words a comment's place and a review's state are called by.
 
 export interface CodeTreeItem extends TreeItem {
   value: string;
   label: string;
-  entry: CodeTreeEntry;
+  entry: TreeEntry;
   children?: CodeTreeItem[];
-  // How many reviews of the commit shown stand on this entry itself.
-  reviews: number;
+  // How many comments at the revision shown stand on this entry itself.
+  comments: number;
 }
 
-// The repository's own folder, which the tree stands everything under so a review of the whole
-// repository has a row to be made from.
+// The repository's own folder, which the tree stands everything under so a comment on the whole repository has
+// a row to be made from.
 export const ROOT_VALUE = "folder:";
 
-export function entryValue(entry: CodeTreeEntry): string {
+export function entryValue(entry: Pick<TreeEntry, "kind" | "path">): string {
   return `${entry.kind === "folder" ? "folder" : "file"}:${entry.path}`;
 }
 
@@ -38,16 +37,16 @@ function parentOf(path: string): string {
   return at === -1 ? "" : path.slice(0, at);
 }
 
-const ICONS: Record<CodeTreeEntry["kind"], string> = {
+const ICONS: Record<TreeEntry["kind"], string> = {
   folder: "i-material-symbols-folder-outline",
   file: "i-material-symbols-code-blocks-outline",
   link: "i-material-symbols-link",
   submodule: "i-material-symbols-package-2-outline"
 };
 
-// A file and a folder wear the marks a reader of code knows them by; a link and a submodule keep
-// the console's own.
-function entryIcon(entry: CodeTreeEntry): string {
+// A file and a folder wear the marks a reader of code knows them by; a link and a submodule keep the console's
+// own.
+function entryIcon(entry: TreeEntry): string {
   return entry.kind === "file" ? fileIcon(entry.path) : entry.kind === "folder" ? folderIcon(entry.path, false) : ICONS[entry.kind];
 }
 
@@ -58,10 +57,10 @@ function byKindAndName(one: CodeTreeItem, other: CodeTreeItem): number {
   return folder(one) - folder(other) || one.label.localeCompare(other.label);
 }
 
-// One commit's entries as a tree under the repository's own row. Given the paths a name search
-// kept, only those and the folders above them stand.
+// One revision's entries as a tree under the repository's own row. Given the paths a name search kept, only
+// those and the folders above them stand.
 export function codeTree(
-  entries: readonly CodeTreeEntry[],
+  entries: readonly TreeEntry[],
   counts: ReadonlyMap<string, number>,
   kept: ReadonlySet<string> | null,
   rootLabel: string
@@ -70,8 +69,8 @@ export function codeTree(
     value: ROOT_VALUE,
     label: rootLabel,
     icon: "i-material-symbols-folder-data-outline",
-    entry: { path: "", kind: "folder", size: null, pinned: null },
-    reviews: counts.get(ROOT_VALUE) ?? 0,
+    entry: { path: "", kind: "folder", byteCount: null, pinnedRevision: null },
+    comments: counts.get(ROOT_VALUE) ?? 0,
     children: []
   };
   const folders = new Map<string, CodeTreeItem>([["", root]]);
@@ -87,7 +86,7 @@ export function codeTree(
     }
   }
 
-  // git lists a folder before what is in it, so every parent is made before its children.
+  // The entries stand in path order, so every folder is made before what is in it.
   for (const entry of entries) {
     if (wanted !== null && !wanted.has(entry.path)) {
       continue;
@@ -99,7 +98,7 @@ export function codeTree(
       label: baseName(entry.path),
       icon: entryIcon(entry),
       entry,
-      reviews: counts.get(value) ?? 0,
+      comments: counts.get(value) ?? 0,
       ...(entry.kind === "folder" ? { children: [] } : {})
     };
     const parent = folders.get(parentOf(entry.path)) ?? root;
@@ -123,8 +122,7 @@ export function codeTree(
   return [root];
 }
 
-// The folders above a path, root first, as the tree's values — what has to be unfolded for the path
-// to be seen.
+// The folders above a path, root first, as the tree's values: what has to be unfolded for the path to be seen.
 export function foldersAbove(path: string): string[] {
   const values = [ROOT_VALUE];
   const parts = path.split("/");
@@ -136,8 +134,8 @@ export function foldersAbove(path: string): string[] {
   return values;
 }
 
-// How well a path holds the typed letters in order, or null when it does not. Letters that run
-// together count for more, and so do letters in the file's own name; a shorter path wins a tie.
+// How well a path holds the typed letters in order, or null when it does not. Letters that run together count
+// for more, and so do letters in the file's own name; a shorter path wins a tie.
 export function nameScore(path: string, query: string): number | null {
   const wanted = query.toLowerCase().replace(/\s+/g, "");
 
@@ -166,30 +164,64 @@ export function nameScore(path: string, query: string): number | null {
   return score * 1000 - path.length;
 }
 
-// The files of a commit a name search keeps, best first, as many as a list can carry.
-export function searchNames(entries: readonly CodeTreeEntry[], query: string, limit: number): CodeTreeEntry[] {
+// The files of a revision a name search keeps, best first, as many as a list can carry.
+export function searchNames(entries: readonly TreeEntry[], query: string, limit: number): TreeEntry[] {
   return entries
     .filter((entry) => entry.kind !== "folder")
     .map((entry) => ({ entry, score: nameScore(entry.path, query) }))
-    .filter((scored): scored is { entry: CodeTreeEntry; score: number } => scored.score !== null)
+    .filter((scored): scored is { entry: TreeEntry; score: number } => scored.score !== null)
     .sort((one, other) => other.score - one.score)
     .slice(0, limit)
     .map((scored) => scored.entry);
 }
 
-// Where a review stands in the tree: a folder review on its folder, any other on its file.
-export function reviewValue(review: Pick<CodeReviewSummary, "scope" | "path">): string {
-  return review.scope === "folder" ? `folder:${review.path}` : `file:${review.path}`;
+// What kind of place a comment points at.
+export type PlaceKind = "whole" | "folder" | "file" | "line" | "range";
+
+// A place a comment is written on, before it is written.
+export interface CommentPlace {
+  kind: PlaceKind;
+  path: string | null;
+  line: number | null;
+  endLine: number | null;
 }
 
-// How many reviews of one commit stand on each row of the tree.
-export function reviewCounts(reviews: readonly CodeReviewSummary[], commit: string | null): Map<string, number> {
+// What kind of place a written comment stands on, as the screen can tell it: a path with no line is a file or a
+// folder, which the comment itself cannot say and the tree of its revision can, so where that tree is not the one
+// held the path stands as a path alone.
+export type ShownKind = PlaceKind | "path";
+
+export function placeKind(comment: Pick<Comment, "path" | "line" | "endLine">, folders: ReadonlySet<string> | null): ShownKind {
+  if (comment.path === null || comment.path === undefined) {
+    return "whole";
+  }
+
+  if (comment.line !== null && comment.line !== undefined) {
+    return comment.endLine === null || comment.endLine === undefined ? "line" : "range";
+  }
+
+  if (comment.path === "") {
+    return "folder";
+  }
+
+  return folders === null ? "path" : folders.has(comment.path) ? "folder" : "file";
+}
+
+// Where a comment stands in the tree: on the folder or the file its path names.
+function commentValue(comment: Comment, folders: ReadonlySet<string>): string | null {
+  const kind = placeKind(comment, folders);
+
+  return kind === "whole" ? null : kind === "folder" ? `folder:${comment.path}` : `file:${comment.path}`;
+}
+
+// How many comments at the revision shown stand on each row of the tree.
+export function commentCounts(placed: readonly PlacedComment[], folders: ReadonlySet<string>): Map<string, number> {
   const counts = new Map<string, number>();
 
-  for (const review of reviews) {
-    if (review.commit === commit) {
-      const value = reviewValue(review);
+  for (const { comment } of placed) {
+    const value = commentValue(comment, folders);
 
+    if (value !== null) {
       counts.set(value, (counts.get(value) ?? 0) + 1);
     }
   }
@@ -197,41 +229,54 @@ export function reviewCounts(reviews: readonly CodeReviewSummary[], commit: stri
   return counts;
 }
 
-export interface ReviewGroups {
-  // The reviews on the commit shown, in line order with the file's and folder's own first.
-  here: CodeReviewSummary[];
-  // The reviews on the same place made at other commits, a group per commit, newest first.
-  elsewhere: Array<{ commit: string; reviews: CodeReviewSummary[] }>;
+// The line comments of one file, in line order.
+export function lineComments(placed: readonly PlacedComment[], path: string | null): PlacedComment[] {
+  return placed
+    .filter(({ comment }) => path !== null && comment.path === path && comment.line !== null && comment.line !== undefined)
+    .sort((one, other) => (one.comment.line ?? 0) - (other.comment.line ?? 0) || one.comment.id - other.comment.id);
 }
 
-// The reviews of one file or folder, sorted onto the commit shown and the others.
-export function reviewGroups(
-  reviews: readonly CodeReviewSummary[],
-  place: { kind: "file" | "folder"; path: string },
-  commit: string | null
-): ReviewGroups {
-  const mine = reviews.filter((review) =>
-    place.kind === "folder" ? review.scope === "folder" && review.path === place.path : review.scope !== "folder" && review.path === place.path
-  );
-  const here = mine
-    .filter((review) => review.commit === commit)
-    .sort((one, other) => (one.startLine ?? 0) - (other.startLine ?? 0) || one.id - other.id);
-  const elsewhere = new Map<string, CodeReviewSummary[]>();
+export interface ReviewGroups {
+  // The reviews of the revision shown, newest first.
+  here: Review[];
+  // The reviews of other revisions, a group per revision, newest first.
+  elsewhere: Array<{ revision: string; reviews: Review[] }>;
+}
 
-  for (const review of mine.filter((one) => one.commit !== commit).sort((one, other) => other.id - one.id)) {
-    elsewhere.set(review.commit, [...(elsewhere.get(review.commit) ?? []), review]);
+// A project's reviews, sorted onto the revision shown and the others.
+export function reviewGroups(reviews: readonly Review[], revision: string | null): ReviewGroups {
+  const newest = [...reviews].sort((one, other) => other.id - one.id);
+  const elsewhere = new Map<string, Review[]>();
+
+  for (const review of newest.filter((one) => one.revision !== revision)) {
+    elsewhere.set(review.revision, [...(elsewhere.get(review.revision) ?? []), review]);
   }
 
-  return { here, elsewhere: [...elsewhere].map(([sha, list]) => ({ commit: sha, reviews: list })) };
+  return {
+    here: newest.filter((one) => one.revision === revision),
+    elsewhere: [...elsewhere].map(([sha, list]) => ({ revision: sha, reviews: list }))
+  };
 }
 
-// The commits the picker offers: the ones that touched what is open, and ahead of them the ones the
-// screen must be able to go back to — HEAD and the commit shown — where the list does not hold them.
-export function offeredCommits<T extends { commit: string }>(touched: readonly T[], always: ReadonlyArray<T | null>): T[] {
-  const ahead: T[] = [];
+// The review a new comment goes into where the reader names none: the one open in the review section where it is
+// of the revision shown, else that revision's newest review still open, else none and a new one is opened.
+export function defaultTarget(reviews: readonly Review[], revision: string | null, openId: number | null): number | null {
+  const ofRevision = reviews.filter((one) => one.revision === revision);
+
+  if (openId !== null && ofRevision.some((one) => one.id === openId)) {
+    return openId;
+  }
+
+  return [...ofRevision].sort((one, other) => other.id - one.id).find((one) => one.state !== "closed")?.id ?? null;
+}
+
+// The commits the picker offers: the ones that touched what is open, and ahead of them the ones the screen must
+// be able to go back to (HEAD and the revision shown) where the list does not hold them.
+export function offeredCommits(touched: readonly Commit[], always: ReadonlyArray<Commit | null>): Commit[] {
+  const ahead: Commit[] = [];
 
   for (const one of always) {
-    if (one !== null && !touched.some((listed) => listed.commit === one.commit) && !ahead.some((listed) => listed.commit === one.commit)) {
+    if (one !== null && !touched.some((listed) => listed.id === one.id) && !ahead.some((listed) => listed.id === one.id)) {
       ahead.push(one);
     }
   }
@@ -239,19 +284,23 @@ export function offeredCommits<T extends { commit: string }>(touched: readonly T
   return [...ahead, ...touched];
 }
 
-export function shortSha(commit: string): string {
-  return commit.slice(0, 8);
+export function shortSha(revision: string): string {
+  return revision.slice(0, 8);
 }
 
-// What a review's place is called on the screen.
-export function reviewPlace(t: Translate, review: { scope: CodeReviewScope; path: string; startLine: number | null; endLine: number | null }): string {
-  const path = review.path === "" ? t("code.label.whole_repository") : review.path;
+// What a comment's place is called on the screen.
+export function placeText(t: Translate, place: { path?: string | null; line?: number | null; endLine?: number | null }, kind: ShownKind): string {
+  const path = place.path === "" ? t("code.label.whole_repository") : (place.path ?? "");
 
-  switch (review.scope) {
+  switch (kind) {
+    case "whole":
+      return t("code.label.place_whole");
+    case "path":
+      return path;
     case "line":
-      return `${path}:${review.startLine}`;
+      return `${path}:${place.line}`;
     case "range":
-      return `${path}:${review.startLine}–${review.endLine}`;
+      return `${path}:${place.line}–${place.endLine}`;
     case "file":
       return t("code.label.place_file", { path });
     case "folder":
@@ -259,15 +308,21 @@ export function reviewPlace(t: Translate, review: { scope: CodeReviewScope; path
   }
 }
 
-export const SCOPE_LABELS: Record<CodeReviewScope, string> = {
-  line: "code.label.scope_line",
-  range: "code.label.scope_range",
-  file: "code.label.scope_file",
-  folder: "code.label.scope_folder"
+// The words a review's state is called by.
+export const STATE_LABELS: Record<ReviewState, string> = {
+  open: "code.label.state_open",
+  answered: "code.label.state_answered",
+  closed: "code.label.state_closed"
 };
 
-// What a line declares, in the words a reader of this console reads. The search names the kinds in
-// the language each one comes from; each kind here holds the key of its word.
+export const STATE_COLORS: Record<ReviewState, "primary" | "success" | "neutral"> = {
+  open: "primary",
+  answered: "success",
+  closed: "neutral"
+};
+
+// What a line declares, in the words a reader of this console reads. The search names the kinds in the language
+// each one comes from; each kind here holds the key of its word.
 export const DEFINITION_LABELS: Record<DefinitionKind, string> = {
   function: "code.label.definition_function",
   method: "code.label.definition_method",
@@ -283,33 +338,32 @@ export const DEFINITION_LABELS: Record<DefinitionKind, string> = {
   "re-export": "code.label.definition_re_export"
 };
 
-// Where each file was left off, so that coming back to a tab comes back to the place rather than
-// to the head of the file.
+// Where each file was left off, so that coming back to a tab comes back to the place rather than to the head of
+// the file.
 //
-// A place belongs to the version it was read in. The same path at another commit is another file —
-// shorter, longer, or nothing like it — so a place kept at one commit is no place in the other and
-// is never given back for it: a file read down to its two hundredth line and then looked at as it
-// stood when it had fifty would otherwise open at a position belonging to neither.
+// A place belongs to the version it was read in. The same path at another revision is another file (shorter,
+// longer, or nothing like it), so a place kept at one revision is no place in the other and is never given back
+// for it.
 export interface ReadingPlaces {
-  keep: (commit: string, path: string, line: number) => void;
-  taken: (commit: string, path: string) => number | null;
+  keep: (revision: string, path: string, line: number) => void;
+  taken: (revision: string, path: string) => number | null;
 }
 
 export function readingPlaces(): ReadingPlaces {
   const places = new Map<string, number>();
-  const at = (commit: string, path: string): string => `${commit}:${path}`;
+  const at = (revision: string, path: string): string => `${revision}:${path}`;
 
   return {
-    keep(commit, path, line): void {
-      places.set(at(commit, path), line);
+    keep(revision, path, line): void {
+      places.set(at(revision, path), line);
     },
 
-    taken: (commit, path) => places.get(at(commit, path)) ?? null
+    taken: (revision, path) => places.get(at(revision, path)) ?? null
   };
 }
 
-// The lines a new line review would take, out of a line pressed and, where a line was already
-// chosen, the line pressed before it.
+// The lines a new line comment would take, out of a line pressed and, where a line was already chosen, the line
+// pressed before it.
 export function lineChoice(anchor: number | null, pressed: number): { start: number; end: number } {
   if (anchor === null) {
     return { start: pressed, end: pressed };
@@ -318,31 +372,38 @@ export function lineChoice(anchor: number | null, pressed: number): { start: num
   return { start: Math.min(anchor, pressed), end: Math.max(anchor, pressed) };
 }
 
-export function scopeOfLines(start: number, end: number): CodeReviewScope {
-  return start === end ? "line" : "range";
+// A file's lines as the place a comment is written on.
+export function linesPlace(path: string, lines: { start: number; end: number }): CommentPlace {
+  return lines.start === lines.end
+    ? { kind: "line", path, line: lines.start, endLine: null }
+    : { kind: "range", path, line: lines.start, endLine: lines.end };
 }
 
-// What the filing dialog opens with: a title naming the place, and the thread's last answer as what
-// is to be done, for him to rewrite.
-export function filingDraft(t: Translate, review: CodeReviewSummary, turns: readonly CodeReviewTurn[]): { title: string; toDo: string } {
-  const answer = [...turns].reverse().find((turn) => turn.speaker === "agent");
-  const path = review.path === "" ? t("code.label.whole_repository") : review.path;
+// What the filing dialog opens with: the review's title, and its comments in order as the brief, each under its
+// writer's name and place, for the reader to rewrite.
+export function filingDraft(t: Translate, review: Review, comments: readonly Comment[], folders: ReadonlySet<string> | null, limit: number): { title: string; brief: string } {
+  const lines = comments.map((comment) => {
+    const head = t("code.label.brief_head", { name: comment.authorName, place: placeText(t, comment, placeKind(comment, folders)) });
+
+    return `${head}\n${comment.text}`;
+  });
+  const opening = t("code.label.brief_opening", { title: review.title, revision: shortSha(review.revision), project: review.projectName });
 
   return {
-    title: t("code.label.filing_title", { path }).slice(0, 200),
-    toDo: (answer?.text ?? "").slice(0, 8_000)
+    title: review.title,
+    brief: [opening, ...lines].join("\n\n").slice(0, limit)
   };
 }
 
 export interface OpenTab {
   path: string;
-  commit: string;
+  revision: string;
   seenAt: number;
   pinned?: boolean;
 }
 
-// What the code review keeps of its tabs for the account: each worker's open files and the one
-// standing, so a worker opened again stands as it was left.
+// What the code review keeps of its tabs in the browser: each project's open files and the one standing, so a
+// project opened again stands as it was left.
 export interface KeptCodeTabs {
   projects: Record<string, { tabs: OpenTab[]; active: string | null }>;
 }
@@ -352,17 +413,17 @@ export function readKeptCodeTabs(value: unknown, cap: number): KeptCodeTabs {
   const projects: KeptCodeTabs["projects"] = {};
   const listed = (value as { projects?: unknown } | null)?.projects;
 
-  if (listed === null || typeof listed !== "object") {
+  if (listed === null || listed === undefined || typeof listed !== "object") {
     return { projects };
   }
 
   for (const [name, entry] of Object.entries(listed as Record<string, unknown>)) {
     const { tabs, active } = (entry ?? {}) as { tabs?: unknown; active?: unknown };
     const read = (Array.isArray(tabs) ? tabs : []).flatMap((tab: unknown): OpenTab[] => {
-      const { path, commit, seenAt, pinned } = (tab ?? {}) as Record<string, unknown>;
+      const { path, revision, seenAt, pinned } = (tab ?? {}) as Record<string, unknown>;
 
-      return typeof path === "string" && path !== "" && typeof commit === "string" && commit !== ""
-        ? [{ path, commit, seenAt: typeof seenAt === "number" ? seenAt : 0, ...(pinned === true ? { pinned: true } : {}) }]
+      return typeof path === "string" && path !== "" && typeof revision === "string" && revision !== ""
+        ? [{ path, revision, seenAt: typeof seenAt === "number" ? seenAt : 0, ...(pinned === true ? { pinned: true } : {}) }]
         : [];
     });
     const unique = read.filter((tab, at) => read.findIndex((other) => other.path === tab.path) === at).slice(0, cap * 4);
@@ -373,8 +434,7 @@ export function readKeptCodeTabs(value: unknown, cap: number): KeptCodeTabs {
   return { projects };
 }
 
-// The open files after one more is opened, at the commit it is read at (docs/screen.md, 「The code」
-// says how every screen's tabs move).
-export function openTab(tabs: readonly OpenTab[], path: string, commit: string, now: number, cap: number): OpenTab[] {
-  return openInTabs(tabs, (tab) => tab.path === path, { path, commit, seenAt: now }, cap);
+// The open files after one more is opened, at the revision it is read at.
+export function openTab(tabs: readonly OpenTab[], path: string, revision: string, now: number, cap: number): OpenTab[] {
+  return openInTabs(tabs, (tab) => tab.path === path, { path, revision, seenAt: now }, cap);
 }

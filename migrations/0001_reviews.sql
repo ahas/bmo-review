@@ -1,37 +1,53 @@
--- The reviews, their threads and the items filed from them (docs/code-review.md, 「The review table」).
+-- The reviews, their comments, the items filed from them and the service's events (docs/code-review.md,
+-- 「Reviews」; docs/api.md, 「Events」).
 
--- A review: words left on a place of a commit of a worker's checkout, never deleted. The root is the checkout's
--- path when it was left; the excerpt is the reviewed lines of a line or range review, at that commit.
-CREATE TABLE code_reviews (
+-- A review: a titled conversation about one revision of one project, never deleted. Its state is open,
+-- answered or closed.
+CREATE TABLE reviews (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  worker TEXT NOT NULL,
-  root TEXT NOT NULL,
-  commit_sha TEXT NOT NULL,
-  scope TEXT NOT NULL,
-  path TEXT NOT NULL,
-  start_line INTEGER,
+  project_name TEXT NOT NULL,
+  revision TEXT NOT NULL,
+  title TEXT NOT NULL,
+  state TEXT NOT NULL,
+  author_name TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  changed_at INTEGER NOT NULL
+);
+
+CREATE INDEX reviews_project ON reviews (project_name, revision, id);
+
+-- A comment on a review: on the whole where it has no path, on a file or folder where it has no line, on a
+-- line or a range of a file otherwise, with the lines it points at copied from the review's revision.
+CREATE TABLE comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  review_id INTEGER NOT NULL REFERENCES reviews (id),
+  path TEXT,
+  line INTEGER,
   end_line INTEGER,
   excerpt TEXT,
+  text TEXT NOT NULL,
+  author_name TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
 
-CREATE INDEX code_reviews_place ON code_reviews (worker, path, id);
+CREATE INDEX comments_review ON comments (review_id, id);
 
--- One line of a review's thread: who said it, owner or agent, the words and when.
-CREATE TABLE code_review_talk (
+-- An item filed from a review, by the number the job service answered for it.
+CREATE TABLE filings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  review_id INTEGER NOT NULL REFERENCES code_reviews (id),
-  speaker TEXT NOT NULL,
-  text TEXT NOT NULL,
-  said_at INTEGER NOT NULL
+  review_id INTEGER NOT NULL REFERENCES reviews (id),
+  item_id INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
 );
 
-CREATE INDEX code_review_talk_review ON code_review_talk (review_id, id);
+CREATE INDEX filings_review ON filings (review_id, id);
 
--- An item filed from a review, by the number bmo-job answered for it; nothing here reaches into bmo-job's
--- tables.
-CREATE TABLE code_review_todos (
-  review_id INTEGER NOT NULL REFERENCES code_reviews (id),
-  filed_item INTEGER NOT NULL,
-  PRIMARY KEY (review_id, filed_item)
+-- The window of the service's latest events, numbered as they were published, each tied to the review it
+-- belongs to.
+CREATE TABLE events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,
+  review_id INTEGER NOT NULL,
+  at INTEGER NOT NULL,
+  data TEXT NOT NULL
 );

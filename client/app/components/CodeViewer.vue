@@ -1,7 +1,7 @@
 <template>
-  <!-- The code part: the open files as tabs with how the file is read at their right end, one
-       toolbar under them with the commit and what can be done to the file, and the file itself in
-       the read-only editor, with the reviews of the commit shown beside and between its lines. -->
+  <!-- The code part: the open files as tabs, one toolbar under them with the revision and what can be done to
+       the file, and the file itself in the read-only editor, with the comments of the revision shown beside and
+       between its lines. -->
   <div class="flex min-h-0 flex-col">
     <TabBar
       v-if="props.tabs.length > 0"
@@ -12,14 +12,10 @@
       @close="emit('close-tabs', $event)"
       @move="(from: number, to: number) => emit('move-tab', from, to)"
       @pin="(id: string, on: boolean) => emit('pin-tab', id, on)"
-    >
-      <template v-if="readable" #switch>
-        <TabSwitch v-model="showing" :items="SIDES" :label="$t('code.shared.label.view')" :compact="props.narrow" />
-      </template>
-    </TabBar>
+    />
 
-    <!-- The editor's toolbar: the explorer's side, which commit, what of the file is not shown, and
-         what can be done to the file, with the reviews' side last. -->
+    <!-- The editor's toolbar: the explorer's side, which revision, what of the file is not shown, and what can be
+         done to the file, with the reviews' side last. -->
     <ToolBar :label="$t('code.label.file')">
       <span class="!px-1">
         <UTooltip :text="props.explorerTool.label">
@@ -38,7 +34,7 @@
 
       <span v-if="props.path !== null" class="min-w-0 shrink! !px-1">
         <USelectMenu
-          :model-value="props.commit ?? undefined"
+          :model-value="props.revision ?? undefined"
           :items="commitItems"
           value-key="value"
           size="sm"
@@ -48,19 +44,19 @@
           :loading="commitsLoading"
           :search-input="{ placeholder: $t('code.placeholder.filter_commits') }"
           :filter-fields="['label', 'description']"
-          :aria-label="$t('code.aria.choose_commit')"
+          :aria-label="$t('code.aria.choose_revision')"
           class="max-w-72 min-w-0"
           :content="{ align: 'start' }"
           :ui="{ content: 'max-w-[min(48rem,calc(100vw-1rem))]' }"
           @update:open="(open: boolean) => open && loadCommits()"
-          @update:model-value="(value: unknown) => typeof value === 'string' && emit('commit', value === props.head ? null : value)"
+          @update:model-value="(value: unknown) => typeof value === 'string' && emit('revision', value === props.head ? null : value)"
         >
           <template #default>
             <span class="flex min-w-0 items-baseline gap-2">
-              <span class="shrink-0 font-mono">{{ shortSha(props.commit ?? "") }}</span>
+              <span class="shrink-0 font-mono">{{ shortSha(props.revision ?? "") }}</span>
               <span v-if="shownCommit !== null && !props.narrow" class="min-w-0 truncate">{{ shownCommit.subject }}</span>
             </span>
-            <UBadge v-if="props.commit === props.head" size="sm" color="neutral" variant="solid" :label="$t('code.label.current')" class="shrink-0" />
+            <UBadge v-if="props.revision === props.head" size="sm" color="neutral" variant="solid" :label="$t('code.label.current')" class="shrink-0" />
           </template>
           <template #empty>
             <span class="text-sm text-muted">{{ commitsFailure || $t("code.status.no_commits_listed") }}</span>
@@ -96,37 +92,36 @@
     </div>
 
     <template v-else>
-      <div v-if="props.head !== null && props.commit !== props.head" class="flex shrink-0 items-center gap-2 border-b border-default bg-elevated px-3 py-1 text-sm" role="status">
+      <div v-if="props.head !== null && props.revision !== props.head" class="flex shrink-0 items-center gap-2 border-b border-default bg-elevated px-3 py-1 text-sm" role="status">
         <UIcon name="i-material-symbols-history" class="size-4 shrink-0 text-toned" />
-        <i18n-t :keypath="'code.message.viewing_past_commit'" tag="span" scope="global" class="min-w-0 flex-1 text-default">
-          <template #commit><span class="font-mono">{{ shortSha(props.commit ?? "") }}</span></template>
+        <i18n-t :keypath="'code.message.viewing_past_revision'" tag="span" scope="global" class="min-w-0 flex-1 text-default">
+          <template #revision><span class="font-mono">{{ shortSha(props.revision ?? "") }}</span></template>
         </i18n-t>
-        <UButton size="sm" color="neutral" variant="subtle" :label="$t('code.action.to_current')" @click="emit('commit', null)" />
+        <UButton size="sm" color="neutral" variant="subtle" :label="$t('code.action.to_current')" @click="emit('revision', null)" />
       </div>
 
-      <ContentSkeleton v-if="reading || (source !== null && source.text !== null && !asDocument && !editorReady)" class="p-3" :label="$t('code.shared.status.source_loading')">
+      <ContentSkeleton v-if="reading || (source !== null && source.text != null && !editorReady)" class="p-3" :label="$t('code.shared.status.source_loading')">
         <SkeletonText :lines="10" size="sm" lastWidth="w-1/3" />
       </ContentSkeleton>
       <div v-else-if="failed !== ''" role="alert" class="flex flex-col items-start gap-2 p-3">
         <p class="text-sm text-error">{{ failed }}</p>
         <UButton size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" @click="retry" />
       </div>
-      <p v-else-if="source !== null && source.text === null" class="p-3 text-sm text-muted">
-        {{ $t("code.status.binary_file", { n: countText(source.size) }) }}
+      <p v-else-if="source !== null && source.text == null" class="p-3 text-sm text-muted">
+        {{ $t("code.status.binary_file", { n: countText(source.byteCount) }) }}
       </p>
     </template>
 
-    <!-- The box the editor fills. Vue never puts anything in it; the editor writes into it once the
-         page is the browser's own, and it is hidden rather than taken down so the editor outlives
-         every file it shows.
+    <!-- The box the editor fills. Vue never puts anything in it; the editor writes into it once the page is the
+         browser's own, and it is hidden rather than taken down so the editor outlives every file it shows.
 
-         The box is also what the code's own menu opens on — go-to-definition for the word pressed,
-         add-a-review for the lines — and the menu's trigger draws nothing of its own, so the box
-         keeps its own place in the layout. The word under the press is read before the menu opens:
-         a mouse says so with its own menu event, a finger with a press it goes on holding. -->
-    <UContextMenu :items="codeMenu" :disabled="!standing || asDocument">
+         The box is also what the code's own menu opens on (go-to-definition for the word pressed, add-a-comment
+         for the lines), and the menu's trigger draws nothing of its own, so the box keeps its own place in the
+         layout. The word under the press is read before the menu opens: a mouse says so with its own menu event,
+         a finger with a press it goes on holding. -->
+    <UContextMenu :items="codeMenu" :disabled="!standing">
       <div
-        v-show="standing && !asDocument && editorReady"
+        v-show="standing && editorReady"
         ref="box"
         class="min-h-0 flex-1 overflow-hidden"
         :aria-label="$t('code.shared.label.code')"
@@ -135,52 +130,45 @@
       />
     </UContextMenu>
 
-    <div
-      v-show="standing && asDocument && documentReady"
-      class="markdown markdown--document min-h-0 flex-1 overflow-auto p-4"
-      @click="copyFromPress($t, $event, copyCode)"
-      v-html="rendered"
-    />
-
-    <!-- What stands between the code lines: each review of the commit shown folded to one card,
-         and the box a new line review is written in. Each is sent into a zone the editor keeps
-         open for it. -->
+    <!-- What stands between the code lines: each line comment of the revision shown folded to one cell, and the
+         box a new line comment is written in. Each is sent into a zone the editor keeps open for it. -->
     <template v-for="zone in zoneList" :key="zone.key">
       <Teleport v-if="zoneNodes.get(zone.key)" :to="zoneNodes.get(zone.key)">
         <div :ref="(element) => watchZone(zone.key, element as HTMLElement | null)" class="px-2 py-1 font-sans">
           <CodeReviewComposer
             v-if="zone.kind === 'composer' && chosen !== null"
             :place="choicePlace"
-            :commit="shortSha(props.commit ?? '')"
+            :revision="shortSha(props.revision ?? '')"
+            :reviews="props.reviews"
+            :target="props.target"
             :busy="posting"
             :failure="postFailure"
             @send="postLines"
             @cancel="clearChoice"
           />
           <button
-            v-else-if="zone.review !== null"
+            v-else-if="zone.placed !== null"
             type="button"
             class="flex w-full max-w-3xl items-center gap-2 rounded-md border px-2 py-2 text-start focus-inset"
-            :class="zone.review.id === props.openReview ? 'border-accented bg-elevated' : 'border-default bg-default hover:bg-elevated'"
-            @click="emit('open-review', zone.review.id)"
+            :class="zone.placed.review.id === props.openReview ? 'border-accented bg-elevated active:bg-accented' : 'border-default bg-default hover:bg-elevated active:bg-accented'"
+            @click="emit('open-review', zone.placed.review.id)"
           >
             <UIcon name="i-material-symbols-chat-outline" class="size-3.5 shrink-0 text-toned" />
-            <span class="min-w-0 flex-1 truncate text-sm text-highlighted">{{ zone.review.first }}</span>
-            <span v-if="!props.narrow" class="shrink-0 text-sm text-muted tabular-nums">{{ $t("code.label.turns", { n: countText(zone.review.turns) }) }}</span>
-            <span v-if="props.answering.has(zone.review.id)" class="shrink-0 text-sm text-muted">{{ $t("code.status.answering") }}</span>
-            <ItemTip v-for="id in zone.review.todoIds" :id="id" :key="id" press class="shrink-0 font-mono text-sm text-muted" />
+            <span v-if="!props.narrow" class="max-w-48 shrink-0 truncate text-sm text-muted">{{ zone.placed.review.title }}</span>
+            <span class="shrink-0 text-sm font-medium text-toned">{{ zone.placed.comment.authorName }}</span>
+            <span class="min-w-0 flex-1 truncate text-sm text-highlighted">{{ zone.placed.comment.text }}</span>
           </button>
         </div>
       </Teleport>
     </template>
 
-    <!-- What a choice of lines turns into: beside a drag's end on a wide screen, and at the foot of
-         the code on a narrow one, where the box itself opens as a sheet. -->
+    <!-- What a choice of lines turns into: beside a drag's end on a wide screen, and at the foot of the code on a
+         narrow one, where the box itself opens as a sheet. -->
     <UButton
       v-if="dragged !== null && !props.narrow && chosen === null"
       size="sm"
       icon="i-material-symbols-add-comment-outline"
-      :label="$t('code.action.add_review')"
+      :label="$t('code.action.add_comment')"
       class="fixed z-20 shadow-md"
       :style="{ top: `${dragged.rect.top + dragged.rect.height + 4}px`, left: `${dragged.rect.left}px` }"
       @click="chooseDragged"
@@ -191,16 +179,18 @@
         <span class="font-mono">{{ narrowPlace }}</span>
       </span>
       <UButton size="sm" color="neutral" variant="ghost" :label="$t('code.shared.action.cancel')" @click="clearChoice" />
-      <UButton size="sm" icon="i-material-symbols-add-comment-outline" :label="$t('code.action.add_review')" @click="openSheet" />
+      <UButton size="sm" icon="i-material-symbols-add-comment-outline" :label="$t('code.action.add_comment')" @click="openSheet" />
     </div>
 
     <CodeDefinitionList v-model:open="choicesOpen" :definitions="choices" :at="choicesAt" @go="chooseDefinition" />
 
     <CodeReviewSheet
       v-model:open="sheetOpen"
-      :scope="chosen === null ? 'line' : scopeOfLines(chosen.start, chosen.end)"
+      :kind="chosen === null || chosen.start === chosen.end ? 'line' : 'range'"
       :place="choicePlace"
-      :commit="shortSha(props.commit ?? '')"
+      :revision="shortSha(props.revision ?? '')"
+      :reviews="props.reviews"
+      :target="props.target"
       :busy="posting"
       :failure="postFailure"
       @send="postLines"
@@ -209,45 +199,44 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { fileSizeText } from "../domain/files";
-import { lineChoice, offeredCommits, readingPlaces, scopeOfLines, shortSha } from "../domain/code";
+import { lineChoice, lineComments, linesPlace, offeredCommits, readingPlaces, shortSha } from "../domain/code";
 import { refusalText } from "../domain/refusals";
+import { findDefinitions, listCommits, postComment, readFile } from "../domain/review";
 import { fileIcon } from "bmo-ui/app/domain/file-icons";
 import { countText } from "bmo-ui/app/domain/numbers";
-import { hasRenderedForm } from "../domain/files";
-import { copyFromPress } from "bmo-ui/app/domain/code-copy";
 import { fileTabLabel } from "bmo-ui/app/domain/tabs";
 
 import type { ContextMenuItem } from "@nuxt/ui";
-import type { OpenTab } from "../domain/code";
+import type { CommentPlace, OpenTab } from "../domain/code";
+import type { CommentDraft } from "../domain/review";
 import type { CodePoint, LineSelection, ReviewView } from "../domain/review-view";
-import type { BarAction, BarProperty, BarTab, SwitchItem } from "bmo-ui/app/domain/tabs";
-import type { CodeCommit, CodeCommits, CodeDefinition, CodeDefinitions, CodeFile, CodeReviewSummary } from "../../shared/types";
+import type { BarAction, BarProperty, BarTab } from "bmo-ui/app/domain/tabs";
+import type { Commit, Definition, FileSource, PlacedComment, Review } from "../../shared/types";
 
-// The code review's code part (docs/screen.md). The file is read out of the commit
-// the screen stands on, never out of the working tree, and a line review is written against that
-// same commit. The editor is a browser's and is fetched once the part is on the screen.
+// The code review's code part (docs/screen.md). The file is read out of the revision the screen stands on, never
+// out of the working tree, and a line comment is written against that same revision. The editor is a browser's
+// and is fetched once the part is on the screen.
 
 interface Props {
   project: string | null;
   tabs: OpenTab[];
   path: string | null;
-  // The commit shown and the checkout's HEAD.
-  commit: string | null;
+  // The revision shown and the checkout's HEAD, as full hashes.
+  revision: string | null;
   head: string | null;
-  // What the commit shown and HEAD are, which the picker offers whether or not they touched the file.
-  shownInfo: CodeCommit | null;
-  headInfo: CodeCommit | null;
-  dirty: number;
+  uncommitted: number;
   line: number | null;
-  // The worker's reviews; this part stands the ones of the file and commit shown.
-  reviews: CodeReviewSummary[];
+  // The comments at the revision shown; this part stands the line comments of the file open.
+  placed: PlacedComment[];
+  // The reviews of the revision shown, which a new comment may go into, and the one it goes into by default.
+  reviews: Review[];
+  target: number | null;
   openReview: number | null;
-  // The reviews the agent is answering right now.
-  answering: Set<number>;
   narrow: boolean;
-  // The explorer beside the code: folded on a wide screen, a sheet from the bottom on a phone. It
-  // stands first in the toolbar, on the explorer's side.
+  // The explorer beside the code: folded on a wide screen, a sheet from the bottom on a phone. It stands first
+  // in the toolbar, on the explorer's side.
   explorerTool: BarAction;
   // The reviews beside the code, on the other side. On a phone it is one of the actions.
   reviewsTool: BarAction;
@@ -258,49 +247,49 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), { tools: () => [] });
 const { t, locale } = useI18n();
 
-// The host's clipboard, named here so the template can hand it on.
-const copyCode = (text: string): Promise<boolean> => copyText(text);
 const emit = defineEmits<{
   tab: [path: string];
   "close-tabs": [paths: string[]];
   "move-tab": [from: number, to: number];
   "pin-tab": [path: string, on: boolean];
-  commit: [commit: string | null];
+  revision: [revision: string | null];
   "open-review": [id: number];
-  created: [id: number];
-  new: [place: { kind: "file" | "folder"; path: string }];
-  // Where a name is declared, and the line the reader asked from — what the place they are leaving
-  // keeps. Null where the address was already told, which is what happens before a list goes up.
+  // A comment written into a review, which the review part then opens.
+  posted: [reviewId: number];
+  new: [place: CommentPlace];
+  // Where a name is declared, and the line the reader asked from: what the place they are leaving keeps. Null
+  // where the address was already told, which is what happens before a list goes up.
   definition: [place: { path: string; line: number; from: number | null }];
-  // The line the reader stands on, told before a list of places goes up over it. The list waits
-  // for the address to carry it, since on a narrow screen the list puts a step of its own into the
-  // history and a line written after that would land on the list's step instead of the reader's.
+  // The line the reader stands on, told before a list of places goes up over it. The list waits for the address
+  // to carry it, since on a narrow screen the list puts a step of its own into the history and a line written
+  // after that would land on the list's step instead of the reader's.
   origin: [line: number, done: () => void];
 }>();
 
-const INLINE_KEY = "bmo-code-inline-reviews";
+const INLINE_KEY = "bmo-code-inline-comments";
+// How many commits that touched the file the picker offers.
+const COMMITS_OFFERED = 100;
 
-const source = ref<CodeFile | null>(null);
+const source = ref<FileSource | null>(null);
 const reading = ref(false);
 const failed = ref("");
 const editorReady = ref(false);
-const documentReady = ref(false);
-const rendered = ref("");
-const showing = ref<"rendered" | "code">("code");
 const inline = ref(true);
-const commits = ref<CodeCommits | null>(null);
+// The commits that touched the file open, and what HEAD and the revision shown are, which the picker offers
+// whether or not they touched it.
+const commits = ref<{ path: string; touched: Commit[]; head: Commit | null; shown: Commit | null } | null>(null);
 const commitsLoading = ref(false);
 const commitsFailure = ref("");
 const chosen = ref<{ start: number; end: number } | null>(null);
 const dragged = ref<LineSelection | null>(null);
-// Where the last press landed, and where the cursor stands. The first is what the code's menu acts
-// on, the second what the file's own go-to-definition acts on, which is the route a phone has.
+// Where the last press landed, and where the cursor stands. The first is what the code's menu acts on, the
+// second what the file's own go-to-definition acts on, which is the route a phone has.
 const pressed = ref<CodePoint | null>(null);
 const cursor = ref<CodePoint | null>(null);
 const seeking = ref(false);
-// The places a name is declared in, when it is declared in more than one, and where on the screen
-// the name that was asked about stands.
-const choices = ref<CodeDefinition[]>([]);
+// The places a name is declared in, when it is declared in more than one, and where on the screen the name that
+// was asked about stands.
+const choices = ref<Definition[]>([]);
 const choicesAt = ref<{ top: number; left: number; height: number } | null>(null);
 const choicesOpen = ref(false);
 const sheetOpen = ref(false);
@@ -309,22 +298,14 @@ const postFailure = ref("");
 const zoneNodes = shallowRef(new Map<string, HTMLElement>());
 const box = useTemplateRef<HTMLElement>("box");
 const colorMode = useColorMode();
-// Where each open file was being read, so going back to a tab goes back to that place. What is
-// remembered belongs to the version it was read in, which is why the commit is asked for with the
-// path.
+// Where each open file was being read, so going back to a tab goes back to that place. What is remembered belongs
+// to the version it was read in, which is why the revision is asked for with the path.
 const readAt = readingPlaces();
 let view: ReviewView | null = null;
 let asked = 0;
 let shownKey: string | null = null;
 
-const standing = computed(() => props.path !== null && !reading.value && failed.value === "" && source.value !== null && source.value.text !== null);
-const readable = computed(() => props.path !== null && hasRenderedForm(props.path));
-const asDocument = computed(() => readable.value && showing.value === "rendered");
-
-const SIDES: SwitchItem<"rendered" | "code">[] = [
-  { value: "rendered", label: t("code.shared.label.rendered"), icon: "i-material-symbols-menu-book-outline" },
-  { value: "code", label: t("code.shared.label.code"), icon: "i-material-symbols-code" }
-];
+const standing = computed(() => props.path !== null && !reading.value && failed.value === "" && source.value !== null && source.value.text != null);
 
 const barTabs = computed<BarTab[]>(() => {
   const paths = props.tabs.map((tab) => tab.path);
@@ -332,8 +313,7 @@ const barTabs = computed<BarTab[]>(() => {
   return props.tabs.map((tab) => ({ id: tab.path, label: fileTabLabel(paths, tab.path), title: tab.path, icon: fileIcon(tab.path), mono: true, pinned: tab.pinned === true }));
 });
 
-// What can be done to the file standing, at the right end of the toolbar. On a phone the reviews
-// are one of them.
+// What can be done to the file standing, at the right end of the toolbar. On a phone the reviews are one of them.
 const actions = computed<BarAction[]>(() => {
   const path = props.path;
   const side = props.narrow ? [props.reviewsTool] : [];
@@ -352,15 +332,15 @@ const actions = computed<BarAction[]>(() => {
       loading: seeking.value,
       onSelect: () => void goToDefinition(cursor.value)
     },
-    { id: "inline", label: t("code.action.show_line_reviews"), icon: "i-material-symbols-sms-outline", pressed: inline.value, onSelect: () => (inline.value = !inline.value) },
-    { id: "review", label: t("code.label.review_file"), icon: "i-material-symbols-add-comment-outline", onSelect: () => emit("new", { kind: "file", path }) },
+    { id: "inline", label: t("code.action.show_line_comments"), icon: "i-material-symbols-sms-outline", pressed: inline.value, onSelect: () => (inline.value = !inline.value) },
+    { id: "comment", label: t("code.label.comment_file"), icon: "i-material-symbols-add-comment-outline", onSelect: () => emit("new", { kind: "file", path, line: null, endLine: null }) },
     ...props.tools
   ];
 });
 
-// The code's own menu, which is where go-to-definition stands beside add-a-review. Each item reads the
-// press as it is pressed rather than as the menu was drawn, so an item is right even where the
-// menu was drawn from what the press before it left.
+// The code's own menu, which is where go-to-definition stands beside add-a-comment. Each item reads the press as
+// it is pressed rather than as the menu was drawn, so an item is right even where the menu was drawn from what
+// the press before it left.
 const codeMenu = computed<ContextMenuItem[][]>(() => [
   [
     {
@@ -370,13 +350,25 @@ const codeMenu = computed<ContextMenuItem[][]>(() => [
       onSelect: () => void goToDefinition(pressed.value)
     },
     {
-      label: t("code.action.add_review"),
+      label: t("code.action.add_comment"),
       icon: "i-material-symbols-add-comment-outline",
-      disabled: reviewLines() === null,
-      onSelect: () => reviewHere()
+      disabled: commentLines() === null,
+      onSelect: () => commentHere()
     }
   ]
 ]);
+
+const shownCommit = computed<Commit | null>(() => {
+  const listed = commits.value;
+
+  if (listed === null) {
+    return null;
+  }
+
+  return [listed.shown, listed.head, ...listed.touched].find((one) => one?.id === props.revision) ?? null;
+});
+
+const dateText = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
 // What the file standing is, for the properties viewer.
 const properties = computed<BarProperty[] | null>(() => {
@@ -389,31 +381,21 @@ const properties = computed<BarProperty[] | null>(() => {
   return [
     { label: t("code.shared.label.path"), value: props.path, mono: true },
     ...(props.project === null ? [] : [{ label: t("code.label.project"), value: props.project }]),
-    { label: t("code.label.commit"), value: commit === null ? shortSha(props.commit ?? "") : `${shortSha(commit.commit)} ${commit.subject}` },
-    ...(commit === null ? [] : [{ label: t("code.label.authored"), value: `${commit.author} · ${dateText.format(new Date(commit.at * 1000))}` }]),
-    ...(source.value === null ? [] : [{ label: t("code.shared.label.size"), value: fileSizeText(source.value.size, locale.value) }]),
-    ...(props.dirty > 0 ? [{ label: t("code.label.uncommitted"), value: t("code.shared.label.count", { n: countText(props.dirty) }) }] : [])
+    { label: t("code.label.revision"), value: commit === null ? shortSha(props.revision ?? "") : `${commit.shortId} ${commit.subject}` },
+    ...(commit === null ? [] : [{ label: t("code.label.authored"), value: `${commit.authorName} · ${dateText.format(new Date(commit.at))}` }]),
+    ...(source.value === null ? [] : [{ label: t("code.shared.label.size"), value: fileSizeText(source.value.byteCount, locale.value) }]),
+    ...(props.uncommitted > 0 ? [{ label: t("code.label.uncommitted"), value: t("code.shared.label.count", { n: countText(props.uncommitted) }) }] : [])
   ];
 });
 
-// The line reviews of the file and commit shown, in line order.
-const lineReviews = computed(() =>
-  props.reviews
-    .filter((review) => review.path === props.path && review.commit === props.commit && (review.scope === "line" || review.scope === "range"))
-    .sort((one, other) => (one.startLine ?? 0) - (other.startLine ?? 0) || one.id - other.id)
-);
-
-const shownCommit = computed<CodeCommit | null>(
-  () => (props.shownInfo?.commit === props.commit ? props.shownInfo : null) ?? commits.value?.commits.find((one) => one.commit === props.commit) ?? null
-);
-
-const dateText = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+// The line comments of the file and revision shown, in line order.
+const linePlaced = computed(() => lineComments(props.placed, props.path));
 
 const commitItems = computed(() =>
-  offeredCommits(commits.value?.commits ?? [], [props.headInfo, shownCommit.value]).map((one) => ({
-    label: `${shortSha(one.commit)} ${one.subject}`,
-    value: one.commit,
-    description: `${one.author} · ${dateText.format(new Date(one.at * 1000))}${one.commit === props.head ? ` · ${t("code.label.current_mark")}` : ""}`
+  offeredCommits(commits.value?.touched ?? [], [commits.value?.head ?? null, shownCommit.value]).map((one) => ({
+    label: `${one.shortId} ${one.subject}`,
+    value: one.id,
+    description: `${one.authorName} · ${dateText.format(new Date(one.at))}${one.id === props.head ? ` · ${t("code.label.current_mark")}` : ""}`
   }))
 );
 
@@ -430,29 +412,32 @@ const narrowPlace = computed(() => {
 
   if (lines === null) return "";
 
-  return lines.start === lines.end
-    ? t("code.shared.label.line_number", { n: lines.start })
-    : t("code.shared.label.line_range", { from: lines.start, to: lines.end });
+  return lines.start === lines.end ? t("code.shared.label.line_number", { n: lines.start }) : t("code.shared.label.line_range", { from: lines.start, to: lines.end });
 });
 
 interface ZoneItem {
   key: string;
   afterLine: number;
-  kind: "review" | "composer";
-  review: CodeReviewSummary | null;
+  kind: "comment" | "composer";
+  placed: PlacedComment | null;
 }
 
 const zoneList = computed<ZoneItem[]>(() => {
-  if (!standing.value || asDocument.value) {
+  if (!standing.value) {
     return [];
   }
 
   const zones: ZoneItem[] = inline.value
-    ? lineReviews.value.map((review) => ({ key: `review:${review.id}`, afterLine: review.endLine ?? review.startLine ?? 1, kind: "review", review }))
+    ? linePlaced.value.map((placed) => ({
+        key: `comment:${placed.comment.id}`,
+        afterLine: placed.comment.endLine ?? placed.comment.line ?? 1,
+        kind: "comment",
+        placed
+      }))
     : [];
 
   if (chosen.value !== null && !props.narrow) {
-    zones.push({ key: "composer", afterLine: chosen.value.end, kind: "composer", review: null });
+    zones.push({ key: "composer", afterLine: chosen.value.end, kind: "composer", placed: null });
   }
 
   return zones;
@@ -483,9 +468,12 @@ function placeZones(): void {
   zoneNodes.value = view.zones(zoneList.value.map((zone) => ({ key: zone.key, afterLine: zone.afterLine })));
 }
 
+// A press on a comment's mark opens the review it was written into.
+const markReviews = computed(() => new Map(linePlaced.value.map((placed) => [placed.comment.id, placed.review.id])));
+
 function placeMarks(): void {
   view?.mark(
-    lineReviews.value.map((review) => ({ id: review.id, start: review.startLine ?? 1, end: review.endLine ?? review.startLine ?? 1 })),
+    linePlaced.value.map(({ comment }) => ({ id: comment.id, start: comment.line ?? 1, end: comment.endLine ?? comment.line ?? 1 })),
     chosen.value
   );
 }
@@ -515,9 +503,9 @@ function openSheet(): void {
   }
 }
 
-// What the code's menu opens on. A mouse's right press raises the browser's own menu event; a
-// finger raises nothing but a press it goes on holding, which the menu itself waits out. Both are
-// read here, before the menu stands, so what it offers is the word that was actually pressed.
+// What the code's menu opens on. A mouse's right press raises the browser's own menu event; a finger raises
+// nothing but a press it goes on holding, which the menu itself waits out. Both are read here, before the menu
+// stands, so what it offers is the word that was actually pressed.
 function notePointer(event: PointerEvent): void {
   if (event.pointerType === "mouse" && event.button !== 2) {
     return;
@@ -530,9 +518,9 @@ function noteMenu(event: MouseEvent): void {
   pressed.value = view?.pointAt(event.clientX, event.clientY) ?? null;
 }
 
-// What add-a-review in the menu would write on: the lines already chosen, the lines just dragged,
-// or the one line the press landed on.
-function reviewLines(): { start: number; end: number } | null {
+// What add-a-comment in the menu would write on: the lines already chosen, the lines just dragged, or the one
+// line the press landed on.
+function commentLines(): { start: number; end: number } | null {
   if (chosen.value !== null) {
     return chosen.value;
   }
@@ -544,8 +532,8 @@ function reviewLines(): { start: number; end: number } | null {
   return pressed.value === null ? null : { start: pressed.value.line, end: pressed.value.line };
 }
 
-function reviewHere(): void {
-  const lines = reviewLines();
+function commentHere(): void {
+  const lines = commentLines();
 
   if (lines === null) {
     return;
@@ -555,72 +543,73 @@ function reviewHere(): void {
   postFailure.value = "";
   chosen.value = lines;
 
-  // On a wide screen the box opens among the lines themselves; on a narrow one it rises from the
-  // bottom edge, as it does when the bar below the code asks for it.
+  // On a wide screen the box opens among the lines themselves; on a narrow one it rises from the bottom edge, as
+  // it does when the bar below the code asks for it.
   if (props.narrow) {
     sheetOpen.value = true;
   }
 }
 
-// Where a name is declared at the commit being shown. One place is gone to; several stand as a
-// list the reader chooses from, at the name itself. Nothing found is nothing at all — no notice and
-// no mark — and so is an answer that arrives after the reader has moved to another file, which is
-// what the file and the commit it carries are for.
+// Where a name is declared at the revision being shown. One place is gone to; several stand as a list the reader
+// chooses from, at the name itself. Nothing found is nothing at all (no notice and no mark), and so is an answer
+// that arrives after the reader has moved to another file.
 async function goToDefinition(point: CodePoint | null): Promise<void> {
-  const { project, path, commit } = props;
+  const { project, path, revision } = props;
   const name = point?.word ?? null;
 
-  if (name === null || point === null || project === null || path === null || commit === null || seeking.value) {
+  if (name === null || point === null || project === null || path === null || revision === null || seeking.value) {
     return;
   }
 
   seeking.value = true;
 
   try {
-    const answer = await $fetch<CodeDefinitions>("/api/code/definition", { query: { project, commit, path, name } });
+    const found = await findDefinitions(project, { name, path, revision });
 
-    if (answer.path !== props.path || answer.commit !== props.commit) {
+    if (path !== props.path || revision !== props.revision) {
       return;
     }
 
-    const first = answer.definitions[0];
+    const first = found[0];
 
     if (first === undefined) {
       return;
     }
 
-    if (answer.definitions.length === 1) {
+    if (found.length === 1) {
       emit("definition", { path: first.path, line: first.line, from: point.line });
 
       return;
     }
 
-    // The list stands over the place the reader is in, and on a narrow screen it puts a step of
-    // its own into the history while it stands. So the address is told where they stand and the
-    // list waits for it, rather than writing it afterwards onto the step that now stands between.
+    // The list stands over the place the reader is in, and on a narrow screen it puts a step of its own into the
+    // history while it stands. So the address is told where they stand and the list waits for it, rather than
+    // writing it afterwards onto the step that now stands between.
     await new Promise<void>((settled) => emit("origin", point.line, settled));
 
-    choices.value = answer.definitions;
+    choices.value = found;
     choicesAt.value = point.rect;
     choicesOpen.value = true;
   } catch {
-    // A jump that cannot be made is not news the reader has to act on.
+    // A jump that cannot be made, a word the search does not take among them, is not news the reader has to act
+    // on.
   } finally {
     seeking.value = false;
   }
 }
 
-// A place chosen off the list. The address was told where the reader stands when the list went up,
-// so the jump itself has nothing left to leave behind.
-function chooseDefinition(one: CodeDefinition): void {
+// A place chosen off the list. The address was told where the reader stands when the list went up, so the jump
+// itself has nothing left to leave behind.
+function chooseDefinition(one: Definition): void {
   choicesOpen.value = false;
   emit("definition", { path: one.path, line: one.line, from: null });
 }
 
-async function postLines(text: string): Promise<void> {
+async function postLines(draft: CommentDraft): Promise<void> {
   const lines = chosen.value;
+  const { project, path, revision } = props;
 
-  if (lines === null || props.project === null || props.path === null || props.commit === null || posting.value) {
+  if (lines === null || project === null || path === null || revision === null || posting.value) {
     return;
   }
 
@@ -628,38 +617,27 @@ async function postLines(text: string): Promise<void> {
   postFailure.value = "";
 
   try {
-    const answer = await $fetch<{ ok: true; review: number }>("/api/code/reviews", {
-      method: "POST",
-      body: {
-        project: props.project,
-        commit: props.commit,
-        scope: scopeOfLines(lines.start, lines.end),
-        path: props.path,
-        startLine: lines.start,
-        endLine: lines.end,
-        text
-      }
-    });
+    const posted = await postComment(project, revision, linesPlace(path, lines), draft);
 
     clearChoice();
-    emit("created", answer.review);
+    emit("posted", posted.reviewId);
   } catch (error) {
-    postFailure.value = refusalText(t, error, t("code.error.review_post_failed"));
+    postFailure.value = refusalText(t, error, t("code.error.comment_post_failed"));
   } finally {
     posting.value = false;
   }
 }
 
 async function load(): Promise<void> {
-  const { project, path, commit } = props;
+  const { project, path, revision } = props;
 
-  if (project === null || path === null || commit === null) {
+  if (project === null || path === null || revision === null) {
     source.value = null;
 
     return;
   }
 
-  const key = `${commit}:${path}`;
+  const key = `${revision}:${path}`;
 
   if (key === shownKey && source.value !== null && failed.value === "") {
     goToLine();
@@ -668,15 +646,13 @@ async function load(): Promise<void> {
   }
 
   if (view !== null && shownKey !== null && source.value !== null) {
-    readAt.keep(source.value.commit, source.value.path, view.topLine());
+    readAt.keep(source.value.revision, source.value.path, view.topLine());
   }
 
   const mine = ++asked;
 
   reading.value = true;
   failed.value = "";
-  rendered.value = "";
-  documentReady.value = false;
   clearChoice();
   pressed.value = null;
   cursor.value = null;
@@ -684,7 +660,7 @@ async function load(): Promise<void> {
   choices.value = [];
 
   try {
-    const read = await $fetch<CodeFile>("/api/code/file", { query: { project, commit, path } });
+    const read = await readFile(project, path, revision);
 
     if (mine !== asked) {
       return;
@@ -705,15 +681,14 @@ async function load(): Promise<void> {
   reading.value = false;
   await nextTick();
   showSource();
-  void showDocument();
 }
 
 function showSource(): void {
-  if (view === null || source.value === null || source.value.text === null) {
+  if (view === null || source.value === null || source.value.text == null) {
     return;
   }
 
-  const kept = props.line === null ? readAt.taken(source.value.commit, source.value.path) : null;
+  const kept = props.line === null ? readAt.taken(source.value.revision, source.value.path) : null;
 
   view.show(source.value.text, source.value.path, props.line);
 
@@ -731,40 +706,11 @@ function goToLine(): void {
   }
 }
 
-async function showDocument(): Promise<void> {
-  if (!import.meta.client || !asDocument.value || rendered.value !== "" || source.value?.text == null) {
-    return;
-  }
-
-  const mine = asked;
-  const text = source.value.text;
-
-  try {
-    const renderer = await loadMarkdownRenderer();
-
-    if (mine !== asked) {
-      return;
-    }
-
-    if (renderer === null) {
-      failed.value = t("code.shared.error.renderer_failed");
-
-      return;
-    }
-
-    rendered.value = renderer.renderMarkdown(t, text, "document");
-    documentReady.value = true;
-  } catch (error) {
-    if (mine === asked) {
-      failed.value = refusalText(t, error, t("code.shared.error.renderer_failed"));
-    }
-  }
-}
-
+// The commits that touched the file, back from HEAD, and HEAD and the revision shown themselves.
 async function loadCommits(): Promise<void> {
-  const { project, path } = props;
+  const { project, path, revision } = props;
 
-  if (!import.meta.client || project === null || path === null || commitsLoading.value || commits.value?.path === path) {
+  if (!import.meta.client || project === null || path === null || commitsLoading.value || (commits.value?.path === path && commits.value.shown?.id === revision)) {
     return;
   }
 
@@ -772,7 +718,13 @@ async function loadCommits(): Promise<void> {
   commitsFailure.value = "";
 
   try {
-    commits.value = await $fetch<CodeCommits>("/api/code/commits", { query: { project, path } });
+    const [touched, head, shown] = await Promise.all([
+      listCommits(project, { path, limit: COMMITS_OFFERED }),
+      listCommits(project, { limit: 1 }),
+      revision === null ? Promise.resolve([]) : listCommits(project, { to: revision, limit: 1 })
+    ]);
+
+    commits.value = { path, touched, head: head[0] ?? null, shown: shown[0] ?? null };
   } catch (error) {
     commitsFailure.value = refusalText(t, error, t("code.error.commits_read_failed"));
   } finally {
@@ -794,14 +746,20 @@ async function prepareEditor(): Promise<void> {
 
     view = openReviewView(t, box.value, colorMode.value === "dark");
 
-    // A press in the margin chooses that line; a second press widens the choice when it was asked
-    // to — with shift on a keyboard's screen, always on a narrow one, where a finger has no shift.
+    // A press in the margin chooses that line; a second press widens the choice when it was asked to, with shift
+    // on a keyboard's screen and always on a narrow one, where a finger has no shift.
     view.onLine((line, widen) => {
       dragged.value = null;
       postFailure.value = "";
       chosen.value = lineChoice(chosen.value !== null && (widen || props.narrow) ? chosen.value.start : null, line);
     });
-    view.onMark((id) => emit("open-review", id));
+    view.onMark((id) => {
+      const review = markReviews.value.get(id);
+
+      if (review !== undefined) {
+        emit("open-review", review);
+      }
+    });
     view.onSelection((selection) => {
       dragged.value = selection;
     });
@@ -822,7 +780,7 @@ async function retry(): Promise<void> {
   await prepareEditor();
 }
 
-watch(() => [props.project, props.path, props.commit], () => void load());
+watch(() => [props.project, props.path, props.revision], () => void load());
 watch(() => props.line, () => goToLine());
 watch(
   () => [props.project, props.path],
@@ -831,9 +789,8 @@ watch(
     commitsFailure.value = "";
   }
 );
-watch([lineReviews, chosen], () => placeMarks());
+watch([linePlaced, chosen], () => placeMarks());
 watch(zoneList, () => placeZones());
-watch(showing, () => void showDocument());
 watch(inline, (on) => {
   try {
     localStorage.setItem(INLINE_KEY, on ? "on" : "off");
@@ -846,9 +803,9 @@ watch(
   (mode) => view?.paint(mode === "dark")
 );
 
-// The commit's title stands on the chip as soon as the file does.
+// The commit's subject stands on the chip as soon as the file does.
 watch(
-  () => [props.project, props.path],
+  () => [props.project, props.path, props.revision],
   () => void loadCommits(),
   { immediate: true }
 );

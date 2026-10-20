@@ -1,257 +1,241 @@
 # The review service's boundary
 
-Every route this service answers, every call it makes, its events and its settings. This document is the
-contract other units match: bmo-web, whose console passes the code review screen's requests on to these routes
-and extends this repository's console plugin bundle; and the switch-over, which points the console at this
-service. What the code review does is `docs/code-review.md`, and the screen is `docs/screen.md`; this document
-says how it is asked. A change to anything here changes this document in the same commit and follows the version
-rule (「Versions」).
+Every route this service answers, its events, its codes, the calls it makes, its harness plugin, its console
+bundle and its settings. What the code review does is `docs/code-review.md`, and the screen is
+`docs/screen.md`; this document says how it is asked. The OpenAPI 3.1 document, `docs/openapi.json`, states the
+same routes, bodies and tools as JSON Schemas generated from the service's own types; `bmo-review openapi` prints
+it. A change to anything here changes this document and that one in the same commit and follows the version rule
+(「Versions」).
 
 ## Conventions
 
+The common wire format and the API design rules are bmo-chat's `docs/conventions.md`; this service keeps them.
+
 - **Every route needs `Authorization: Bearer <token>`,** the token of the settings; a missing or wrong token is
-  answered 401 `unauthorized`. The console presents it on every request it passes on.
+  answered 401 `unauthorized`. An empty token in the settings lets no caller in.
 - **Bodies are JSON, both ways, with field names in camelCase.**
-- **Times are Unix seconds.**
-- **A refusal** is a non-2xx answer whose body carries an English sentence under `error` and a snake_case code
-  under `code` (「Refusals」), and beside them the fields its row names. The sentence is for a log; the screen
-  shows the code in its own pack's words, as `code.error.<code>`.
-- **A project** is named by its worker's name, `project`; **a commit** by seven to sixty-four hex characters,
-  resolved to the full hash (`docs/code-review.md`, 「How commits are accepted」); **a path** by names joined by
-  `/` relative to the repository, the empty path being the whole repository.
-- **A commit left out or empty** is the checkout's HEAD.
+- **Times are integers of epoch milliseconds,** each field ending in `At`, and a commit's time is `at`.
+- **A failure** is a non-2xx answer whose body is `code`, a kebab-case code a caller matches on, and `error`, an
+  English sentence for a log (「Codes」).
+- **A page** is `items` and `more`, whether anything stands past the last item. A list takes `limit`, 1 to 1,000
+  and 100 where absent, and `after`, the cursor each route states: the next page is asked with the last item's
+  cursor.
+- **A project** is named by the name the graph service registers it under, `projectName`; **a revision** by
+  seven to sixty-four hex characters, resolved to the full hash (`docs/code-review.md`, 「How revisions are
+  accepted」), HEAD where left out or empty; **a path** by names joined by `/` relative to the repository, the
+  empty path being the whole repository.
 
 ## Health
 
-`GET /health` answers `pid`, `version` and `ready`: the store is open and migrated.
+`GET /health` answers `ready`, `reason` (null while ready) and `version`. A service that answers has its store
+open and migrated.
 
-## Names
-
-`GET /api/code/names` answers `owner` and `agent`, the names the settings give (「Settings」, `filing`): the
-screen fills its pack's `{owner}` and `{agent}` marks with them, so no name stands in the bundle or its pack.
-
-## Reading a checkout
+## Projects
 
 | Route | Query | Answer |
 |---|---|---|
-| `GET /api/code/projects` | | `[projects]` |
-| `GET /api/code/tree` | `project`, `commit?` | a tree |
-| `GET /api/code/file` | `project`, `commit?`, `path` | a file |
-| `GET /api/code/commits` | `project`, `path?` | the commits |
-| `GET /api/code/search` | `project`, `commit?`, `q` | the matches |
-| `GET /api/code/definition` | `project`, `commit?`, `path`, `name` | the definitions |
+| `GET /projects` | `after`, `limit` | a page of projects, in name order |
+| `GET /projects/{projectName}/tree` | `revision`, `path`, `after`, `limit` | a page of tree entries |
+| `GET /projects/{projectName}/files/{filePath}` | `revision` | a file |
+| `GET /projects/{projectName}/commits` | `to`, `from`, `path`, `after`, `limit` | a page of commits, newest first |
+| `GET /projects/{projectName}/commits/{commitId}` | | a commit with its diff |
+| `GET /projects/{projectName}/matches` | `q`, `revision`, `after`, `limit` | a page of matches |
+| `GET /projects/{projectName}/definitions` | `name`, `path`, `revision`, `after`, `limit` | a page of definitions |
 
-- **A project:** `name` (the worker's name), `label` (its label, the name where it has none), `state` (`ready`,
-  `missing`, `not-git` or `no-commits`), `head` (a commit, null unless `ready`), `branch` (null where HEAD names
-  none), `dirty` (the count of uncommitted changes, untracked files left out). Every worker of the catalogue
-  naming a directory stands, an unreadable one with its state; two workers on one directory stand once.
-- **A commit:** `commit` (the full hash), `short`, `subject`, `at`, `author`.
-- **A tree:** `project`, `commit` (a commit), `entries` and `cut` (true where the entry ceiling dropped some).
-  Each entry is `path`, `kind` (`file`, `folder`, `link` or `submodule`), `size` (a file's bytes, null
-  otherwise) and `pinned` (a submodule's commit, null otherwise). Excluded files and folders do not stand.
-- **A file:** `project`, `commit`, `path`, `size`, `text` (null for a binary file), `lines` and `cut` (true where
-  the body ceiling cut it).
-- **The commits:** `project`, `path`, `head` (HEAD's full hash) and `commits`, those that touched the path,
-  newest first, up to the commit ceiling.
-- **The matches:** `project`, `commit`, `matches` (each `path`, `line`, `text`, the text cut to the match line
-  ceiling) and `cut` (true where a ceiling of count or time was reached).
-- **The definitions:** `project`, `commit`, `path` (the reader's file), `name` and `definitions` (each `path`,
-  `line`, `text` and `kind`, the kind of declaration), ordered and capped as `docs/code-review.md` 「Search」
-  states. A name nothing declares answers an empty list.
+- **A project:** `name`, `checkout` (the absolute path the graph names), `state` (`ready`, `missing`, `not-git` or
+  `no-commits`), `head` (HEAD's full hash, null unless `ready`), `branch` (the branch HEAD names, null where it
+  names none or the project is not `ready`) and `uncommittedCount` (the tracked files' uncommitted changes). The
+  cursor is the last project's `name`. Every project the graph serves stands, an unreadable one with its state.
+- **A tree entry:** `path`, `kind` (`file`, `folder`, `link` or `submodule`), `byteCount` (a file's bytes, null
+  otherwise) and `pinnedRevision` (a submodule's revision, null otherwise). The entries are every one under
+  `path`, at any depth, in path order, the excluded ones left out; the cursor is the last entry's `path`, and
+  `limit` here reaches up to the tree ceiling. A `path` that is no folder of the revision is answered
+  `not-found`.
+- **A file:** `path`, `revision` (the full hash), `byteCount`, `text` (null for a binary file), `lineCount` and
+  `cut` (true where the body ceiling cut it). `filePath` stands as the rest of the route's path, its slashes as
+  they are.
+- **A commit:** `id` (the full hash), `shortId`, `subject`, `authorName`, `at`, `files` (the paths it touched
+  against its first parent, the excluded ones left out), `diff` and `cut`. In a list `diff` is null and `cut`
+  false; read alone, `diff` is the patch over its files and `cut` true where the diff ceiling cut it. The list
+  walks back from `to`, HEAD where absent, and stops short of `from` and its history where it is given; with
+  `path`, only the commits that touched it stand. The cursor is the last commit's `id`. `commitId` is a revision
+  as above.
+- **A match:** `path`, `line` and `text`, the line cut to the match line ceiling. `q` is the words, taken
+  literally and ignoring case; empty words, words past the search ceiling, or words holding a NUL or a line break
+  are answered `bad-request`.
+- **A definition:** `name`, `path`, `line`, `text` and `kind` (`function`, `method`, `class`, `interface`, `type`,
+  `enum`, `const`, `struct`, `trait`, `module`, `macro` or `re-export`), ordered and capped as `docs/code-review.md`
+  「Search」 states. `path` is the reader's file, which orders the answer and names the language whose keywords
+  are no name; a `name` the search does not take is answered `not-a-name`. A name nothing declares answers an
+  empty page.
+- **The cursor of matches and definitions** is the count of items already read, since a search keeps nothing to
+  key on; `more` is true where items stand past the page or a ceiling or the time cut the search.
+- **A project the graph does not know** is answered `not-found`, and so is a revision that resolves to no commit
+  of it; a checkout that cannot be read is answered `unreadable-checkout`, its state in the sentence.
 
 ## Reviews
 
-| Route | Request | Answer |
+| Route | Body or query | Answer |
 |---|---|---|
-| `GET /api/code/reviews` | query `project` | `[summaries]`, newest first |
-| `POST /api/code/reviews` | `project`, `commit`, `scope`, `path`, `startLine?`, `endLine?`, `text` | 202 `ok`, `review` (its number) |
-| `GET /api/code/reviews/{id}` | | a thread |
-| `GET /api/code/reviews/{id}/talk` | | `answering`, `failure` |
-| `POST /api/code/reviews/{id}/talk` | `text` | 202 `ok` |
-| `POST /api/code/reviews/{id}/todo` | `title`, `toDo`, `conclusion?` | `ok`, `raised` (the filed item's number) |
+| `GET /reviews` | query `projectName`, `revision`, `state`, `after`, `limit` | a page of reviews, newest first |
+| `POST /reviews` | `projectName`, `revision`, `title`, `authorName` | 201, the review |
+| `GET /reviews/{reviewId}` | | the review |
+| `PATCH /reviews/{reviewId}` | `state` | the review |
+| `GET /reviews/{reviewId}/comments` | query `after`, `limit` | a page of comments, oldest first |
+| `POST /reviews/{reviewId}/comments` | `path?`, `line?`, `endLine?`, `text`, `authorName` | 201, the comment |
+| `POST /reviews/{reviewId}/filings` | `title`, `brief`, `queueName` | 201, the filing |
 
-- **A summary:** `id`, `worker`, `commit`, `scope` (`line`, `range`, `file` or `folder`), `path`, `startLine`,
-  `endLine`, `createdAt`, `first` (the thread's first words), `turns` (their count), `lastAt` (the last words'
-  time) and `todoIds` (the items filed from it).
-- **Making a review** judges the place in the commit's own tree: a line review's lines lie inside the file (a
-  `line` names one line, `startLine` alone; a `range` names a start before its end), a file review's path is a
-  file and a folder review's a folder. A line review's lines are read from that commit as its excerpt, cut to the
-  excerpt ceiling. The review is written, its first words become the thread's first turn, and the answer comes
-  before the turn ends.
-- **A thread:** `review` (a summary with its `excerpt`, null for a file or folder review), `readable` (the
-  commit can still be read in the worker's checkout, false where the worker is gone), `turns` (each `id`,
-  `speaker` — `owner` or `agent` —, `text` and `saidAt`), `answering` and `failure`.
-- **The talk's state:** `answering` is true while a turn of that review is out; `failure` is the code its last
-  turn came back with (「Refusals」, the thread's failures), null where it was answered.
-- **Talking** writes the owner's words at once and answers 202; the turn goes to the receiver in the background
-  (「Calls this service makes」), and its answer is written as the agent's turn when it ends. The answer or the
-  failure is told by a `code-review-talk` event.
-- **Filing** builds the item's parts (`docs/code-review.md`, 「The item's shape」) and hands them to bmo-job,
-  assigned to the review's worker; the item's number is remembered under the review, and a `code-review` event is
-  sent.
+- **A review:** `id`, `projectName`, `revision` (the full hash), `title`, `state` (`open`, `answered` or
+  `closed`), `authorName`, `commentCount`, `itemIds` (the job service's items filed from it, oldest first),
+  `createdAt` and `changedAt`. The list's cursor is the last review's `id`, and each filter given narrows it.
+- **Opening a review** resolves the revision in the project's checkout; a project the graph does not know is
+  refused `unknown-project`, a revision that resolves to no commit `unknown-revision`, and a checkout that cannot
+  be read `unreadable-checkout`. The title and the author's name are refused `bad-request` where empty or past
+  their ceilings.
+- **Changing a review** is a change of its state, `open` or `closed`; a move its states do not allow, `answered`
+  among them, is refused `conflict` (`docs/code-review.md`, 「Its states」).
+- **A comment:** `id`, `reviewId`, `path` (null for the whole review), `line` and `endLine` (null where it points
+  at no lines; `endLine` null for one line), `excerpt` (the lines it points at, copied from the review's
+  revision, null where it points at none), `text`, `authorName` and `createdAt`. The list's cursor is the last
+  comment's `id`.
+- **Commenting** judges the place against the review's revision: `line` without `path`, `endLine` without `line`,
+  or an `endLine` not past `line` is `bad-request`; a path that is no file or folder of the revision that may be
+  shown, lines on a folder, lines past the file's last, or lines on a file with no body is `no-such-place`. The
+  text and the author's name are refused `bad-request` where empty or past their ceilings. A comment moves the
+  review's state as its states say, and is kept on a closed review.
+- **A filing:** `id`, `reviewId`, `itemId` (the number the job service answered) and `createdAt`. Filing
+  creates the item in the job service (「Calls this service makes」); the job service's refusal is answered
+  `filing-refused`, its code and sentence in this service's sentence, and a job service that cannot be reached
+  or fails `upstream-failed`.
+- **An unknown review** is answered `not-found`.
 
 ## Events
 
-`GET /api/code/events` is a server-sent event stream: the events kept in a ring are replayed after the cursor
-the `Last-Event-ID` header names, then every new one as it is sent. Each event carries its cursor as its id, its
-kind as its name, and as its JSON data `review` (the review's number) and, where a turn ended, `detail`.
+`GET /events` is the service's one stream, as server-sent events, or a page of them to a reader asking
+`Accept: application/json`.
 
-| Event | When |
-|---|---|
-| `code-review` | a review was made, or an item was filed from it |
-| `code-review-talk` without `detail` | the owner's words were written and a turn of the review went out |
-| `code-review-talk` with `detail` | the turn ended: `detail` is null where it was answered, else the thread's failure code |
+- **An event** is `id` (the event number, which only grows), `kind`, `at` and `data`, the member as a GET answers
+  it. Its SSE `id` is its number and its SSE `event` its kind.
+- **Narrowing:** `kinds`, a comma-separated list of kinds, and `reviewId`, the events of one review (a review's
+  own and those of its comments and filings).
+- **Resuming:** `after` or the `Last-Event-ID` header, the number of the last event read. The service keeps the
+  last 1,000 events in its store; a resume from before them is answered 410 `gone`, and the reader reads the
+  collections again.
+- **A page** takes `after` and `limit`. The stream says a comment line every fifteen seconds.
 
-## Refusals
+| Kind | When | `data` |
+|---|---|---|
+| `review.created` | a review was opened | the review |
+| `review.changed` | a review's state moved, or a comment or a filing was added to it | the review |
+| `comment.created` | a comment was written | the comment |
+| `filing.created` | an item was filed from a review | the filing |
+
+## Codes
 
 | Status | Code | When |
 |---|---|---|
-| 400 | `bad_request` | the body is not JSON of the route's shape |
+| 400 | `bad-request` | the body, the query or the path is not the shape the route takes; the sentence names what is wrong |
 | 401 | `unauthorized` | no token, or not the one the settings name |
-| 404 | `no_such_worker` | the project is no worker of the catalogue naming a directory |
-| 409 | `no_path` | the worker's directory does not exist |
-| 409 | `not_git` | the worker's directory is not a git repository |
-| 409 | `no_commits` | the repository has no commits |
-| 409 | `unreadable_checkout` | the checkout cannot be read for another reason |
-| 404 | `no_such_commit` | the commit does not resolve to a commit of that repository |
-| 404 | `no_such_path` | the commit list's path is not one that may be shown |
-| 404 | `no_such_file` | the path is no file of that commit that may be shown |
-| 404 | `no_such_folder` | a folder review's path is no folder of that commit |
-| 400 | `definition_no_file` | a definition search names no reader's file |
-| 400 | `definition_word` | the word is not one the definition search takes |
-| 400 | `search_too_long` | the search words are empty, over `limit`, or hold a NUL or a line break; carries `limit` |
-| 400 | `review_empty` | a review's first words are empty |
-| 400 | `talk_empty` | a turn's words are empty |
-| 400 | `too_long` | the words are over `limit`, the talk's ceiling; carries `limit` |
-| 400 | `bad_review_place` | `scope` is not one of its four, or the path is not a path a review takes |
-| 400 | `bad_review_line` | the lines are not whole numbers from 1, or a range's start is not before its end |
-| 400 | `no_such_line` | a line lies past the file's last |
-| 409 | `no_line_review` | a line review of a file with no body |
-| 404 | `no_such_review` | no review has that number |
-| 409 | `review_busy` | a turn of that review is out: no words and no filing until it ends |
-| 400 | `title_too_long` | the title is empty or over `limit`; carries `limit` |
-| 400 | `todo_too_long` | what to do is empty or over `limit`; carries `limit` |
-| 400 | `conclusion_too_long` | the conclusion is over `limit`; carries `limit` |
-| 409 | `no_worker` | the review's worker is gone from the catalogue, as bmo-job answers it; carries `worker` |
-| 501 | `job_filing_unsupported` | bmo-job carries no route for this service to file an item (「What the siblings lack」) |
-| 502 | `job_failed` | a call on bmo-job failed for another reason |
-| 500 | `database` | the store failed |
-
-**The thread's failures** are the codes a turn comes back with, kept as the thread's `failure` rather than
-answered to the talk's request:
-
-| Code | When |
-|---|---|
-| `receiver_talk_unsupported` | the receiver carries no talk topic for a code review (「What the siblings lack」) |
-| `resting` | the receiver refused the talk with `resting`: the agent rests or the owner's chat has fallen silent |
-| `limit` | the receiver refused the talk with `limit`: the provider's limit is reached |
-| `outage` | the receiver refused the talk with `outage`: the provider is out |
-| `talk_failed` | the receiver refused the talk with any other code, or could not be reached |
-| `no_answer` | the talk came back with no answer |
+| 404 | `no-route` | no route answers the method and path |
+| 404 | `not-found` | nothing stands at the project, the revision, the path or the review the request names |
+| 409 | `conflict` | the review's states do not allow the change |
+| 410 | `gone` | the events since the number asked for are no longer kept |
+| 422 | `unreadable-checkout` | the project's checkout is missing, not in a git repository or without commits |
+| 422 | `unknown-project` | a review names a project the graph does not know |
+| 422 | `unknown-revision` | a review names a revision that resolves to no commit of the project |
+| 422 | `no-such-place` | a comment's place is no file or folder of the revision that may be shown, or its lines lie off the file |
+| 422 | `not-a-name` | the definition search does not take the word |
+| 422 | `filing-refused` | the job service refused the item |
+| 500 | `failed` | the service failed; the sentence is the failure |
+| 502 | `upstream-failed` | the graph service or the job service could not be reached or failed |
 
 ## Calls this service makes
 
-Each unit is reached through one module named for it under `src/clients/`, holding only the calls this service
-makes, with the base address and token its settings name.
+Each unit is reached only through the client it publishes, at the base address and with the token the settings
+name, and its contract is that unit's own document.
 
-### bmo-job
-
-Stated in bmo-job's `docs/api.md`, 「Workers」:
-
-| Route | Request | Answer |
-|---|---|---|
-| `GET /workers` | | `[workers]` |
-| `GET /workers/{name}` | | a worker |
-
-- "**A worker:** `name`, `label?`, `cwd?`, `icon?`, `builtin`, `preamble?`, `dev_command?`, `support_count`,
-  `support_keepalive`, `support_of?`, `support_slot?`, `node?`, `role?`, `resting_since?` and `created_at`, as
-  `workers` keeps it. A name no worker has is refused `no_worker`."
-- This service reads `name`, `label` and `cwd`: the list for the projects, one worker for making a review and
-  before filing. `no_worker` is carried through as this service's own `no_worker`.
-- **Filing an item** is shaped as bmo-job's filing parts, its `docs/api.md` 「A filing part: `FilingPart`」:
-  `title`, `what`, `do`, `conclusion`, `instruction` (the owner's words in the thread) and `reply` (the agent's
-  answers), with the worker, the requester and the approval pending. No route of bmo-job's takes a filing from
-  another unit (「What the siblings lack」), so the call answers `job_filing_unsupported` until one stands.
-
-### bmo-receiver
-
-Stated in the receiver's `docs/boundary-api.md`, 「For bmo-job」, which the receiver serves with snake_case bodies:
-
-| Call | Route | Request | Answer |
-|---|---|---|---|
-| Talk | `POST /talks` | `topic`, `[turns]`, `said` | `answer?`: null where the agent said nothing |
-
-- "A turn is `owner` and `text`. The talk is a round of the owner's private chat on the chat agent's session. A
-  talk that comes back with nothing is refused: `resting` with 409 where the agent rests or the owner's chat has
-  fallen silent, `limit` with 429 where its provider's limit is reached, `outage` with 503 where its provider is
-  out, and any other code for any other failure."
-- **The topic** this service sends is of kind `code-review`, holding the review's facts: `id`, `worker`,
-  `label`, `root` (the checkout's absolute path), `commit`, `scope`, `path`, `start_line?`, `end_line?` and
-  `excerpt?`. The receiver words the turn's head from its own policy. The receiver documents only the kinds
-  `item` and `document` (「What the siblings lack」), so a talk ends at once with the failure
-  `receiver_talk_unsupported` until the kind stands.
-- **The turns** are the thread's earlier turns, the owner's marked `owner`; **`said`** is the words just said.
-
-### What the siblings lack
-
-| Unit | What is missing |
-|---|---|
-| bmo-receiver | a `code-review` kind of a talk's topic in `POST /talks`, with the fields above, in its `docs/boundary-api.md` and its talk route |
-| bmo-job | a route by which another unit files a fresh item out of its own conversation: the filing parts, the worker, the requester, its source named, waiting for approval, placed at the end of the queue, with the queue's news its own |
-
-## What it reaches beside the units
-
-- **git,** run in a worker's checkout as `docs/code-review.md` 「How git is called」 states, reading only.
+- **bmo-graph,** through `bmo_graph::client` at 0.1.0-rev.1: `GET /projects` for the projects, a page at a time
+  with the caller's cursor, and `GET /projects/{projectName}` for the one a request names; this service reads a
+  project's `name` and `checkout`.
+- **bmo-job,** through `bmo-job-client` at 0.1.0-rev.5: `POST /items` for a filing, with the caller's `title`,
+  `brief` and `queueName`, and as `labels` the review's `reviewId`, `projectName` and `revision`; this service
+  reads the item's `id`.
+- **git,** run in a project's checkout as `docs/code-review.md` 「How git is called」 states, reading only.
 - **Its own store,** the SQLite file the settings name, migrated from `migrations/` at start.
+
+## The client
+
+`bmo_review::client` is the service's own client: one method for each route, sending and reading the bodies of
+`bmo_review::wire`, which the routes answer in and the OpenAPI document is generated from, and a failure read
+back as its status, code and sentence. It carries the contract and no caller's policy.
+
+## The harness plugin
+
+The plugin is `ahas-review`: the MCP server `bmo-review mcp` starts on standard input and output, and the skill
+`plugin/skills/ahas-review/SKILL.md`. The server reaches the service at the address and with the token the
+settings name (`http://` and `server.listen`, `server.token`), or those `--address` and `--token` give. Each
+tool is a thin call of one route through the client; a tool's failure is the error shape with the status, or the
+sentence alone where nothing answered.
+
+| Tool | Route | Input | Output |
+|---|---|---|---|
+| `review_projects` | `GET /projects` | `after?`, `limit?` | a page of projects |
+| `review_commits` | `GET /projects/{projectName}/commits` | `projectName`, `to?`, `from?`, `path?`, `after?`, `limit?` | a page of commits |
+| `review_diff` | `GET /projects/{projectName}/commits/{commitId}` | `projectName`, `commitId` | the commit with its diff |
+| `review_reviews` | `GET /reviews` | `projectName?`, `revision?`, `state?`, `after?`, `limit?` | a page of reviews |
+| `review_create` | `POST /reviews` | `projectName`, `revision`, `title`, `authorName` | the review |
+| `review_review` | `GET /reviews/{reviewId}`, `GET /reviews/{reviewId}/comments` | `reviewId`, `after?`, `limit?` | `review` and `comments`, a page of its comments |
+| `review_comment` | `POST /reviews/{reviewId}/comments` | `reviewId`, `path?`, `line?`, `endLine?`, `text`, `authorName` | the comment |
+| `review_file_item` | `POST /reviews/{reviewId}/filings` | `reviewId`, `title`, `brief`, `queueName` | the filing |
+
+What a harness does first: it reads a change with `review_diff`, writes its findings with `review_create` and
+`review_comment`, and files a follow-up item with `review_file_item`.
+
+## The console bundle
+
+`client/` is the service's console bundle, packed as `bmo-review-client`, conforming to bmo-ui's console plugin
+contract at 0.1.0-rev.2 (bmo-ui's `docs/console-bundles.md`). Its declaration, `client/console-bundle.json`:
+
+| Field | Value |
+|---|---|
+| `name` | `code`: its words' namespace and its components' prefix, `Code` |
+| `title` | `code.title.screen` |
+| `icon` | `i-material-symbols-rate-review-outline` |
+| `screenPath` | `/code` |
+| `serviceName` | `review` |
+| `languagePack` | `i18n`, one JSON file to a locale |
+| `events` | true: the screen reads `GET /events` |
+| `websocket` | false |
+| `pushKinds` | none |
+
+The screen calls only this service's routes, at the address bmo-ui's `relay` module answers for `review`, and
+says a failure by its code in its own pack's words, as `code.error.<code>`.
 
 ## Settings
 
 The settings are read at start in layers, each overriding the one before: the defaults, which are the
 repository's own `settings.toml` built into the binary; then `settings.toml` and `settings.local.toml` where they
 stand in the settings folder, the one `BMO_REVIEW_SETTINGS` names, else the folder above the one holding the
-binary (a deployment's root); then `BMO_REVIEW_<TABLE>__<KEY>` in the environment. An empty token lets no caller
-in.
+binary (a deployment's root); then `BMO_REVIEW_<TABLE>__<KEY>` in the environment.
 
 | Table | Key | What it is |
 |---|---|---|
 | `server` | `listen` | where the service answers, as `host:port` |
 | `server` | `token` | the bearer token every caller presents |
-| `store` | `path` | the SQLite file the reviews and threads stand in |
+| `store` | `path` | the SQLite file the reviews, comments, filings and events stand in |
+| `graph` | `address`, `token` | bmo-graph's base address and the token it takes |
 | `job` | `address`, `token` | bmo-job's base address and the token it takes |
-| `receiver` | `address`, `token` | the receiver's base address and the token it takes |
-| `filing` | `language` | the language of this repository's pack the item's parts are worded in, by its folder under `lang/`: `ko` |
-| `filing` | `owner` | the owner's name, filling `{owner}` in the item's parts |
-| `filing` | `agent` | the chat agent's name, filling `{agent}` in the item's parts |
-| `filing` | `requester` | who an item filed from a review is requested by |
-| `filing` | `excerpt_clip` | how much of the reviewed lines an item carries, in characters |
 | `limits` | `file_bytes`, `binary_probe` | the body ceiling, and how far into a file a NUL marks it binary |
-| `limits` | `tree_entries`, `commits` | the tree's entry ceiling and the commit list's |
+| `limits` | `tree_entries`, `diff_bytes` | the most entries a tree page holds, and the diff ceiling |
 | `limits` | `search_query`, `search_per_file`, `search_total`, `search_timeout_ms` | the content search's ceilings |
 | `limits` | `definition_scan_per_file`, `definition_per_file`, `definition_total`, `definition_timeout_ms` | the definition search's ceilings |
 | `limits` | `match_line` | how much of a matched line comes back |
-| `limits` | `excerpt` | how much of the reviewed lines a review keeps |
-| `limits` | `talk`, `title`, `to_do`, `conclusion` | the ceilings of a turn's words and of a filing's three fields |
-
-## What the console does
-
-These are bmo-web's to carry; this repository holds none of them.
-
-- **Pass on** every request under `/api/code/` behind the console's sign-in, whole — the method, the query, the
-  body and the headers that say what is asked — to the address this service answers on, with its token, and hand
-  the answer back as it came, the event stream as it streams.
-- **Extend the console plugin bundle** under `client/`, packed as `bmo-review-client`, and serve its page at
-  `/code`.
-- **Owe the bundle what it asks of the host:** bmo-ui at the version the bundle's peer names, an i18n module that
-  loads the bundle's own Korean pack beside the host's, the components `MarkdownText`, `ItemTip`, `DeployMark`,
-  `TodoOpenButton` and `UsageMeters`, and the functions `copyText` (the clipboard), `loadMarkdownRenderer` (the
-  console's markdown renderer, for a file read as a document) and `useKeptTabs` (the screen's open tabs kept for
-  the account), all declared in `client/host/` by what the screen hands them and asks of them; and the TODO panel
-  an item's number opens.
-- **The words are the bundle's own:** the screen's keys and `code.error.<code>` for each code above stand in the
-  bundle's pack, not the host's.
+| `limits` | `excerpt` | how much of the lines a comment points at it keeps |
+| `limits` | `title`, `comment`, `author_name` | the ceilings of a review's title, a comment's text and an author's name |
 
 ## Versions
 
-The repository's version is the crate's, in semver. The major moves on a change to this document's routes,
-fields, codes, events or settings that a caller must follow; the minor on an addition to any of them; the patch
-on a change that leaves every statement here true.
+The repository has one version, the crate's, which its health, its OpenAPI document and its MCP server answer.
+Before its first release it is `0.1.0-rev.<n>`, `n` counting the version bumps since `0.1.0`, as bmo-chat's
+`docs/conventions.md` 「Versions」 states; every change to this document's routes, fields, codes, events, tools or
+settings is one bump.

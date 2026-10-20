@@ -1,8 +1,0 @@
-# The place a review is pinned to, in the words an item filed from it uses (docs/code-review.md, 「The item's
-# shape」): the whole repository, a {path} with its {start} line or its lines from {start} to {end}, a whole
-# file, a whole folder.
-whole: "(저장소 전체)"
-line: "{path} {start}번 줄"
-range: "{path} {start}–{end}번 줄"
-file: "{path} 파일 전체"
-folder: "{path} 폴더 전체"

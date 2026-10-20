@@ -2,7 +2,7 @@
   {
     "id": "console/screen",
     "title": "Code review screen",
-    "what": "The console's code review screen in the bundle under client/: the explorer, the read-only editor with review marks, the review pane and thread, filing a TODO, and the screen's own Korean pack.",
+    "what": "The code review screen in the bundle under client/: the explorer, the read-only editor with comment marks, the review pane with its comments and states, filing an item, and its calls through the console relay.",
     "files": [
       "client/app/pages/code.vue",
       "client/app/components/CodeExplorer.vue",
@@ -11,18 +11,19 @@
       "client/app/components/CodeReviewRow.vue",
       "client/app/components/CodeReviewComposer.vue",
       "client/app/components/CodeReviewSheet.vue",
-      "client/app/components/CodeReviewTodo.vue",
+      "client/app/components/CodeReviewFiling.vue",
       "client/app/components/CodeDefinitionList.vue",
       "client/app/domain/code.ts",
+      "client/app/domain/review.ts",
       "client/app/domain/review-view.ts",
       "client/app/domain/events.ts",
       "client/app/domain/files.ts",
-      "client/app/domain/names.ts",
+      "client/app/domain/kept.ts",
       "client/app/domain/refusals.ts",
+      "client/app/i18n.d.ts",
       "client/app/assets/css/review.css",
       "client/shared/config.ts",
-      "client/shared/definitions.ts",
-      "client/i18n/locales/ko.yaml",
+      "client/i18n/ko.json",
       "docs/screen.md"
     ],
     "symbols": [
@@ -30,9 +31,12 @@
       "useReviewEvents",
       "useReviewRefresh",
       "refusalText",
-      "useNames",
+      "postComment",
+      "listReviews",
+      "readTree",
       "searchNames",
-      "definitionName"
+      "codeTree",
+      "useAuthorName"
     ],
     "aliases": [
       "코드 뷰어",
@@ -43,6 +47,7 @@
       "Go to definition"
     ],
     "needs": [],
-    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd"
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468508464
   }
 ]

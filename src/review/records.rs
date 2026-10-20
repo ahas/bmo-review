@@ -1,249 +1,278 @@
-//! The reviews and their threads as this service's store keeps them (`docs/code-review.md`, 「The review table」,
-//! 「The exchange」).
+//! The reviews, their comments and the items filed from them as this service's store keeps them
+//! (`docs/code-review.md`, 「Reviews」, 「Comments」, 「Filing an item」).
 
-use serde::Serialize;
-use sqlx::{FromRow, SqlitePool};
+use sqlx::{FromRow, Sqlite, SqlitePool, Transaction};
 
 use crate::http::Refused;
+use crate::wire::{Comment, CommentQuery, Filing, Review, ReviewQuery, ReviewState};
 
-/// What a review is pinned to.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Scope {
-  Line,
-  Range,
-  File,
-  Folder,
-}
+/// A review as one row reads it, with its count of comments and the items filed from it.
+const REVIEW: &str = "SELECT r.id, r.project_name, r.revision, r.title, r.state, r.author_name, r.created_at, \
+  r.changed_at, (SELECT COUNT(*) FROM comments c WHERE c.review_id = r.id) AS comment_count, \
+  (SELECT json_group_array(item_id) FROM (SELECT item_id FROM filings f WHERE f.review_id = r.id ORDER BY f.id)) \
+  AS item_ids FROM reviews r";
 
-impl Scope {
-  pub fn of(name: &str) -> Option<Self> {
-    match name {
-      "line" => Some(Self::Line),
-      "range" => Some(Self::Range),
-      "file" => Some(Self::File),
-      "folder" => Some(Self::Folder),
-      _ => None,
-    }
-  }
-
-  pub fn name(self) -> &'static str {
-    match self {
-      Self::Line => "line",
-      Self::Range => "range",
-      Self::File => "file",
-      Self::Folder => "folder",
-    }
-  }
-
-  /// Whether the place is lines of a file, carrying lines and an excerpt.
-  pub fn lined(self) -> bool {
-    matches!(self, Self::Line | Self::Range)
-  }
-}
-
-/// Who said a line of a thread.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Speaker {
-  Owner,
-  Agent,
-}
-
-impl Speaker {
-  fn name(self) -> &'static str {
-    match self {
-      Self::Owner => "owner",
-      Self::Agent => "agent",
-    }
-  }
-}
-
-/// A review as the store keeps it.
-#[derive(Clone, Debug, FromRow)]
-pub struct Review {
-  pub id: i64,
-  pub worker: String,
-  pub root: String,
-  pub commit_sha: String,
-  pub scope: String,
-  pub path: String,
-  pub start_line: Option<i64>,
-  pub end_line: Option<i64>,
-  pub excerpt: Option<String>,
-  pub created_at: i64,
-}
-
-/// A review to be written.
-pub struct NewReview<'a> {
-  pub worker: &'a str,
-  pub root: &'a str,
-  pub commit: &'a str,
-  pub scope: Scope,
-  pub path: &'a str,
-  pub start_line: Option<i64>,
-  pub end_line: Option<i64>,
-  pub excerpt: Option<&'a str>,
-  pub created_at: i64,
-}
-
-/// A review as a list shows it.
-#[derive(Clone, Debug, Serialize, FromRow)]
-#[serde(rename_all = "camelCase")]
-pub struct Summary {
-  pub id: i64,
-  pub worker: String,
-  pub commit: String,
-  pub scope: String,
-  pub path: String,
-  pub start_line: Option<i64>,
-  pub end_line: Option<i64>,
-  pub created_at: i64,
-  /// The thread's first words.
-  pub first: String,
-  /// The count of its words.
-  pub turns: i64,
-  /// When the last words were said.
-  pub last_at: i64,
-  #[serde(skip)]
-  pub excerpt: Option<String>,
-  #[serde(skip)]
-  pub filed: Option<String>,
-  /// The items filed from it.
-  #[sqlx(skip)]
-  pub todo_ids: Vec<i64>,
-}
-
-impl Summary {
-  fn read(mut self) -> Self {
-    self.todo_ids = self
-      .filed
-      .as_deref()
-      .unwrap_or_default()
-      .split(',')
-      .filter_map(|id| id.trim().parse().ok())
-      .collect();
-    self
-  }
-}
-
-/// One line of a thread.
-#[derive(Clone, Debug, Serialize, FromRow)]
-#[serde(rename_all = "camelCase")]
-pub struct Turn {
-  pub id: i64,
-  pub speaker: String,
-  pub text: String,
-  pub said_at: i64,
-}
-
-impl Turn {
-  pub fn by_owner(&self) -> bool {
-    self.speaker == Speaker::Owner.name()
-  }
-}
-
-const SUMMARY: &str = r#"
-  SELECT r.id, r.worker, r.commit_sha AS "commit", r.scope, r.path, r.start_line, r.end_line, r.created_at,
-    r.excerpt,
-    COALESCE((SELECT text FROM code_review_talk WHERE review_id = r.id ORDER BY id LIMIT 1), '') AS first,
-    (SELECT count(*) FROM code_review_talk WHERE review_id = r.id) AS turns,
-    COALESCE((SELECT max(said_at) FROM code_review_talk WHERE review_id = r.id), r.created_at) AS last_at,
-    (SELECT group_concat(filed_item, ',') FROM code_review_todos WHERE review_id = r.id) AS filed
-  FROM code_reviews r
-"#;
+const COMMENT: &str = "SELECT id, review_id, path, line, end_line, excerpt, text, author_name, created_at \
+  FROM comments";
 
 fn failed(why: sqlx::Error) -> Refused {
-  Refused::new(axum::http::StatusCode::INTERNAL_SERVER_ERROR, "database", why.to_string())
+  Refused::failed(format!("the store failed: {why}"))
 }
 
-/// Every review of one worker, newest first.
-pub async fn summaries(pool: &SqlitePool, worker: &str) -> Result<Vec<Summary>, Refused> {
-  let rows: Vec<Summary> = sqlx::query_as(&format!("{SUMMARY} WHERE r.worker = ? ORDER BY r.id DESC"))
-    .bind(worker)
-    .fetch_all(pool)
-    .await
-    .map_err(failed)?;
-
-  Ok(rows.into_iter().map(Summary::read).collect())
+#[derive(FromRow)]
+struct ReviewRow {
+  id: i64,
+  project_name: String,
+  revision: String,
+  title: String,
+  state: String,
+  author_name: String,
+  created_at: i64,
+  changed_at: i64,
+  comment_count: i64,
+  item_ids: String,
 }
 
-/// One review as a list shows it, with its excerpt.
-pub async fn summary(pool: &SqlitePool, id: i64) -> Result<Option<Summary>, Refused> {
-  let row: Option<Summary> = sqlx::query_as(&format!("{SUMMARY} WHERE r.id = ?"))
-    .bind(id)
-    .fetch_optional(pool)
-    .await
-    .map_err(failed)?;
-
-  Ok(row.map(Summary::read))
+impl ReviewRow {
+  fn review(self) -> Review {
+    Review {
+      id: self.id,
+      project_name: self.project_name,
+      revision: self.revision,
+      title: self.title,
+      state: ReviewState::parse(&self.state).unwrap_or(ReviewState::Open),
+      author_name: self.author_name,
+      comment_count: u64::try_from(self.comment_count).unwrap_or(0),
+      item_ids: serde_json::from_str(&self.item_ids).unwrap_or_default(),
+      created_at: self.created_at,
+      changed_at: self.changed_at,
+    }
+  }
 }
 
-/// One review as it was written.
+#[derive(FromRow)]
+struct CommentRow {
+  id: i64,
+  review_id: i64,
+  path: Option<String>,
+  line: Option<i64>,
+  end_line: Option<i64>,
+  excerpt: Option<String>,
+  text: String,
+  author_name: String,
+  created_at: i64,
+}
+
+impl CommentRow {
+  fn comment(self) -> Comment {
+    Comment {
+      id: self.id,
+      review_id: self.review_id,
+      path: self.path,
+      line: self.line.and_then(|line| u32::try_from(line).ok()),
+      end_line: self.end_line.and_then(|line| u32::try_from(line).ok()),
+      excerpt: self.excerpt,
+      text: self.text,
+      author_name: self.author_name,
+      created_at: self.created_at,
+    }
+  }
+}
+
+/// One review, where it stands.
 pub async fn review(pool: &SqlitePool, id: i64) -> Result<Option<Review>, Refused> {
-  sqlx::query_as("SELECT * FROM code_reviews WHERE id = ?")
+  let row: Option<ReviewRow> = sqlx::query_as(&format!("{REVIEW} WHERE r.id = ?"))
     .bind(id)
     .fetch_optional(pool)
     .await
-    .map_err(failed)
+    .map_err(failed)?;
+
+  Ok(row.map(ReviewRow::review))
 }
 
-/// Writes a review, answering its number.
-pub async fn make(pool: &SqlitePool, review: &NewReview<'_>) -> Result<i64, Refused> {
+/// One review inside a write, where it stands.
+pub async fn review_in(
+  transaction: &mut Transaction<'static, Sqlite>,
+  id: i64,
+) -> Result<Option<Review>, Refused> {
+  let row: Option<ReviewRow> = sqlx::query_as(&format!("{REVIEW} WHERE r.id = ?"))
+    .bind(id)
+    .fetch_optional(&mut **transaction)
+    .await
+    .map_err(failed)?;
+
+  Ok(row.map(ReviewRow::review))
+}
+
+/// The reviews a query narrows to, newest first, past the cursor: at most `limit`, and one more to tell whether
+/// more stand.
+pub async fn reviews(pool: &SqlitePool, query: &ReviewQuery, limit: usize) -> Result<Vec<Review>, Refused> {
+  let rows: Vec<ReviewRow> = sqlx::query_as(&format!(
+    "{REVIEW} WHERE (?1 IS NULL OR r.project_name = ?1) AND (?2 IS NULL OR r.revision = ?2) \
+     AND (?3 IS NULL OR r.state = ?3) AND (?4 IS NULL OR r.id < ?4) ORDER BY r.id DESC LIMIT ?5"
+  ))
+  .bind(query.project_name.as_deref())
+  .bind(query.revision.as_deref())
+  .bind(query.state.map(ReviewState::as_str))
+  .bind(query.after)
+  .bind(i64::try_from(limit + 1).unwrap_or(i64::MAX))
+  .fetch_all(pool)
+  .await
+  .map_err(failed)?;
+
+  Ok(rows.into_iter().map(ReviewRow::review).collect())
+}
+
+/// A review opened, its id.
+pub async fn open_review(
+  transaction: &mut Transaction<'static, Sqlite>,
+  project_name: &str,
+  revision: &str,
+  title: &str,
+  author_name: &str,
+  at: i64,
+) -> Result<i64, Refused> {
   sqlx::query_scalar(
-    "INSERT INTO code_reviews (worker, root, commit_sha, scope, path, start_line, end_line, excerpt, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    "INSERT INTO reviews (project_name, revision, title, state, author_name, created_at, changed_at) \
+     VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
   )
-  .bind(review.worker)
-  .bind(review.root)
-  .bind(review.commit)
-  .bind(review.scope.name())
-  .bind(review.path)
-  .bind(review.start_line)
-  .bind(review.end_line)
-  .bind(review.excerpt)
-  .bind(review.created_at)
-  .fetch_one(pool)
+  .bind(project_name)
+  .bind(revision)
+  .bind(title)
+  .bind(ReviewState::Open.as_str())
+  .bind(author_name)
+  .bind(at)
+  .bind(at)
+  .fetch_one(&mut **transaction)
   .await
   .map_err(failed)
 }
 
-/// A review's thread, oldest first.
-pub async fn thread(pool: &SqlitePool, id: i64) -> Result<Vec<Turn>, Refused> {
-  sqlx::query_as("SELECT id, speaker, text, said_at FROM code_review_talk WHERE review_id = ? ORDER BY id")
-    .bind(id)
-    .fetch_all(pool)
-    .await
-    .map_err(failed)
-}
-
-/// Writes one line of a review's thread.
-pub async fn say(pool: &SqlitePool, id: i64, speaker: Speaker, text: &str, at: i64) -> Result<(), Refused> {
-  sqlx::query("INSERT INTO code_review_talk (review_id, speaker, text, said_at) VALUES (?, ?, ?, ?)")
-    .bind(id)
-    .bind(speaker.name())
-    .bind(text)
+/// A review's state set, and the time it changed.
+pub async fn set_state(
+  transaction: &mut Transaction<'static, Sqlite>,
+  id: i64,
+  state: ReviewState,
+  at: i64,
+) -> Result<(), Refused> {
+  sqlx::query("UPDATE reviews SET state = ?, changed_at = ? WHERE id = ?")
+    .bind(state.as_str())
     .bind(at)
-    .execute(pool)
-    .await
-    .map(drop)
-    .map_err(failed)
-}
-
-/// Remembers an item filed from a review.
-pub async fn filed(pool: &SqlitePool, id: i64, item: i64) -> Result<(), Refused> {
-  sqlx::query("INSERT INTO code_review_todos (review_id, filed_item) VALUES (?, ?)")
     .bind(id)
-    .bind(item)
-    .execute(pool)
+    .execute(&mut **transaction)
     .await
-    .map(drop)
+    .map_err(failed)?;
+
+  Ok(())
+}
+
+/// The author of a review's last comment, where it has one.
+pub async fn last_commenter(
+  transaction: &mut Transaction<'static, Sqlite>,
+  id: i64,
+) -> Result<Option<String>, Refused> {
+  sqlx::query_scalar("SELECT author_name FROM comments WHERE review_id = ? ORDER BY id DESC LIMIT 1")
+    .bind(id)
+    .fetch_optional(&mut **transaction)
+    .await
     .map_err(failed)
 }
 
-/// Now, in Unix seconds.
-pub fn now() -> i64 {
-  std::time::SystemTime::now()
-    .duration_since(std::time::UNIX_EPOCH)
-    .map_or(0, |since| since.as_secs() as i64)
+/// A review's comments, oldest first, past the cursor: at most `limit`, and one more to tell whether more stand.
+pub async fn comments(
+  pool: &SqlitePool,
+  review_id: i64,
+  query: &CommentQuery,
+  limit: usize,
+) -> Result<Vec<Comment>, Refused> {
+  let rows: Vec<CommentRow> = sqlx::query_as(&format!(
+    "{COMMENT} WHERE review_id = ?1 AND (?2 IS NULL OR id > ?2) ORDER BY id LIMIT ?3"
+  ))
+  .bind(review_id)
+  .bind(query.after)
+  .bind(i64::try_from(limit + 1).unwrap_or(i64::MAX))
+  .fetch_all(pool)
+  .await
+  .map_err(failed)?;
+
+  Ok(rows.into_iter().map(CommentRow::comment).collect())
+}
+
+/// A comment as it is written.
+pub struct Written<'a> {
+  pub review_id: i64,
+  pub path: Option<&'a str>,
+  pub line: Option<u32>,
+  pub end_line: Option<u32>,
+  pub excerpt: Option<&'a str>,
+  pub text: &'a str,
+  pub author_name: &'a str,
+  pub at: i64,
+}
+
+/// A comment written, as it now stands.
+pub async fn write_comment(
+  transaction: &mut Transaction<'static, Sqlite>,
+  written: &Written<'_>,
+) -> Result<Comment, Refused> {
+  let row: CommentRow = sqlx::query_as(
+    "INSERT INTO comments (review_id, path, line, end_line, excerpt, text, author_name, created_at) \
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?) \
+     RETURNING id, review_id, path, line, end_line, excerpt, text, author_name, created_at",
+  )
+  .bind(written.review_id)
+  .bind(written.path)
+  .bind(written.line)
+  .bind(written.end_line)
+  .bind(written.excerpt)
+  .bind(written.text)
+  .bind(written.author_name)
+  .bind(written.at)
+  .fetch_one(&mut **transaction)
+  .await
+  .map_err(failed)?;
+
+  Ok(row.comment())
+}
+
+/// An item filed from a review remembered, as it now stands.
+pub async fn write_filing(
+  transaction: &mut Transaction<'static, Sqlite>,
+  review_id: i64,
+  item_id: i64,
+  at: i64,
+) -> Result<Filing, Refused> {
+  let id: i64 = sqlx::query_scalar(
+    "INSERT INTO filings (review_id, item_id, created_at) VALUES (?, ?, ?) RETURNING id",
+  )
+  .bind(review_id)
+  .bind(item_id)
+  .bind(at)
+  .fetch_one(&mut **transaction)
+  .await
+  .map_err(failed)?;
+
+  sqlx::query("UPDATE reviews SET changed_at = ? WHERE id = ?")
+    .bind(at)
+    .bind(review_id)
+    .execute(&mut **transaction)
+    .await
+    .map_err(failed)?;
+
+  Ok(Filing {
+    id,
+    review_id,
+    item_id,
+    created_at: at,
+  })
+}
+
+/// A write begun on the store.
+pub async fn begin(pool: &SqlitePool) -> Result<Transaction<'static, Sqlite>, Refused> {
+  pool.begin().await.map_err(failed)
+}
+
+/// A write committed.
+pub async fn commit(transaction: Transaction<'static, Sqlite>) -> Result<(), Refused> {
+  transaction.commit().await.map_err(failed)
 }

@@ -1,6 +1,6 @@
 <template>
-  <!-- The explorer: which worker, a search over the commit shown, and that commit's tree. Under the
-       tree stands the folder chosen and what can be done with it, since a row of the tree is a
+  <!-- The explorer: which project, a search over the revision shown, and that revision's tree. Under
+       the tree stands the folder chosen and what can be done with it, since a row of the tree is a
        button of its own and cannot hold another. -->
   <div class="flex min-h-0 flex-col gap-2 pt-3">
     <USelectMenu :content="{ align: 'start' }"
@@ -10,8 +10,8 @@
       :search-input="false"
       size="sm"
       icon="i-material-symbols-folder-data-outline"
-      :placeholder="$t('code.aria.choose_worker')"
-      :aria-label="$t('code.aria.choose_worker')"
+      :placeholder="$t('code.aria.choose_project')"
+      :aria-label="$t('code.aria.choose_project')"
       class="mx-3 w-auto"
       @update:model-value="(value: unknown) => typeof value === 'string' && emit('project', value)"
     >
@@ -24,7 +24,7 @@
     </USelectMenu>
 
     <p v-if="current !== null && current.state !== 'ready'" class="px-3 text-sm text-muted" role="status">
-      {{ current.label }} — {{ stateText(current.state) }}
+      {{ current.name }} · {{ stateText(current.state) }}
     </p>
 
     <template v-else>
@@ -72,9 +72,9 @@
         <template v-if="mode === 'content' && query.trim() !== ''">
           <p v-if="searchFailure !== ''" class="px-3 text-sm text-error" role="alert">{{ searchFailure }}</p>
           <p v-else-if="found !== null" class="px-3 text-sm tabular-nums text-muted" role="status">
-            <template v-if="found.matches.length === 0">{{ $t("code.status.no_lines_found") }}</template>
+            <template v-if="found.items.length === 0">{{ $t("code.status.no_lines_found") }}</template>
             <template v-else>
-              {{ $t("code.status.content_hits", { files: countText(foundGroups.length), lines: countText(found.matches.length) }) }}<template v-if="found.cut"> · {{ $t("code.status.partial") }}</template>
+              {{ $t("code.status.content_hits", { files: countText(foundGroups.length), lines: countText(found.items.length) }) }}<template v-if="found.more"> · {{ $t("code.status.partial") }}</template>
             </template>
           </p>
 
@@ -123,20 +123,20 @@
             <template #item-label="{ item }">
               <span class="flex min-w-0 items-center gap-2">
                 <span class="truncate" :class="(item as CodeTreeItem).entry.kind === 'file' ? '' : 'font-medium'" :title="(item as CodeTreeItem).entry.path">{{ (item as CodeTreeItem).label }}</span>
-                <span v-if="(item as CodeTreeItem).entry.kind === 'submodule'" class="shrink-0 text-sm text-muted">{{ $t("code.label.submodule", { commit: shortSha((item as CodeTreeItem).entry.pinned ?? "") }) }}</span>
+                <span v-if="(item as CodeTreeItem).entry.kind === 'submodule'" class="shrink-0 text-sm text-muted">{{ $t("code.label.submodule", { revision: shortSha((item as CodeTreeItem).entry.pinnedRevision ?? "") }) }}</span>
                 <span v-else-if="(item as CodeTreeItem).entry.kind === 'link'" class="shrink-0 text-sm text-muted">{{ $t("code.shared.label.link") }}</span>
               </span>
             </template>
 
             <template #item-trailing="{ item, expanded: open }">
               <UBadge
-                v-if="(item as CodeTreeItem).reviews > 0"
+                v-if="(item as CodeTreeItem).comments > 0"
                 size="sm"
                 color="neutral"
                 variant="subtle"
                 icon="i-material-symbols-chat-outline"
-                :label="String((item as CodeTreeItem).reviews)"
-                :aria-label="$t('code.aria.review_count', { n: (item as CodeTreeItem).reviews })"
+                :label="String((item as CodeTreeItem).comments)"
+                :aria-label="$t('code.aria.comment_count', { n: (item as CodeTreeItem).comments })"
               />
               <UIcon
                 v-if="(item as CodeTreeItem).children?.length"
@@ -151,7 +151,7 @@
         <div v-if="props.folder !== null" class="flex items-center gap-2 border-t border-default p-3">
           <UIcon name="i-material-symbols-folder-outline" class="size-4 shrink-0 text-muted" />
           <span class="min-w-0 flex-1 truncate font-mono text-sm text-highlighted">{{ props.folder === "" ? $t("code.label.whole_repository") : props.folder }}</span>
-          <UButton size="sm" color="neutral" variant="subtle" icon="i-material-symbols-add-comment-outline" :label="$t('code.label.review_folder')" @click="emit('review-folder', props.folder)" />
+          <UButton size="sm" color="neutral" variant="subtle" icon="i-material-symbols-add-comment-outline" :label="$t('code.label.comment_folder')" @click="emit('comment-folder', props.folder)" />
         </div>
       </template>
     </template>
@@ -159,25 +159,27 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
 import { CODE_VIEW } from "../../shared/config";
 import { codeTree, foldersAbove, ROOT_VALUE, searchNames, shortSha } from "../domain/code";
 import { folderIcon } from "bmo-ui/app/domain/file-icons";
 import { countText } from "bmo-ui/app/domain/numbers";
 import { refusalText } from "../domain/refusals";
+import { findMatches } from "../domain/review";
 
 import type { CodeTreeItem } from "../domain/code";
-import type { CodeCheckoutState, CodeProject, CodeSearch, CodeTree } from "../../shared/types";
+import type { Match, Project, ProjectState, RevisionTree } from "../../shared/types";
 
-// The code review's explorer (docs/screen.md). The tree is made of the commit's
-// entries the screen already holds, and a name search runs over them in the browser; a content
-// search asks the server, which searches the commit itself.
+// The code review's explorer (docs/screen.md). The tree is made of the revision's entries the screen already
+// holds, and a name search runs over them in the browser; a content search asks the service, which searches the
+// revision itself.
 
 interface Props {
-  projects: CodeProject[];
+  projects: Project[];
   project: string | null;
-  tree: CodeTree | null;
+  tree: RevisionTree | null;
   failure: string;
-  // How many reviews of the commit shown stand on each row.
+  // How many comments at the revision shown stand on each row.
   counts: Map<string, number>;
   // The file open and the folder chosen.
   file: string | null;
@@ -190,7 +192,7 @@ const emit = defineEmits<{
   project: [name: string];
   open: [target: { path: string; line: number | null }];
   folder: [path: string];
-  "review-folder": [path: string];
+  "comment-folder": [path: string];
   retry: [];
 }>();
 
@@ -203,7 +205,7 @@ const MODES = [
 
 const query = ref("");
 const mode = ref<"name" | "content">("name");
-const found = ref<CodeSearch | null>(null);
+const found = ref<{ items: Match[]; more: boolean } | null>(null);
 const searching = ref(false);
 const searchFailure = ref("");
 const expanded = ref<string[]>([ROOT_VALUE]);
@@ -212,7 +214,7 @@ let waiting: ReturnType<typeof setTimeout> | null = null;
 
 const current = computed(() => props.projects.find((one) => one.name === props.project) ?? null);
 
-function stateText(state: CodeCheckoutState): string {
+function stateText(state: ProjectState): string {
   switch (state) {
     case "missing":
       return t("code.status.no_path");
@@ -227,9 +229,9 @@ function stateText(state: CodeCheckoutState): string {
 
 const projectItems = computed(() =>
   props.projects.map((one) => ({
-    label: one.label,
+    label: one.name,
     value: one.name,
-    note: one.state === "ready" ? `${one.name} · ${one.branch ?? t("code.label.no_branch")}` : `${one.name} · ${stateText(one.state)}`,
+    note: one.state === "ready" ? (one.branch ?? t("code.label.no_branch")) : stateText(one.state),
     icon: one.state === "ready" ? "i-material-symbols-folder-data-outline" : "i-material-symbols-folder-off-outline"
   }))
 );
@@ -241,13 +243,13 @@ const named = computed(() =>
 const items = computed(() =>
   props.tree === null
     ? []
-    : codeTree(props.tree.entries, props.counts, named.value === null ? null : new Set(named.value.map((entry) => entry.path)), current.value?.label ?? t("code.label.repository"))
+    : codeTree(props.tree.entries, props.counts, named.value === null ? null : new Set(named.value.map((entry) => entry.path)), current.value?.name ?? t("code.label.repository"))
 );
 
 const foundGroups = computed(() => {
-  const groups = new Map<string, CodeSearch["matches"]>();
+  const groups = new Map<string, Match[]>();
 
-  for (const match of found.value?.matches ?? []) {
+  for (const match of found.value?.items ?? []) {
     groups.set(match.path, [...(groups.get(match.path) ?? []), match]);
   }
 
@@ -288,9 +290,9 @@ function onSelect(event: { preventDefault: () => void }, item: CodeTreeItem): vo
 
 async function searchContent(words: string): Promise<void> {
   const project = props.project;
-  const commit = props.tree?.commit.commit;
+  const revision = props.tree?.revision;
 
-  if (project === null || commit === undefined) {
+  if (project === null || revision === undefined) {
     return;
   }
 
@@ -300,7 +302,7 @@ async function searchContent(words: string): Promise<void> {
   searchFailure.value = "";
 
   try {
-    const answer = await $fetch<CodeSearch>("/api/code/search", { query: { project, commit, q: words } });
+    const answer = await findMatches(project, { q: words, revision });
 
     if (mine === asked) {
       found.value = answer;
@@ -317,8 +319,8 @@ async function searchContent(words: string): Promise<void> {
   }
 }
 
-// A content search reads the whole commit on the server, so it waits for typing to stop.
-watch([query, mode, () => props.tree?.commit.commit], ([words, how]) => {
+// A content search reads the whole revision on the service, so it waits for typing to stop.
+watch([query, mode, () => props.tree?.revision], ([words, how]) => {
   if (waiting !== null) {
     clearTimeout(waiting);
   }
@@ -343,7 +345,7 @@ watch(named, (kept) => {
       : [ROOT_VALUE, ...kept.flatMap((entry) => foldersAbove(entry.path))];
 });
 
-// A file opened from anywhere — the address, a search, a review — is unfolded to in the tree.
+// A file opened from anywhere (the address, a search, a comment) is unfolded to in the tree.
 watch(
   () => props.file,
   (file) => {

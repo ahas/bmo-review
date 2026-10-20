@@ -1,48 +1,49 @@
 [
   {
-    "id": "calls/job-workers",
-    "title": "bmo-job worker catalogue",
-    "what": "The calls on bmo-job: its worker list and one worker, which the checkouts are read from, and the filing of an item, held in src/clients/job.rs.",
+    "id": "calls/graph-projects",
+    "title": "bmo-graph projects",
+    "what": "The projects and their checkouts read from the graph service, GET /projects and GET /projects/{projectName}, through its published client, in src/review/projects.rs.",
     "files": [
-      "src/clients/job.rs",
-      "src/clients/mod.rs",
+      "src/review/projects.rs",
+      "Cargo.toml",
       "docs/api.md"
     ],
     "symbols": [
-      "Job",
-      "Worker",
-      "Filing",
-      "FilingPart"
+      "Checkout",
+      "find",
+      "require",
+      "revision",
+      "require_revision"
     ],
     "aliases": [],
     "needs": [],
-    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd",
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468493865,
     "boundary": {
       "side": "calls",
-      "repository": "bmo-job",
+      "repository": "bmo-graph",
       "api": "api/http"
     }
   },
   {
-    "id": "calls/receiver-talks",
-    "title": "Receiver talks",
-    "what": "The call on the receiver's POST /talks with a code-review topic, the talk under a review, held in src/clients/receiver.rs.",
+    "id": "calls/job-items",
+    "title": "bmo-job items",
+    "what": "The filing of an item into the job service, POST /items, made through its published client bmo-job-client from the filing route under src/review/filing.rs.",
     "files": [
-      "src/clients/receiver.rs",
+      "src/review/filing.rs",
+      "Cargo.toml",
       "docs/api.md"
     ],
     "symbols": [
-      "Receiver",
-      "Talk",
-      "Topic",
-      "Failure"
+      "FileItem"
     ],
     "aliases": [],
     "needs": [],
-    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd",
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468493858,
     "boundary": {
       "side": "calls",
-      "repository": "bmo-receiver",
+      "repository": "bmo-job",
       "api": "api/http"
     }
   }

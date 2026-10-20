@@ -1,22 +1,21 @@
 <template>
-  <!-- The review part: the reviews of what is open, or one review's thread. -->
+  <!-- The review part: the project's reviews, or one review and its comments. -->
   <div class="flex min-h-0 flex-col gap-2 pt-3">
     <template v-if="props.openId === null">
       <div class="flex items-center gap-2 px-3">
         <p class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted">{{ $t("code.title.reviews") }}</p>
         <UButton
-          v-if="props.place !== null && props.commit !== null"
+          v-if="props.revision !== null"
           size="sm"
           color="neutral"
           variant="subtle"
-          icon="i-material-symbols-add-comment-outline"
-          :label="props.place.kind === 'folder' ? $t('code.label.review_folder') : $t('code.label.review_file')"
-          @click="emit('new', props.place)"
+          icon="i-material-symbols-rate-review-outline"
+          :label="$t('code.action.open_review')"
+          @click="emit('new')"
         />
       </div>
 
-      <p v-if="props.place === null" class="px-3 text-sm text-muted">{{ $t("code.message.choose_path") }}</p>
-      <p v-else-if="props.failure !== ''" class="px-3 text-sm text-error" role="alert">{{ props.failure }}</p>
+      <p v-if="props.failure !== ''" class="px-3 text-sm text-error" role="alert">{{ props.failure }}</p>
       <ContentSkeleton v-else-if="props.loading && props.reviews.length === 0" class="px-3" :rows="4" listClass="flex flex-col gap-1" :label="$t('code.status.reviews_loading')">
         <div class="flex h-5 items-center gap-2 py-1">
           <SkeletonBar class="h-4 w-16" />
@@ -28,8 +27,8 @@
         <p v-if="groups.here.length === 0 && groups.elsewhere.length === 0" class="px-3 text-sm text-muted">{{ $t("code.status.no_reviews") }}</p>
 
         <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3 pb-3">
-          <section v-if="groups.here.length > 0" :aria-label="$t('code.aria.reviews_of_commit')">
-            <p class="mb-1 text-sm text-muted">{{ $t("code.label.this_commit") }} · <span class="font-mono">{{ shortSha(props.commit ?? "") }}</span></p>
+          <section v-if="groups.here.length > 0" :aria-label="$t('code.aria.reviews_of_revision')">
+            <p class="mb-1 text-sm text-muted">{{ $t("code.label.this_revision") }} · <span class="font-mono">{{ shortSha(props.revision ?? "") }}</span></p>
             <ul class="flex flex-col gap-1">
               <li v-for="review in groups.here" :key="review.id">
                 <CodeReviewRow :review="review" @open="emit('open', review.id)" />
@@ -37,8 +36,8 @@
             </ul>
           </section>
 
-          <section v-for="group in groups.elsewhere" :key="group.commit" :aria-label="$t('code.aria.reviews_of', { commit: shortSha(group.commit) })">
-            <p class="mb-1 text-sm text-muted">{{ $t("code.label.other_commit") }} · <span class="font-mono">{{ shortSha(group.commit) }}</span></p>
+          <section v-for="group in groups.elsewhere" :key="group.revision" :aria-label="$t('code.aria.reviews_of', { revision: shortSha(group.revision) })">
+            <p class="mb-1 text-sm text-muted">{{ $t("code.label.other_revision") }} · <span class="font-mono">{{ shortSha(group.revision) }}</span></p>
             <ul class="flex flex-col gap-1">
               <li v-for="review in group.reviews" :key="review.id">
                 <CodeReviewRow :review="review" @open="emit('go', review)" />
@@ -55,184 +54,218 @@
           <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('code.action.back_to_reviews')" @click="emit('close')" />
         </UTooltip>
         <button
-          v-if="thread !== null"
+          v-if="review !== null"
           type="button"
           class="flex min-h-9 min-w-0 flex-1 flex-col rounded-sm px-1 text-start transition-colors hover:bg-elevated active:bg-accented focus-inset"
-          :title="$t('code.action.view_in_code', { place: reviewPlace($t, thread.review) })"
-          @click="emit('go', thread.review)"
+          :title="$t('code.action.view_revision', { revision: shortSha(review.revision) })"
+          @click="emit('go', review)"
         >
-          <span class="truncate font-mono text-sm text-highlighted">{{ reviewPlace($t, thread.review) }}</span>
-          <span class="truncate text-sm text-muted">
-            {{ $t("code.label.review_head", { scope: $t(SCOPE_LABELS[thread.review.scope]), id: thread.review.id }) }} <span class="font-mono">{{ shortSha(thread.review.commit) }}</span>
+          <span class="truncate text-sm font-medium text-highlighted">{{ review.title }}</span>
+          <span class="flex min-w-0 items-center gap-1 text-sm text-muted">
+            <UBadge size="sm" :color="STATE_COLORS[review.state]" variant="subtle" :label="$t(STATE_LABELS[review.state])" />
+            <span class="truncate">{{ review.authorName }} · <span class="font-mono">{{ shortSha(review.revision) }}</span></span>
           </span>
         </button>
       </div>
 
-      <div v-if="thread !== null" class="flex flex-wrap items-center gap-1 px-3 text-sm text-muted">
-        <template v-if="thread.review.todoIds.length > 0">
+      <div v-if="review !== null" class="flex flex-wrap items-center gap-1 px-3 text-sm text-muted">
+        <template v-if="review.itemIds.length > 0">
           {{ $t("code.label.filed_items") }}
-          <ItemTip v-for="id in thread.review.todoIds" :id="id" :key="id" press>
+          <span v-for="id in review.itemIds" :key="id" class="font-mono text-highlighted tabular-nums">#{{ id }}</span>
+        </template>
+        <span class="ms-auto flex items-center gap-1">
+          <UTooltip :text="stateAction">
             <UButton
               size="sm"
               color="neutral"
-              variant="subtle"
-              :label="`#${id}`"
-              :aria-label="$t('code.aria.open_todo', { id })"
-              @click="openTodo(id)"
+              variant="ghost"
+              square
+              :icon="review.state === 'closed' ? 'i-material-symbols-lock-open-outline' : 'i-material-symbols-check-circle-outline'"
+              :aria-label="stateAction"
+              :loading="changing"
+              @click="toggleState"
             />
-          </ItemTip>
-        </template>
-        <UButton
-          size="sm"
-          color="neutral"
-          variant="subtle"
-          icon="i-material-symbols-playlist-add"
-          :label="$t('code.action.file_todo')"
-          class="ms-auto"
-          :disabled="thread.answering"
-          @click="filing = true"
-        />
-        <p v-if="thread.answering" class="w-full text-end">{{ $t("code.status.file_after_answer") }}</p>
+          </UTooltip>
+          <UTooltip :text="$t('code.action.file_item')">
+            <UButton size="sm" color="neutral" variant="ghost" square icon="i-material-symbols-playlist-add" :aria-label="$t('code.action.file_item')" @click="filing = true" />
+          </UTooltip>
+        </span>
       </div>
+      <p v-if="changeFailure !== ''" class="px-3 text-sm text-error" role="alert">{{ changeFailure }}</p>
 
-      <ContentSkeleton v-if="thread === null && threadFailure === ''" class="px-3" :rows="4" listClass="flex flex-col gap-3" :label="$t('code.status.reviews_loading')">
+      <ContentSkeleton v-if="review === null && readFailure === ''" class="px-3" :rows="4" listClass="flex flex-col gap-3" :label="$t('code.status.reviews_loading')">
         <div class="flex flex-col gap-1">
           <SkeletonLine width="w-16" />
           <SkeletonText :lines="2" size="sm" lastWidth="w-2/3" />
         </div>
       </ContentSkeleton>
-      <div v-else-if="threadFailure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
-        <p class="text-sm text-error">{{ threadFailure }}</p>
+      <div v-else-if="readFailure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
+        <p class="text-sm text-error">{{ readFailure }}</p>
         <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" @click="load" />
       </div>
 
-      <template v-if="thread !== null">
-        <div v-if="!thread.readable" class="mx-3 flex flex-col gap-1 rounded-md bg-elevated p-2">
-          <p class="text-sm text-warning">{{ $t("code.status.excerpt_only") }}</p>
-          <pre v-if="thread.review.excerpt !== null" class="overflow-x-auto font-mono text-sm whitespace-pre text-default">{{ thread.review.excerpt }}</pre>
-        </div>
+      <template v-if="review !== null">
+        <p v-if="comments.length === 0" class="px-3 text-sm text-muted">{{ $t("code.status.no_comments") }}</p>
 
-        <ol ref="list" class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3" :aria-label="$t('code.aria.review_thread')">
-          <li v-for="turn in thread.turns" :key="turn.id" class="flex flex-col gap-1">
-            <p class="text-sm">
-              <span class="font-medium" :class="turn.speaker === 'owner' ? 'text-highlighted' : 'text-muted'">{{ turn.speaker === "owner" ? $t("code.shared.label.speaker_owner", names) : $t("code.shared.label.speaker_agent", names) }}</span>
-              <span class="text-muted"> · {{ timeText(turn.saidAt) }}</span>
+        <ol ref="list" class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3" :aria-label="$t('code.aria.review_comments')">
+          <li v-for="comment in comments" :key="comment.id" class="flex flex-col gap-1">
+            <p class="flex min-w-0 flex-wrap items-baseline gap-x-1 text-sm">
+              <span class="font-medium text-highlighted">{{ comment.authorName }}</span>
+              <span class="text-muted">· {{ timeText(comment.createdAt) }}</span>
+              <button
+                v-if="placeKind(comment) !== 'whole'"
+                type="button"
+                class="min-w-0 truncate rounded-sm px-1 font-mono text-toned transition-colors hover:bg-elevated active:bg-accented focus-inset"
+                :title="$t('code.action.view_in_code', { place: placeOf(comment) })"
+                @click="emit('go-comment', review, comment)"
+              >
+                {{ placeOf(comment) }}
+              </button>
             </p>
-            <MarkdownText :text="turn.text" class="text-sm text-highlighted" />
+            <pre
+              v-if="comment.excerpt != null && review.revision !== props.revision"
+              class="overflow-x-auto rounded-md bg-elevated p-2 font-mono text-sm whitespace-pre text-default"
+            >{{ comment.excerpt }}</pre>
+            <p class="text-sm break-words whitespace-pre-wrap text-highlighted">{{ comment.text }}</p>
           </li>
         </ol>
 
-        <p v-if="thread.answering" class="px-3 text-sm text-muted" role="status">{{ $t("code.shared.status.agent_answering", names) }}</p>
-        <p v-else-if="thread.failure !== null" class="px-3 text-sm text-warning" role="status">{{ $t(`code.error.${thread.failure}`) }}</p>
         <p v-if="sendFailure !== ''" class="px-3 text-sm text-error" role="alert">{{ sendFailure }}</p>
 
         <form class="flex flex-col gap-2 border-t border-default p-3" @submit.prevent="send">
+          <UInput
+            v-model="author"
+            size="sm"
+            icon="i-material-symbols-person-outline"
+            :maxlength="AUTHOR_LIMIT"
+            :placeholder="$t('code.placeholder.author')"
+            :aria-label="$t('code.placeholder.author')"
+          />
           <UTextarea
             v-model="text"
             :rows="2"
             size="sm"
             autoresize
             :maxrows="8"
-            :maxlength="TALK_LIMIT"
-            :disabled="thread.answering"
-            :placeholder="$t('code.placeholder.talk', names)"
-            :aria-label="$t('code.aria.talk', names)"
+            :maxlength="COMMENT_LIMIT"
+            :placeholder="$t('code.placeholder.comment_whole')"
+            :aria-label="$t('code.placeholder.comment_whole')"
             @keydown.meta.enter.prevent="send"
             @keydown.ctrl.enter.prevent="send"
           />
-          <UButton type="submit" size="sm" class="self-end" icon="i-material-symbols-send-outline" :label="$t('code.shared.action.send')" :disabled="text.trim() === '' || thread.answering" :loading="sending" />
+          <UButton
+            type="submit"
+            size="sm"
+            class="self-end"
+            icon="i-material-symbols-send-outline"
+            :label="$t('code.shared.action.send')"
+            :disabled="text.trim() === '' || author.trim() === ''"
+            :loading="sending"
+          />
         </form>
 
-        <CodeReviewTodo
-          v-model:open="filing"
-          :review="thread.review"
-          :turns="thread.turns"
-          :worker-label="props.workerLabel"
-          :answering="thread.answering"
-          @filed="onFiled"
-        />
+        <CodeReviewFiling v-model:open="filing" :review="review" :comments="comments" :folders="review.revision === props.revision ? props.folders : null" @filed="onFiled" />
       </template>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { TALK_LIMIT } from "../../shared/config";
-import { reviewGroups, reviewPlace, SCOPE_LABELS, shortSha } from "../domain/code";
-import { useNames } from "../domain/names";
+import { useI18n } from "vue-i18n";
+import { AUTHOR_LIMIT, COMMENT_LIMIT } from "../../shared/config";
+import { placeKind as kindOf, placeText, reviewGroups, shortSha, STATE_COLORS, STATE_LABELS } from "../domain/code";
+import { useAuthorName } from "../domain/kept";
 import { refusalText } from "../domain/refusals";
+import { changeReview, listComments, readReview, writeComment } from "../domain/review";
 import { useReviewRefresh } from "../domain/events";
 
-import type { CodeReviewSummary, CodeReviewThread } from "../../shared/types";
+import type { ShownKind } from "../domain/code";
+import type { Comment, Review } from "../../shared/types";
 
-// The review part of the code review (docs/screen.md). The list is sorted out of
-// the worker's reviews the screen already holds; a thread is read on its own and kept up by the
-// news that it moved, the way the TODO panel keeps an item's talk.
+// The review part of the code review (docs/screen.md). The list is sorted out of the project's reviews the
+// screen already holds; one review and its comments are read on their own and kept up by the service's events.
 
 interface Props {
-  reviews: CodeReviewSummary[];
+  reviews: Review[];
   loading: boolean;
   failure: string;
-  place: { kind: "file" | "folder"; path: string } | null;
-  commit: string | null;
+  // The revision shown, and its folders, which tell a folder comment from a file comment.
+  revision: string | null;
+  folders: ReadonlySet<string> | null;
   openId: number | null;
-  workerLabel: string;
 }
 
 const { t } = useI18n();
+const toast = useToast();
 const props = defineProps<Props>();
-// The owner's and the agent's names the thread's words are filled with.
-const names = useNames();
 const emit = defineEmits<{
   open: [id: number];
   close: [];
-  go: [review: CodeReviewSummary];
-  new: [place: { kind: "file" | "folder"; path: string }];
-  filed: [id: number];
+  // A review moved to: the screen goes to its revision.
+  go: [review: Review];
+  // A comment's place gone to: the screen goes to its revision, file and line.
+  "go-comment": [review: Review, comment: Comment];
+  // A new review asked for, by a comment on the whole of it.
+  new: [];
+  // The open review changed here: a comment, a state, an item filed.
+  changed: [];
 }>();
 
-const route = useRoute();
-const router = useRouter();
-
-const thread = ref<CodeReviewThread | null>(null);
-const threadFailure = ref("");
+const review = ref<Review | null>(null);
+const comments = ref<Comment[]>([]);
+const readFailure = ref("");
 const text = ref("");
+const author = useAuthorName();
 const sending = ref(false);
 const sendFailure = ref("");
+const changing = ref(false);
+const changeFailure = ref("");
 const filing = ref(false);
 const list = useTemplateRef<HTMLElement>("list");
 let asked = 0;
 
-const groups = computed(() => (props.place === null ? { here: [], elsewhere: [] } : reviewGroups(props.reviews, props.place, props.commit)));
+const groups = computed(() => reviewGroups(props.reviews, props.revision));
+const stateAction = computed(() => (review.value?.state === "closed" ? t("code.action.reopen_review") : t("code.action.close_review")));
 
 const clock = new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
-function timeText(seconds: number): string {
-  return clock.format(new Date(seconds * 1000));
+function timeText(at: number): string {
+  return clock.format(new Date(at));
+}
+
+// A comment's place, its folder told from a file by the revision's tree where the review is of the one shown.
+function placeKind(comment: Comment): ShownKind {
+  return kindOf(comment, review.value?.revision === props.revision ? props.folders : null);
+}
+
+function placeOf(comment: Comment): string {
+  return placeText(t, comment, placeKind(comment));
 }
 
 async function load(): Promise<void> {
   const id = props.openId;
 
   if (id === null) {
-    thread.value = null;
+    review.value = null;
+    comments.value = [];
 
     return;
   }
 
   const mine = ++asked;
 
-  threadFailure.value = "";
+  readFailure.value = "";
 
   try {
-    const answer = await $fetch<CodeReviewThread>(`/api/code/reviews/${id}`);
+    const [read, written] = await Promise.all([readReview(id), listComments(id)]);
 
     if (mine === asked) {
-      thread.value = answer;
+      review.value = read;
+      comments.value = written;
     }
   } catch (error) {
     if (mine === asked) {
-      threadFailure.value = refusalText(t, error, t("code.error.review_read_failed"));
+      readFailure.value = refusalText(t, error, t("code.error.review_read_failed"));
     }
   }
 }
@@ -241,7 +274,7 @@ async function send(): Promise<void> {
   const said = text.value.trim();
   const id = props.openId;
 
-  if (said === "" || id === null || sending.value || thread.value?.answering === true) {
+  if (said === "" || author.value.trim() === "" || id === null || sending.value) {
     return;
   }
 
@@ -249,42 +282,61 @@ async function send(): Promise<void> {
   sendFailure.value = "";
 
   try {
-    await $fetch(`/api/code/reviews/${id}/talk`, { method: "POST", body: { text: said } });
+    await writeComment(id, { path: null, line: null, endLine: null, text: said, authorName: author.value.trim() });
     text.value = "";
     await load();
+    emit("changed");
   } catch (error) {
-    // Words the bot refused were not written down, so they stay in the box to send again.
-    sendFailure.value = refusalText(t, error, t("code.shared.error.send_failed"));
+    // Words the service refused were not written down, so they stay in the box to send again.
+    sendFailure.value = refusalText(t, error, t("code.error.comment_post_failed"));
   } finally {
     sending.value = false;
   }
 }
 
-// The address opens the item, in the drawer where the panel is one.
-function openTodo(id: number): void {
-  void router.replace({ query: { ...route.query, todo: String(id) } });
+async function toggleState(): Promise<void> {
+  const current = review.value;
+
+  if (current === null || changing.value) {
+    return;
+  }
+
+  changing.value = true;
+  changeFailure.value = "";
+
+  try {
+    review.value = await changeReview(current.id, current.state === "closed" ? "open" : "closed");
+    emit("changed");
+  } catch (error) {
+    changeFailure.value = refusalText(t, error, t("code.error.review_change_failed"));
+  } finally {
+    changing.value = false;
+  }
 }
 
-async function onFiled(id: number): Promise<void> {
-  emit("filed", id);
+async function onFiled(itemId: number): Promise<void> {
+  toast.add({ title: t("code.message.item_filed", { id: itemId }), icon: "i-material-symbols-playlist-add-check" });
   await load();
+  emit("changed");
 }
 
 watch(
   () => props.openId,
   () => {
-    thread.value = null;
+    review.value = null;
+    comments.value = [];
     text.value = "";
     sendFailure.value = "";
+    changeFailure.value = "";
     filing.value = false;
     void load();
   },
   { immediate: true }
 );
 
-// The newest turn is the one waited for, so the thread goes to its foot when it grows.
+// The newest comment is the one last written, so the list goes to its foot when it grows.
 watch(
-  () => thread.value?.turns.length,
+  () => comments.value.length,
   async () => {
     await nextTick();
 
@@ -295,7 +347,7 @@ watch(
 );
 
 useReviewRefresh(() => void load(), {
-  on: ["code-review-talk", "code-review"],
-  where: (event) => (event.type === "code-review-talk" || event.type === "code-review") && event.review === props.openId
+  on: ["review.changed", "comment.created", "filing.created"],
+  where: (event) => event.reviewId === props.openId
 });
 </script>

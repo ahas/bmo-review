@@ -1,12 +1,13 @@
 [
   {
     "id": "api/bundle",
-    "title": "Console bundle API",
-    "what": "The bmo-review-client layer a console extends: its manifest, its Nuxt configuration with its own Korean pack, and what it owes its host and asks of it.",
+    "title": "Console bundle",
+    "what": "The bmo-review-client console bundle by the bmo-ui 0.1.0-rev.2 plugin contract: its declaration, its manifest and Nuxt configuration, and its Korean pack folder.",
     "files": [
       "client/package.json",
       "client/nuxt.config.ts",
-      "client/host/host.d.ts",
+      "client/console-bundle.json",
+      "client/i18n/ko.json",
       "README.md",
       "docs/api.md"
     ],
@@ -15,7 +16,30 @@
     "needs": [
       "console/screen"
     ],
-    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd",
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468493900,
+    "boundary": {
+      "side": "exposes"
+    }
+  },
+  {
+    "id": "api/client",
+    "title": "Service client",
+    "what": "The service own Rust client, one method for each route over the bodies of src/wire.rs, with a failure read back as its status, code and sentence, in src/client.rs.",
+    "files": [
+      "src/client.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "ReviewClient",
+      "ClientFailure"
+    ],
+    "aliases": [],
+    "needs": [
+      "api/http"
+    ],
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468493891,
     "boundary": {
       "side": "exposes"
     }
@@ -23,23 +47,66 @@
   {
     "id": "api/http",
     "title": "HTTP API",
-    "what": "The service's routes behind its token: the checkout reading, the reviews, their talk and filing, the names, the event stream and health, with their refusal codes, as docs/api.md states them.",
+    "what": "The service routes behind its token: projects read at a revision, reviews, comments, filings, the event stream and health, their bodies in src/wire.rs and the OpenAPI document generated from them, as docs/api.md states them.",
     "files": [
+      "src/wire.rs",
+      "src/openapi.rs",
       "src/review/reading.rs",
       "src/review/reviews.rs",
-      "src/review/names.rs",
+      "src/review/filing.rs",
       "src/events.rs",
       "src/health.rs",
-      "docs/api.md"
+      "docs/api.md",
+      "docs/openapi.json"
     ],
-    "symbols": [],
+    "symbols": [
+      "openapi",
+      "openapi_json",
+      "Stated",
+      "WireError",
+      "Page",
+      "Review",
+      "Comment",
+      "Filing",
+      "Project",
+      "Commit"
+    ],
     "aliases": [],
     "needs": [
       "review/reading",
       "review/reviews",
       "service/plumbing"
     ],
-    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd",
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468493885,
+    "boundary": {
+      "side": "exposes"
+    }
+  },
+  {
+    "id": "api/mcp",
+    "title": "Harness plugin",
+    "what": "The ahas-review harness plugin: the MCP server bmo-review mcp starts, its eight tools each calling routes through the service client, and the skill under plugin/skills/.",
+    "files": [
+      "src/mcp.rs",
+      "plugin/skills/ahas-review/SKILL.md",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "ReviewServer",
+      "ReviewTool",
+      "tools",
+      "serve",
+      "PLUGIN",
+      "MCP",
+      "ENTRY"
+    ],
+    "aliases": [],
+    "needs": [
+      "api/client"
+    ],
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468493895,
     "boundary": {
       "side": "exposes"
     }

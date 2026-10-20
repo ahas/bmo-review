@@ -1,7 +1,7 @@
 /* The code review's marks in the editor's margin (docs/screen.md, 「Reviewing」). The editor draws
    its margin itself and takes a class name for a line, so what a mark looks like is said here, in
-   the console's own colours: a plus where a review can be written, a speech bubble where one
-   stands, and a tint over the lines a review covers or the lines being chosen for one. Both marks
+   the console's own colours: a plus where a comment can be written, a speech bubble where one
+   stands, and a tint over the lines a comment covers or the lines being chosen for one. Both marks
    are drawn out of boxes and gradients in the text colour of the theme standing, so this sheet
    names no file. */
 .code-review-glyph-add,

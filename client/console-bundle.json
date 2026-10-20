@@ -1,0 +1,11 @@
+{
+  "name": "code",
+  "title": "code.title.screen",
+  "icon": "i-material-symbols-rate-review-outline",
+  "screenPath": "/code",
+  "serviceName": "review",
+  "languagePack": "i18n",
+  "events": true,
+  "websocket": false,
+  "pushKinds": []
+}

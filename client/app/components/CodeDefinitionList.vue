@@ -31,17 +31,17 @@
 <script setup lang="ts">
 import { DEFINITION_LABELS } from "../domain/code";
 
-import type { CodeDefinition } from "../../shared/types";
+import type { Definition } from "../../shared/types";
 
 interface Props {
   open: boolean;
-  definitions: readonly CodeDefinition[];
+  definitions: readonly Definition[];
   // Where the name stands on the screen, which is what the list is put beside.
   at: { top: number; left: number; height: number } | null;
 }
 
 const props = defineProps<Props>();
-const emit = defineEmits<{ "update:open": [open: boolean]; go: [definition: CodeDefinition] }>();
+const emit = defineEmits<{ "update:open": [open: boolean]; go: [definition: Definition] }>();
 
 // The list stands at the name. What it is anchored to is the name's own place rather than an
 // element, since the name is drawn by the editor and has no element of the console's to hang on.
@@ -70,7 +70,7 @@ const shell = computed(() => {
   };
 });
 
-function choose(one: CodeDefinition): void {
+function choose(one: Definition): void {
   emit("go", one);
 }
 </script>

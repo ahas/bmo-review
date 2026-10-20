@@ -1,10 +1,14 @@
 # bmo-review
 
-The code review as one service with its own API: the console's code review screen reading each worker's
-checkout at a commit — its tree, its files, its commits, a content search and a definition search — the reviews
-pinned to a line, a range, a file or a folder of that commit, the talk under each review with the chat agent,
-and the TODO items filed from a review for that worker. Nothing is written to a checkout. Every other unit is
-reached through its API, as `docs/api.md` lists.
+Code review over git checkouts as one service with its own API: the projects the graph service registers, each
+read at a revision (its tree, its files, its commits and each commit's diff, a content search and a definition
+search), reviews of a revision with their comments on its lines, files and folders, and items filed from a
+review into the job service. Nothing is written to a checkout. The graph service and the job service are reached
+only through the clients they publish, as `docs/api.md` lists.
+
+The service publishes its own client (`bmo_review::client`), its OpenAPI document (`docs/openapi.json`, printed
+by `bmo-review openapi`), and its harness plugin: the MCP server `bmo-review mcp` and the `ahas-review` skill
+under `plugin/skills/`.
 
 ## Tests are deferred
 
@@ -16,45 +20,39 @@ services stand on the new repositories; until then the only check is the build c
 
 | Folder | Holds |
 |---|---|
-| `src/` | The service, one crate split into its own modules |
-| `migrations/` | The reviews' store, its tables made by these statements in order |
-| `lang/` | This repository's Korean pack for the words of an item filed from a review |
-| `client/` | The console plugin bundle: the code review screen and its own Korean pack, a project of its own |
+| `src/` | The service, its client, its OpenAPI document and its MCP server, one crate split into its own modules |
+| `migrations/` | The store, its tables made by these statements in order |
+| `plugin/` | The harness plugin's skill, `ahas-review` |
+| `client/` | The console bundle: the code review screen and its own Korean pack, a project of its own |
 | `deploy/` | The service's user unit |
-| `docs/` | The canonical statements of what the service does |
+| `docs/` | The canonical statements of what the service does, and its OpenAPI document |
+| `.graph/` | The repository's code dependency graph |
 
 At the root stand the Cargo manifest, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `korean-ledger.json`, `settings.toml` and `settings.local.toml.example`, the example of the local settings a
 deployment gives.
 
-## The console plugin bundle
+## The console bundle
 
-`client/` holds the console's code review screen as a Nuxt layer on top of bmo-ui, packed as
-`bmo-review-client`. A host console extends it as it extends bmo-ui, and owes it:
-
-- bmo-ui itself, at the version the bundle's peer names; for the bundle's own install and typecheck a packed
-  copy stands in `client/vendor/`;
-- its i18n module, loading the bundle's own Korean pack beside the host's: the screen's words and
-  `code.error.<code>` for each code of `docs/api.md` are the bundle's, not the host's;
-- the components `MarkdownText`, `ItemTip`, `DeployMark`, `TodoOpenButton` and `UsageMeters`, and the functions
-  `copyText`, `loadMarkdownRenderer` and `useKeptTabs`, declared in `client/host/` by what the screen hands them
-  and asks of them, and the TODO panel an item's number opens;
-- every route under `/api/code/`, the event stream included, passed on to this service behind the console's
-  sign-in (`docs/api.md`, 「What the console does」).
-
-The screen calls only those routes, and says a refusal by its code in its own pack's words. The bundle's check is
+`client/` holds the code review screen as a console bundle by bmo-ui's console plugin contract at 0.1.0-rev.2,
+packed as `bmo-review-client`: a Nuxt layer on top of bmo-ui, declared by `client/console-bundle.json`. A console
+extends it as it extends bmo-ui and attaches it by that declaration alone; the screen calls this service's routes
+at the address bmo-ui's `relay` module answers for `review`, and its words are its own pack under `client/i18n/`
+(`docs/api.md`, 「The console bundle」). For the bundle's own install and typecheck a packed copy of bmo-ui stands
+in `client/vendor/`. Its types are generated from the OpenAPI document by `bun run api`. The bundle's check is
 `bun install --frozen-lockfile && bun run typecheck` inside `client/`.
 
 ## Documents
 
 | Document | States |
 |---|---|
-| `docs/code-review.md` | The code review: the checkouts, the version shown, the fence and exclusions, search, reviews, threads and filing |
+| `docs/code-review.md` | The code review: the projects, the revision read, the fence and exclusions, search, reviews, comments and filing |
 | `docs/screen.md` | The console screen's shape |
-| `docs/api.md` | The routes, their answers and refusals, the events, the calls to other units, what the siblings lack, the settings and what the console does |
+| `docs/api.md` | The routes, their answers and codes, the events, the calls to other units, the client, the harness plugin, the console bundle and the settings |
+| `docs/openapi.json` | The same routes, bodies and tools as the OpenAPI 3.1 document generated from the service's types |
 | `docs/inventory.md` | What this repository takes from the old repository, with each set's count and source |
 
 ## Version
 
-`VERSION` holds the repository's version in semver, the crate's own. `docs/api.md`, 「Versions」, says which
-change moves which part.
+`VERSION` holds the repository's version, the crate's own, `0.1.0-rev.<n>` before the first release.
+`docs/api.md`, 「Versions」, says which change is a bump.

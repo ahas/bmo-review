@@ -8,40 +8,29 @@ listen = "127.0.0.1:3340"
 token = ""
 
 [store]
-# The SQLite file the reviews and their threads stand in.
+# The SQLite file the reviews, comments, filings and events stand in.
 path = "review.db"
 
+[graph]
+# bmo-graph's base address and the token it takes: the projects and their checkouts.
+address = "http://127.0.0.1:3296"
+token = ""
+
 [job]
-# bmo-job's base address and the token it takes: the worker catalogue and the filing of items.
+# bmo-job's base address and the token it takes: the items filed from a review.
 address = "http://127.0.0.1:7841"
 token = ""
 
-[receiver]
-# The receiver's base address and the token it takes: the talk under a review.
-address = "http://127.0.0.1:3212"
-token = ""
-
-[filing]
-# The language of this repository's pack the item's parts are worded in, by its folder under lang/.
-language = "ko"
-# The names the item's parts are worded with, filling {owner} and {agent} in the Korean pack. A deployment
-# names its own.
-owner = "owner"
-agent = "agent"
-# Who an item filed from a review is requested by.
-requester = "owner"
-# How much of the reviewed lines an item carries, in characters.
-excerpt_clip = 2000
-
-# The ceilings of reading a checkout and of what a review and a filing take (docs/code-review.md).
+# The ceilings of reading a checkout and of what a review and a comment take (docs/code-review.md).
 [limits]
 # A file's body past this many bytes carries only its beginning; a NUL within the first binary_probe bytes
 # marks a file binary.
 file_bytes = 1000000
 binary_probe = 8000
-# A tree's entries and a commit list's commits.
+# The most entries one page of a tree holds, and a commit's diff past this many bytes carries only its
+# beginning.
 tree_entries = 50000
-commits = 100
+diff_bytes = 2000000
 # The content search: the words' length, the lines per file and in all, and its time.
 search_query = 200
 search_per_file = 5
@@ -54,10 +43,9 @@ definition_total = 50
 definition_timeout_ms = 5000
 # How much of a matched line comes back, in characters.
 match_line = 300
-# How much of the reviewed lines a review keeps, in characters.
+# How much of the lines a comment points at it keeps, in characters.
 excerpt = 20000
-# A turn's words, and a filing's title, what to do and conclusion, in characters.
-talk = 2000
+# A review's title, a comment's text and an author's name, in characters.
 title = 200
-to_do = 8000
-conclusion = 4000
+comment = 20000
+author_name = 200

@@ -2,6 +2,6 @@ repository = "bmo-review"
 base = false
 
 [coverage]
-# Every tracked Rust, TypeScript and Vue file outside the tests, but this one: the declarations of the shapes the
-# screen reads, types alone.
-unindexed = ["client/shared/types.ts"]
+# Every tracked Rust, TypeScript and Vue file outside the tests, but these: the declarations of the shapes the
+# screen reads, types alone, and the types generated from the OpenAPI document.
+unindexed = ["client/shared/types.ts", "client/shared/openapi.ts"]

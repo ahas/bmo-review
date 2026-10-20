@@ -1,40 +1,76 @@
-// The review service's own event stream (docs/api.md, 「Events」), heard by the screen: a review made or an
-// item filed moves the list, and a turn of a review's thread moves the thread. One stream stands for the whole
-// page however many parts listen, opened when the first one mounts and closed when the last one goes.
+import { eventsAddress } from "./review";
 
-export type ReviewEventType = "code-review" | "code-review-talk";
+import type { ServiceEvent } from "../../shared/types";
 
-// One event: what moved and on which review. A talk's event carries `detail` once its turn ended — null where
-// it was answered, the failure's code where it was not — and none while the turn is going out.
-export interface ReviewEvent {
-  type: ReviewEventType;
-  review: number;
-  detail?: string | null;
-}
+// The review service's one event stream (docs/api.md, 「Events」), heard by the screen through the console's
+// relay: a review opened or changed moves the list, and a comment moves its review. One stream stands for the
+// whole page however many parts listen, opened when the first one mounts and closed when the last one goes.
 
-const TYPES: readonly ReviewEventType[] = ["code-review", "code-review-talk"];
+export type ReviewEventKind = "review.created" | "review.changed" | "comment.created" | "filing.created";
 
-// How long a run of events is gathered before a part reads again, so one turn's two events are one read.
+// One event, or `gone` where the stream could not resume and every part reads its lists again.
+export type ReviewEvent = { kind: ReviewEventKind; reviewId: number | null } | { kind: "gone"; reviewId: null };
+
+const KINDS: readonly ReviewEventKind[] = ["review.created", "review.changed", "comment.created", "filing.created"];
+
+// How long a run of events is gathered before a part reads again, so a comment's two events are one read.
 const GATHER_MS = 150;
+// How long a stream that ended waits before it is opened again.
+const REOPEN_MS = 3_000;
 
 const listeners = new Set<(event: ReviewEvent) => void>();
 let source: EventSource | null = null;
+let reopening: ReturnType<typeof setTimeout> | null = null;
+
+// The review an event belongs to: a review's own id, or the review its comment or filing stands under.
+function reviewOf(event: ServiceEvent): number | null {
+  const data = (event.data ?? {}) as { id?: unknown; reviewId?: unknown };
+  const key = event.kind.startsWith("review.") ? data.id : data.reviewId;
+
+  return typeof key === "number" ? key : null;
+}
+
+function tell(event: ReviewEvent): void {
+  for (const listener of listeners) {
+    listener(event);
+  }
+}
 
 function open(): void {
-  const base = useRuntimeConfig().app.baseURL.replace(/\/$/, "");
+  // A fresh stream replays the window the service keeps; what happened before it opened is what the parts read
+  // when they mounted, so only what happens from now on is news.
+  const openedAt = Date.now();
 
-  source = new EventSource(`${base}/api/code/events`);
+  source = new EventSource(eventsAddress());
 
-  for (const type of TYPES) {
-    source.addEventListener(type, (message) => {
-      const data = JSON.parse((message as MessageEvent<string>).data) as Omit<ReviewEvent, "type">;
-      const event: ReviewEvent = { type, ...data };
+  for (const kind of KINDS) {
+    source.addEventListener(kind, (message) => {
+      const event = JSON.parse((message as MessageEvent<string>).data) as ServiceEvent;
 
-      for (const listener of listeners) {
-        listener(event);
+      if (event.at >= openedAt) {
+        tell({ kind, reviewId: reviewOf(event) });
       }
     });
   }
+
+  // A stream the browser gave up on, a resume from before the window among the reasons, is opened afresh, and
+  // every part reads again what it may have missed.
+  source.addEventListener("error", () => {
+    if (source?.readyState !== EventSource.CLOSED) {
+      return;
+    }
+
+    source.close();
+    source = null;
+    reopening = setTimeout(() => {
+      reopening = null;
+
+      if (listeners.size > 0) {
+        open();
+        tell({ kind: "gone", reviewId: null });
+      }
+    }, REOPEN_MS);
+  });
 }
 
 // Hears every event while the calling part stands.
@@ -46,7 +82,7 @@ export function useReviewEvents(onEvent: (event: ReviewEvent) => void): void {
   onMounted(() => {
     listeners.add(onEvent);
 
-    if (source === null) {
+    if (source === null && reopening === null) {
       open();
     }
   });
@@ -57,13 +93,18 @@ export function useReviewEvents(onEvent: (event: ReviewEvent) => void): void {
     if (listeners.size === 0) {
       source?.close();
       source = null;
+
+      if (reopening !== null) {
+        clearTimeout(reopening);
+        reopening = null;
+      }
     }
   });
 }
 
 export interface ReviewRefreshOptions {
-  // The events that move what the part shows.
-  on: readonly ReviewEventType[];
+  // The events that move what the part shows; `gone` moves every part.
+  on: readonly ReviewEventKind[];
   // Which of them are this part's, where it shows one review rather than all.
   where?: (event: ReviewEvent) => boolean;
 }
@@ -73,11 +114,9 @@ export function useReviewRefresh(run: () => void, options: ReviewRefreshOptions)
   let waiting: ReturnType<typeof setTimeout> | null = null;
 
   useReviewEvents((event) => {
-    if (!options.on.includes(event.type) || (options.where !== undefined && !options.where(event))) {
-      return;
-    }
+    const moves = event.kind === "gone" || (options.on.includes(event.kind) && (options.where === undefined || options.where(event)));
 
-    if (waiting === null) {
+    if (moves && waiting === null) {
       waiting = setTimeout(() => {
         waiting = null;
         run();

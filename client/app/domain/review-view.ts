@@ -1,4 +1,4 @@
-// The editor the code review shows a file in: bmo-ui's read-only editor with a margin a review is written
+// The editor the code review shows a file in: bmo-ui's read-only editor with a margin a comment is written
 // from and marked in (docs/screen.md, 「Reviewing」). Importing bmo-ui's editor module first sets up what
 // every editor of the layer stands on — the worker, the tokenizers, the diff language — and this module
 // adds only the review's own view on top of it. Like bmo-ui's editor, it is reached from the browser alone,
@@ -61,19 +61,18 @@ const OPEN_LINE: monaco.editor.IModelDecorationOptions = {
 };
 
 
-// A file as the code review shows it (docs/screen.md): the same read-only editor, with
-// a margin a review is written from and marked in. A line is chosen by pressing its number or the
-// margin beside it, and a run of lines by pressing a second one; lines are chosen by dragging too.
-// A review that stands on the commit shown marks its first line in the margin and tints its lines,
-// and anything the screen wants between the lines — a review folded to one card, the box a new
-// review is written in — is a zone the screen fills.
-export interface ReviewMark {
+// A file as the code review shows it (docs/screen.md): the same read-only editor, with a margin a comment is
+// written from and marked in. A line is chosen by pressing its number or the margin beside it, and a run of
+// lines by pressing a second one; lines are chosen by dragging too. A line comment at the revision shown marks
+// its first line in the margin and tints its lines, and anything the screen wants between the lines (a comment
+// folded to one cell, the box a new comment is written in) is a zone the screen fills.
+export interface CommentMark {
   id: number;
   start: number;
   end: number;
 }
 
-export interface ReviewZone {
+export interface CommentZone {
   key: string;
   afterLine: number;
 }
@@ -101,10 +100,10 @@ export interface ReviewView {
   // A file's text, coloured in the language its path says, opened at a line.
   show: (text: string, path: string, line: number | null) => void;
   paint: (dark: boolean) => void;
-  // The reviews standing on the file, and the lines being chosen for a new one.
-  mark: (marks: readonly ReviewMark[], chosen: { start: number; end: number } | null) => void;
+  // The comments standing on the file, and the lines being chosen for a new one.
+  mark: (marks: readonly CommentMark[], chosen: { start: number; end: number } | null) => void;
   // The zones between the lines, replacing those before; each comes back as the element to fill.
-  zones: (zones: readonly ReviewZone[]) => Map<string, HTMLElement>;
+  zones: (zones: readonly CommentZone[]) => Map<string, HTMLElement>;
   // A zone's height, once what fills it has been measured.
   resize: (key: string, height: number) => void;
   reveal: (line: number) => void;
@@ -114,7 +113,7 @@ export interface ReviewView {
   lineCount: () => number;
   // A line pressed in the margin, and whether the press asked to widen what was chosen.
   onLine: (listener: (line: number, widen: boolean) => void) => void;
-  // A review's mark pressed.
+  // A comment's mark pressed.
   onMark: (listener: (id: number) => void) => void;
   onSelection: (listener: (selection: LineSelection | null) => void) => void;
   // What a press and the cursor stand on, for go-to-definition: read on demand where the screen has a
@@ -148,8 +147,8 @@ const ADD_HERE: monaco.editor.IModelDecorationOptions = {
   glyphMarginClassName: "code-review-glyph-add"
 };
 
-// Where what a zone holds — a review's card, or the box a new review is written in — stands until
-// the zone reports its place: far above the editor, so nothing unplaced is drawn over the code.
+// Where what a zone holds (a comment's cell, or the box a new comment is written in) stands until the zone
+// reports its place: far above the editor, so nothing unplaced is drawn over the code.
 const UNPLACED_ZONE_TOP = "-10000px";
 
 // How tall a zone opens before what it holds has been measured; the measured height replaces it.
@@ -164,8 +163,8 @@ interface HeldZone {
 
 export function openReviewView(t: Translate, box: HTMLElement, dark: boolean): ReviewView {
   // The two marks in the margin, each with the words its hover says.
-  const markStart = { ...MARK_START, glyphMarginHoverMessage: { value: t("code.action.open_review") } };
-  const addHere = { ...ADD_HERE, glyphMarginHoverMessage: { value: t("code.action.add_review") } };
+  const markStart = { ...MARK_START, glyphMarginHoverMessage: { value: t("code.action.open_comment") } };
+  const addHere = { ...ADD_HERE, glyphMarginHoverMessage: { value: t("code.action.add_comment") } };
 
   const editor = monaco.editor.create(box, {
     ...VIEW,
@@ -252,7 +251,7 @@ export function openReviewView(t: Translate, box: HTMLElement, dark: boolean): R
 
   // Go-to-definition from the keyboard. An action added to the editor carries its own keybinding with
   // nothing else loaded, and F12 is the key the editor itself keeps for this. It is given no
-  // context menu group: the menu that stands beside add-review is the console's own, and a group
+  // context menu group: the menu that stands beside add-comment is the console's own, and a group
   // named here would only register an entry nothing draws.
   editor.addAction({
     id: "bmo-go-to-definition",
@@ -274,10 +273,10 @@ export function openReviewView(t: Translate, box: HTMLElement, dark: boolean): R
       return;
     }
 
-    const review = starts.get(line);
+    const comment = starts.get(line);
 
-    if (review !== undefined && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
-      markListeners.forEach((listener) => listener(review));
+    if (comment !== undefined && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
+      markListeners.forEach((listener) => listener(comment));
 
       return;
     }

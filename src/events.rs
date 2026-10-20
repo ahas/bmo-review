@@ -1,156 +1,288 @@
-//! The service's own event stream (`docs/api.md`, 「Events」): what moved, kept in a ring and replayed after the
-//! cursor a reader names, then sent live as it happens.
+//! The service's one event stream (`docs/api.md`, 「Events」): each write numbered and kept in the store with the
+//! member it moved, a window of the latest kept for a reader resuming, and handed to every live reader in the
+//! order the numbers run.
 
-use std::collections::VecDeque;
 use std::convert::Infallible;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 
-use axum::http::Method;
+use axum::http::{Method, StatusCode, header};
 use axum::response::sse::{Event as Sent, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
-use futures_util::stream::{self, Stream, StreamExt};
+use futures_util::stream::{self, StreamExt};
+use schemars::generate::SchemaGenerator;
+use serde::Serialize;
 use serde_json::json;
-use tokio::sync::broadcast;
+use sqlx::{FromRow, Sqlite, Transaction};
+use tokio::sync::{Mutex, MutexGuard, broadcast};
 use tokio_stream::wrappers::BroadcastStream;
 
-use crate::http::{Call, Refused, Route};
+use crate::http::{Call, MOST_PAGE, PAGE, Refused, Route, answer, page_size};
+use crate::openapi::{Stated, query};
+use crate::store::{Store, now_ms};
+use crate::wire::{Event, EventQuery, Page};
 
-// How many events the ring keeps for a reader coming back after a cursor.
-const RING: usize = 256;
+/// How many past events the store keeps for a reader resuming.
+pub const WINDOW: i64 = 1_000;
+// How many events a live reader may fall behind before it is let go, to resume from the window.
+const BACKLOG: usize = 256;
 // How often an idle stream says it is still there.
 const KEEP_ALIVE: Duration = Duration::from_secs(15);
 
-/// What moved.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Kind {
-  /// A review was made, or an item was filed from it.
-  Review,
-  /// The owner's words of a review's thread were written and a turn went out.
-  Talk,
-  /// A review's turn ended: answered, or with the code it failed with.
-  TalkEnded { failure: Option<&'static str> },
-}
+/// The kinds of event, a resource and its change.
+pub const REVIEW_CREATED: &str = "review.created";
+pub const REVIEW_CHANGED: &str = "review.changed";
+pub const COMMENT_CREATED: &str = "comment.created";
+pub const FILING_CREATED: &str = "filing.created";
 
-impl Kind {
-  /// The event's name on the stream.
-  pub fn name(self) -> &'static str {
-    match self {
-      Self::Review => "code-review",
-      Self::Talk | Self::TalkEnded { .. } => "code-review-talk",
-    }
-  }
-}
-
-/// One event: its cursor, what moved, and the review it moved on.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Event {
-  pub cursor: u64,
-  pub kind: Kind,
-  pub review: i64,
-}
-
-impl Event {
-  fn sent(self) -> Sent {
-    let mut data = json!({ "review": self.review });
-
-    if let Kind::TalkEnded { failure } = self.kind {
-      data["detail"] = json!(failure);
-    }
-
-    Sent::default()
-      .id(self.cursor.to_string())
-      .event(self.kind.name())
-      .data(data.to_string())
-  }
-}
-
-#[derive(Debug, Default)]
-struct Ring {
-  next: u64,
-  kept: VecDeque<Event>,
-}
-
-/// The events the service sends: a ring of the latest, and the live channel every reader hears.
-#[derive(Clone, Debug)]
+/// The event log of the service.
+#[derive(Clone)]
 pub struct Events {
-  ring: Arc<Mutex<Ring>>,
+  store: Store,
   live: broadcast::Sender<Event>,
+  // Held from a write's start to its events' announcement, so live readers hear the numbers in order.
+  writing: Arc<Mutex<()>>,
 }
 
-impl Default for Events {
-  fn default() -> Self {
-    Self::new()
+/// A write under way: its events are numbered inside its transaction and announced once it is committed.
+pub struct Writing<'a> {
+  events: &'a Events,
+  _held: MutexGuard<'a, ()>,
+  recorded: Vec<Event>,
+}
+
+impl Writing<'_> {
+  /// One event of `kind` about `data`, belonging to `review_id`, numbered in `transaction`.
+  pub async fn record(
+    &mut self,
+    transaction: &mut Transaction<'static, Sqlite>,
+    kind: &str,
+    review_id: i64,
+    data: &impl Serialize,
+  ) -> Result<(), Refused> {
+    let data = serde_json::to_value(data).map_err(Refused::failed)?;
+    let at = now_ms();
+    let id: i64 =
+      sqlx::query_scalar("INSERT INTO events (kind, review_id, at, data) VALUES (?, ?, ?, ?) RETURNING id")
+        .bind(kind)
+        .bind(review_id)
+        .bind(at)
+        .bind(data.to_string())
+        .fetch_one(&mut **transaction)
+        .await
+        .map_err(Refused::failed)?;
+
+    sqlx::query("DELETE FROM events WHERE id <= ?")
+      .bind(id - WINDOW)
+      .execute(&mut **transaction)
+      .await
+      .map_err(Refused::failed)?;
+
+    self.recorded.push(Event {
+      id,
+      kind: kind.to_owned(),
+      at,
+      data,
+    });
+
+    Ok(())
   }
+
+  /// Hands the events recorded to the live readers, once their transaction is committed.
+  pub fn announce(self) {
+    for event in self.recorded {
+      // No reader listening is no failure: the window keeps it for the next one.
+      let _ = self.events.live.send(event);
+    }
+  }
+}
+
+#[derive(FromRow)]
+struct Row {
+  id: i64,
+  kind: String,
+  at: i64,
+  data: String,
+}
+
+impl Row {
+  fn event(self) -> Event {
+    Event {
+      id: self.id,
+      kind: self.kind,
+      at: self.at,
+      data: serde_json::from_str(&self.data).unwrap_or_default(),
+    }
+  }
+}
+
+/// What a reader narrowed the stream to.
+#[derive(Clone, Debug, Default)]
+struct Narrowing {
+  kinds: Vec<String>,
+  review_id: Option<i64>,
+}
+
+impl Narrowing {
+  fn of(query: &EventQuery) -> Self {
+    let kinds = query
+      .kinds
+      .iter()
+      .flat_map(|kinds| kinds.split(','))
+      .map(str::trim)
+      .filter(|kind| !kind.is_empty())
+      .map(str::to_owned)
+      .collect();
+
+    Self {
+      kinds,
+      review_id: query.review_id,
+    }
+  }
+
+  fn wants(&self, event: &Event) -> bool {
+    let kind_wanted = self.kinds.is_empty() || self.kinds.contains(&event.kind);
+    let review_wanted = self.review_id.is_none_or(|wanted| review_of(event) == Some(wanted));
+
+    kind_wanted && review_wanted
+  }
+
+  /// The kinds as the store's query takes them, a JSON array, or none where every kind is wanted.
+  fn kinds_json(&self) -> Option<String> {
+    (!self.kinds.is_empty()).then(|| serde_json::Value::from(self.kinds.clone()).to_string())
+  }
+}
+
+/// The review an event belongs to: a review's own id, or the review its comment or filing stands under.
+fn review_of(event: &Event) -> Option<i64> {
+  let key = if event.kind.starts_with("review.") { "id" } else { "reviewId" };
+
+  event.data.get(key).and_then(serde_json::Value::as_i64)
 }
 
 impl Events {
-  pub fn new() -> Self {
-    let (live, _) = broadcast::channel(RING);
-
+  pub fn new(store: Store) -> Self {
     Self {
-      ring: Arc::new(Mutex::new(Ring {
-        next: 1,
-        kept: VecDeque::new(),
-      })),
-      live,
+      store,
+      live: broadcast::channel(BACKLOG).0,
+      writing: Arc::new(Mutex::new(())),
     }
   }
 
-  /// Sends that something moved on a review.
-  pub fn send(&self, kind: Kind, review: i64) {
-    let event = {
-      let mut ring = self.ring.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-      let event = Event {
-        cursor: ring.next,
-        kind,
-        review,
-      };
-
-      ring.next += 1;
-      ring.kept.push_back(event);
-
-      if ring.kept.len() > RING {
-        ring.kept.pop_front();
-      }
-
-      event
-    };
-
-    // No reader listening is no failure: the ring keeps it for the next one.
-    let _ = self.live.send(event);
+  /// Starts a write whose events are announced in number order.
+  pub async fn write(&self) -> Writing<'_> {
+    Writing {
+      events: self,
+      _held: self.writing.lock().await,
+      recorded: Vec::new(),
+    }
   }
 
-  /// The events after `cursor` the ring still keeps, then every one sent from now on, none twice.
-  pub fn after(&self, cursor: u64) -> impl Stream<Item = Event> + Send + use<> {
-    // The live channel is heard before the ring is read, so nothing sent between the two is lost.
-    let live = BroadcastStream::new(self.live.subscribe());
-    let kept: Vec<Event> = {
-      let ring = self.ring.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+  /// The kept events past `after` a reader wants, at most `limit` and one more to tell whether more stand;
+  /// refused where `after` stands before the window, so events past it were let go.
+  async fn since(
+    &self,
+    after: i64,
+    narrowing: &Narrowing,
+    limit: Option<usize>,
+  ) -> Result<Vec<Event>, Refused> {
+    let first: Option<i64> = sqlx::query_scalar("SELECT MIN(id) FROM events")
+      .fetch_one(self.store.pool())
+      .await
+      .map_err(Refused::failed)?;
 
-      ring.kept.iter().copied().filter(|event| event.cursor > cursor).collect()
-    };
-    let replayed = kept.last().map_or(cursor, |event| event.cursor);
-    let live = live.filter_map(move |heard| async move {
-      // A reader too slow for the channel loses what it lagged past; it reads again on what follows.
-      heard.ok().filter(|event| event.cursor > replayed)
-    });
+    if first.is_some_and(|first| after < first - 1) {
+      return Err(Refused::new(
+        StatusCode::GONE,
+        "gone",
+        format!("the events after {after} are no longer kept; read the collections again"),
+      ));
+    }
 
-    stream::iter(kept).chain(live)
+    let rows: Vec<Row> = sqlx::query_as(
+      "SELECT id, kind, at, data FROM events WHERE id > ?1 \
+       AND (?2 IS NULL OR review_id = ?2) \
+       AND (?3 IS NULL OR kind IN (SELECT value FROM json_each(?3))) \
+       ORDER BY id LIMIT ?4",
+    )
+    .bind(after)
+    .bind(narrowing.review_id)
+    .bind(narrowing.kinds_json())
+    .bind(limit.map_or(-1, |limit| i64::try_from(limit + 1).unwrap_or(i64::MAX)))
+    .fetch_all(self.store.pool())
+    .await
+    .map_err(Refused::failed)?;
+
+    Ok(rows.into_iter().map(Row::event).collect())
   }
 }
 
-/// The stream itself.
+/// `GET /events`: the stream, or a page of it to a reader asking for JSON.
 pub struct EventStream;
 
 impl Route for EventStream {
   const METHOD: Method = Method::GET;
-  const PATH: &'static str = "/api/code/events";
+  const PATH: &'static str = "/events";
 
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
-    let cursor = call.header("last-event-id").and_then(|id| id.trim().parse::<u64>().ok()).unwrap_or(0);
-    let events = call.standing().events.after(cursor).map(|event| Ok::<_, Infallible>(event.sent()));
-    Ok(Sse::new(events).keep_alive(KeepAlive::new().interval(KEEP_ALIVE)).into_response())
+    let query: EventQuery = call.query()?;
+    let resumed = call.header("last-event-id").and_then(|id| id.trim().parse::<i64>().ok());
+    let after = query.after.or(resumed).unwrap_or(0);
+    let narrowing = Narrowing::of(&query);
+    let events = &call.standing().events;
+
+    if call.accepts_json() {
+      let limit = page_size(query.limit, PAGE, MOST_PAGE)?;
+      let mut items = events.since(after, &narrowing, Some(limit)).await?;
+      let more = items.len() > limit;
+
+      items.truncate(limit);
+
+      return Ok(answer(StatusCode::OK, &Page { items, more }));
+    }
+
+    // The live channel is heard before the window is read, so nothing published between the two is lost.
+    let live = BroadcastStream::new(events.live.subscribe());
+    let kept = events.since(after, &narrowing, None).await?;
+    let replayed = kept.last().map_or(after, |event| event.id);
+    let live = live
+      // A reader too slow for the channel is let go; it resumes from the window with the last number it read.
+      .take_while(|heard| std::future::ready(heard.is_ok()))
+      .filter_map(move |heard| {
+        let wanted = heard.ok().filter(|event| event.id > replayed && narrowing.wants(event));
+
+        std::future::ready(wanted)
+      });
+    let sent = stream::iter(kept).chain(live).map(|event| {
+      let data = serde_json::to_string(&event).unwrap_or_default();
+
+      Ok::<_, Infallible>(Sent::default().id(event.id.to_string()).event(event.kind.clone()).data(data))
+    });
+
+    let mut response = Sse::new(sent).keep_alive(KeepAlive::new().interval(KEEP_ALIVE)).into_response();
+
+    response
+      .headers_mut()
+      .insert(header::CACHE_CONTROL, header::HeaderValue::from_static("no-cache"));
+
+    Ok(response)
+  }
+
+  fn stated(&self, generator: &mut SchemaGenerator) -> Stated {
+    let events = json!({
+      "text/event-stream": { "schema": { "type": "string", "description": "Server-sent events, each an event." } },
+      "application/json": { "schema": generator.subschema_for::<Page<Event>>() },
+    });
+
+    Stated {
+      id: "listEvents",
+      tag: "events",
+      summary: "The one stream: reviews, comments, filings (SSE), or a page of it with Accept: application/json.",
+      parameters: query::<EventQuery>(generator),
+      body: None,
+      answer: (200, events),
+      codes: vec!["gone"],
+    }
   }
 }
 

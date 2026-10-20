@@ -8,15 +8,10 @@ token = "review-token"
 [store]
 path = "/srv/bmo-review/review.db"
 
+[graph]
+address = "http://127.0.0.1:3296"
+token = "graph-token"
+
 [job]
 address = "http://127.0.0.1:7841"
 token = "job-token"
-
-[receiver]
-address = "http://127.0.0.1:3212"
-token = "receiver-token"
-
-[filing]
-owner = "Example Owner"
-agent = "Example Agent"
-requester = "Example Owner"

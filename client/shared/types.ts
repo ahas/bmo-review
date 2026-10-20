@@ -1,134 +1,40 @@
-// The shapes the code review screen reads from the service (docs/api.md): the projects, a commit's tree, a
-// file, the commits, the searches, the reviews and their threads.
+// The shapes the code review screen reads from the review service, each taken from the types generated out of
+// the service's OpenAPI document (`shared/openapi.ts`, made by `bun run api` from `docs/openapi.json`), so the
+// screen and the service never part.
 
-import type { DefinitionKind } from "./definitions";
+import type { components } from "./openapi";
 
-// Who said one turn of a review's thread: the owner, or the agent answering.
-export type TalkSpeaker = "owner" | "agent";
+type Schemas = components["schemas"];
 
-// A worker's checkout as the code review offers it. The absolute directory stays on the server;
-// what a screen is told is whether there is anything to read, and why not where there is not.
-export type CodeCheckoutState = "ready" | "missing" | "not-git" | "no-commits";
+export type Page<T> = { items: T[]; more: boolean };
 
-export interface CodeCommit {
-  commit: string;
-  short: string;
-  subject: string;
-  // Committer time, unix seconds.
-  at: number;
-  author: string;
-}
+export type Project = Schemas["Project"];
+export type ProjectState = Schemas["ProjectState"];
+export type TreeEntry = Schemas["TreeEntry"];
+export type EntryKind = Schemas["EntryKind"];
+export type FileSource = Schemas["FileSource"];
+export type Commit = Schemas["Commit"];
+export type Match = Schemas["Match"];
+export type Definition = Schemas["Definition"];
+export type DefinitionKind = Schemas["DefinitionKind"];
+export type Review = Schemas["Review"];
+export type ReviewState = Schemas["ReviewState"];
+export type Comment = Schemas["Comment"];
+export type NewComment = Schemas["NewComment"];
+export type Filing = Schemas["Filing"];
+export type ServiceEvent = Schemas["Event"];
 
-export interface CodeProject {
-  name: string;
-  label: string;
-  state: CodeCheckoutState;
-  // HEAD, its branch (null on a detached HEAD) and how many tracked files differ from it, where the
-  // checkout is ready.
-  head: CodeCommit | null;
-  branch: string | null;
-  dirty: number;
-}
-
-export type CodeEntryKind = "file" | "folder" | "link" | "submodule";
-
-export interface CodeTreeEntry {
-  path: string;
-  kind: CodeEntryKind;
-  // Bytes, for a file.
-  size: number | null;
-  // The commit a submodule is pinned to.
-  pinned: string | null;
-}
-
-export interface CodeTree {
-  project: string;
-  commit: CodeCommit;
-  entries: CodeTreeEntry[];
+// One revision's tree as the screen holds it: every entry the service listed for it, read a page at a time, and
+// whether the screen stopped short of the last page.
+export interface RevisionTree {
+  projectName: string;
+  revision: string;
+  entries: TreeEntry[];
   cut: boolean;
 }
 
-export interface CodeFile {
-  project: string;
-  commit: string;
-  path: string;
-  size: number;
-  // Null for a binary file, whose body is not shown.
-  text: string | null;
-  lines: number;
-  cut: boolean;
-}
-
-export interface CodeCommits {
-  project: string;
-  path: string;
-  head: string;
-  commits: CodeCommit[];
-}
-
-export interface CodeMatch {
-  path: string;
-  line: number;
-  text: string;
-}
-
-export interface CodeSearch {
-  project: string;
-  commit: string;
-  matches: CodeMatch[];
-  cut: boolean;
-}
-
-// One place a name is declared at the commit being read, as the screen shows it: where it stands,
-// the line itself, and what that line declares.
-export interface CodeDefinition {
-  path: string;
-  line: number;
-  text: string;
-  kind: DefinitionKind;
-}
-
-// The answer to one press on a name. The file the reader stood in and the name they pressed come
-// back with it, so an answer that arrives after the reader has moved on is known for what it is.
-// Nothing found is an empty list: a press that finds no definition does nothing at all.
-export interface CodeDefinitions {
-  project: string;
-  commit: string;
-  path: string;
-  name: string;
-  definitions: CodeDefinition[];
-}
-
-export type CodeReviewScope = "line" | "range" | "file" | "folder";
-
-export interface CodeReviewTurn {
-  id: number;
-  speaker: TalkSpeaker;
-  text: string;
-  saidAt: number;
-}
-
-// A review as a list shows it: where it is pinned, how its thread opens and how long it is.
-export interface CodeReviewSummary {
-  id: number;
-  worker: string;
-  commit: string;
-  scope: CodeReviewScope;
-  path: string;
-  startLine: number | null;
-  endLine: number | null;
-  createdAt: number;
-  first: string;
-  turns: number;
-  lastAt: number;
-  todoIds: number[];
-}
-
-export interface CodeReviewThread {
-  review: CodeReviewSummary & { excerpt: string | null };
-  // Whether the commit it is pinned to can still be read out of the worker's checkout.
-  readable: boolean;
-  turns: CodeReviewTurn[];
-  answering: boolean;
-  failure: string | null;
+// A comment beside the review it was written into, as the code shows it among the lines.
+export interface PlacedComment {
+  comment: Comment;
+  review: Review;
 }

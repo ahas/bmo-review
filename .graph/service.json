@@ -2,7 +2,7 @@
   {
     "id": "service/plumbing",
     "title": "Service plumbing",
-    "what": "The service's start, its settings, the routes behind the token, the SQLite store and its migrations, health, the event stream, and the deployment's unit and testbed declaration.",
+    "what": "The service start and its commands, its settings, the routes behind the token, the SQLite store and its migrations, health, the event stream kept in the store, and the deployment unit and testbed declaration.",
     "files": [
       "src/main.rs",
       "src/lib.rs",
@@ -16,6 +16,7 @@
       "settings.local.toml.example",
       "deploy/bmo-review.service",
       "testbed.toml",
+      "Cargo.toml",
       "docs/api.md"
     ],
     "symbols": [
@@ -26,10 +27,14 @@
       "Settings",
       "Store",
       "Events",
-      "Kind"
+      "Writing",
+      "EventStream",
+      "Ready",
+      "now_ms"
     ],
     "aliases": [],
     "needs": [],
-    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd"
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468493870
   }
 ]

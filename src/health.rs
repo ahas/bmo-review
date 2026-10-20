@@ -1,58 +1,56 @@
 //! Whether the service is up (`docs/api.md`, 「Health」): the route, and the command that asks it.
 
-use std::time::Duration;
-
 use axum::http::{Method, StatusCode};
 use axum::response::Response;
-use serde::Deserialize;
-use serde_json::json;
+use schemars::generate::SchemaGenerator;
 
+use crate::client::ReviewClient;
 use crate::http::{Call, Refused, Route, answer};
+use crate::openapi::{Stated, json_of};
 use crate::settings::Settings;
+use crate::wire::Health;
 
-/// The process, the version and whether the store is open and migrated. A service that answers has its
-/// store: it opens it before it answers anything.
-pub struct Health;
+/// Readiness and the version. A service that answers has its store: it opens it before it answers anything.
+pub struct Ready;
 
-impl Route for Health {
+impl Route for Ready {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/health";
 
   async fn answer(&self, _call: Call) -> Result<Response, Refused> {
-    Ok(answer(
-      StatusCode::OK,
-      json!({ "pid": std::process::id(), "version": env!("CARGO_PKG_VERSION"), "ready": true }),
-    ))
+    let health = Health {
+      ready: true,
+      reason: None,
+      version: env!("CARGO_PKG_VERSION").to_owned(),
+    };
+
+    Ok(answer(StatusCode::OK, &health))
+  }
+
+  fn stated(&self, generator: &mut SchemaGenerator) -> Stated {
+    Stated {
+      id: "readHealth",
+      tag: "health",
+      summary: "Readiness and version.",
+      parameters: Vec::new(),
+      body: None,
+      answer: (200, json_of::<Health>(generator)),
+      codes: Vec::new(),
+    }
   }
 }
 
-crate::route!(Health);
+crate::route!(Ready);
 
-// How long the command waits on the service.
-const WAIT: Duration = Duration::from_secs(5);
-
-#[derive(Deserialize)]
-struct Answer {
-  ready: bool,
-}
-
-/// Whether the service the settings name answers ready, asked once and waited on at most five seconds.
+/// Whether the service the settings name answers ready, asked once through the service's own client.
 pub async fn ask(settings: &Settings) -> Result<(), String> {
-  let address = format!("http://{}/health", settings.server.listen);
-  let answer = reqwest::Client::new()
-    .get(&address)
-    .bearer_auth(&settings.server.token)
-    .timeout(WAIT)
-    .send()
-    .await
-    .map_err(|why| format!("the service at {} did not answer: {why}", settings.server.listen))?;
-  let status = answer.status();
+  let client = ReviewClient::new(&format!("http://{}", settings.server.listen), &settings.server.token)
+    .map_err(|why| why.to_string())?;
+  let health = client.health().await.map_err(|why| why.to_string())?;
 
-  if !status.is_success() {
-    return Err(format!("the service answered {}", status.as_u16()));
+  if health.ready {
+    Ok(())
+  } else {
+    Err(format!("the service is not ready: {}", health.reason.unwrap_or_default()))
   }
-
-  let read: Answer = answer.json().await.map_err(|why| format!("the answer could not be read: {why}"))?;
-
-  if read.ready { Ok(()) } else { Err("the service is not ready".to_owned()) }
 }

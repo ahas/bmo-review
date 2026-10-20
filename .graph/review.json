@@ -2,11 +2,10 @@
   {
     "id": "review/reading",
     "title": "Checkout reading",
-    "what": "A worker's checkout read at one commit for the code review: the projects, the tree, a file, the commits, the content and definition searches, fenced by the tracked tree and the secret exclusions, under src/review/.",
+    "what": "A project checkout read at one revision: the projects from the graph service, the tree, a file, the commits and a commit diff, the content and definition searches, fenced by the tracked tree and the secret exclusions, under src/review/.",
     "files": [
       "src/review/mod.rs",
-      "src/review/checkouts.rs",
-      "src/review/request.rs",
+      "src/review/projects.rs",
       "src/review/workspace.rs",
       "src/review/git.rs",
       "src/review/secrets.rs",
@@ -15,62 +14,66 @@
       "docs/code-review.md"
     ],
     "symbols": [
-      "checkouts_of",
-      "require_checkout",
-      "require_commit",
       "checkout_state",
+      "head_of",
+      "resolve_commit",
       "list_tree",
+      "find_entry",
       "read_tree_file",
       "list_commits",
+      "read_commit_diff",
       "search_tree",
       "find_definitions",
       "is_secret_path",
       "definition_pattern",
-      "git"
+      "git",
+      "Projects",
+      "Tree",
+      "FileAt",
+      "Commits",
+      "CommitDiff",
+      "Matches",
+      "Definitions"
     ],
     "aliases": [],
     "needs": [
-      "calls/job-workers",
+      "calls/graph-projects",
       "service/plumbing"
     ],
-    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd"
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468493876
   },
   {
     "id": "review/reviews",
-    "title": "Reviews and their talk",
-    "what": "Reviews pinned to a place of a commit, their thread with the chat agent through the receiver, and the TODO item filed from one in this repository's Korean pack, under src/review/ and lang/ko/.",
+    "title": "Reviews, comments and filings",
+    "what": "Reviews of a revision with their states, comments on its lines, files, folders or the whole, judged against the revision tree, and items filed from a review into the job service, under src/review/.",
     "files": [
       "src/review/reviews.rs",
       "src/review/records.rs",
-      "src/review/talking.rs",
       "src/review/filing.rs",
-      "src/review/words.rs",
-      "src/review/names.rs",
-      "lang/ko/place.yaml",
-      "lang/ko/filing.yaml",
-      "korean-ledger.json",
       "docs/code-review.md"
     ],
     "symbols": [
-      "MakeReview",
       "Reviews",
-      "OneReview",
-      "TalkTurnRoute",
+      "OpenReview",
+      "ReadReview",
+      "ChangeReview",
+      "Comments",
+      "WriteComment",
       "FileItem",
-      "Talking",
-      "Words",
-      "filing",
-      "Names"
+      "required",
+      "review_of"
     ],
     "aliases": [
       "투두로 리팩토링 지시"
     ],
     "needs": [
       "review/reading",
-      "calls/job-workers",
-      "calls/receiver-talks",
+      "calls/graph-projects",
+      "calls/job-items",
       "service/plumbing"
     ],
-    "base": "222d72a4833892c6075a4af5f13c8460d3064ebd"
+    "base": "ff864faeef3b8134f35f22a6e8314eaf972a51c4",
+    "changed": 1792468519830
   }
 ]

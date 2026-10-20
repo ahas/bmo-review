@@ -1,13 +1,17 @@
-//! The review service: the workers' checkouts read at a commit, the reviews pinned to them, the talk under each
-//! review and the items filed from them (`docs/code-review.md`, `docs/api.md`).
+//! The review service: projects' checkouts read at a revision, the reviews of a revision with their comments, and
+//! the items filed from them into the job service; with the service's own client, its OpenAPI document and the
+//! harness plugin's MCP server (`docs/code-review.md`, `docs/api.md`).
 
-pub mod clients;
+pub mod client;
 pub mod events;
 pub mod health;
 pub mod http;
+pub mod mcp;
+pub mod openapi;
 pub mod review;
 pub mod settings;
 pub mod store;
+pub mod wire;
 
 use std::io;
 

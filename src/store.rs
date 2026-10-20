@@ -1,9 +1,9 @@
-//! The reviews' store: one SQLite file, opened once as the service starts and shared by every request
-//! (`docs/code-review.md`, 「The review table」).
+//! The store: one SQLite file of reviews, comments, filings and events, opened once as the service starts and
+//! shared by every request (`docs/code-review.md`, 「Reviews」).
 
 use std::path::Path;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use sqlx::SqlitePool;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
@@ -41,6 +41,13 @@ impl Store {
   pub fn pool(&self) -> &SqlitePool {
     &self.pool
   }
+}
+
+/// Now, in epoch milliseconds: the time a row is written with.
+pub fn now_ms() -> i64 {
+  SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .map_or(0, |since| i64::try_from(since.as_millis()).unwrap_or(i64::MAX))
 }
 
 /// Why the store could not be opened.

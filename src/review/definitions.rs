@@ -14,7 +14,8 @@
 use std::collections::BTreeSet;
 
 use regex::Regex;
-use serde::Serialize;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 /// The language families a definition is looked for in. A file of any other kind declares nothing here.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -29,8 +30,9 @@ pub enum Language {
 }
 
 /// What a line declares.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
+#[schemars(rename = "DefinitionKind")]
 pub enum Kind {
   Function,
   Method,
@@ -368,7 +370,7 @@ fn is_name_shape(name: &str) -> bool {
 /// The word a reader pressed, as a name worth looking for, or none where it is not one. In a file of no family
 /// only the words every family spends on itself are refused.
 pub fn definition_name(word: &str, path: &str) -> Option<String> {
-  let name = bmo_markup::js::trim(word);
+  let name = bmo_text::js::trim(word);
   let length = name.len();
 
   if !is_name_shape(name) || !(NAME_LEAST..=NAME_MOST).contains(&length) {

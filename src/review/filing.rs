@@ -1,126 +1,104 @@
-//! The item filed from a review (`docs/code-review.md`, 「The item's shape」): its parts composed from the review
-//! and its thread in this repository's own words, handed to bmo-job as filing parts.
+//! Filing an item from a review into the job service (`docs/code-review.md`, 「Filing an item」): the item is
+//! created through the job service's client with the caller's title, brief and queue and the review as its
+//! labels, and its number remembered under the review.
 
-use super::records::{Review, Scope, Turn};
-use super::words::Words;
-use crate::clients::job::{Filing, FilingPart, PartKind};
+use axum::http::{Method, StatusCode};
+use axum::response::Response;
+use bmo_job_client::{ClientFailure, Labels, NewItem};
+use schemars::generate::SchemaGenerator;
 
-/// The place a review is pinned to, in the words an item uses.
-pub fn place(words: &Words, review: &Review) -> String {
-  let places = &words.place;
-  let line = match Scope::of(&review.scope) {
-    Some(Scope::Line) => &places.line,
-    Some(Scope::Range) => &places.range,
-    Some(Scope::Folder) => &places.folder,
-    Some(Scope::File) | None => &places.file,
-  };
-  let path = if review.path.is_empty() { places.whole.as_str() } else { review.path.as_str() };
-  let number = |line: Option<i64>| line.map_or_else(|| "null".to_owned(), |line| line.to_string());
+use super::records;
+use super::reviews::review_of;
+use crate::events::{FILING_CREATED, REVIEW_CHANGED};
+use crate::http::{Call, Refused, Route, answer};
+use crate::openapi::{Stated, json_of, review_key, schema_of};
+use crate::store::now_ms;
+use crate::wire::{Filing, NewFiling, Review};
 
-  words.fill(
-    line,
-    &[("path", path), ("start", &number(review.start_line)), ("end", &number(review.end_line))],
-  )
+/// The labels an item filed from a review carries: the review it came from.
+fn labels_of(review: &Review) -> Labels {
+  Labels::from([
+    ("reviewId".to_owned(), review.id.to_string()),
+    ("projectName".to_owned(), review.project_name.clone()),
+    ("revision".to_owned(), review.revision.clone()),
+  ])
 }
 
-/// A text cut to a number of characters, an ellipsis standing for what was left out.
-fn clip(text: &str, limit: usize) -> String {
-  if text.chars().count() <= limit {
-    text.to_owned()
+/// The job service's failure as this service answers it: its refusal under this service's own code, anything
+/// else as a failure upstream.
+fn refused(failure: &ClientFailure) -> Refused {
+  match failure {
+    ClientFailure::Answered {
+      status,
+      answer: Some(answer),
+      ..
+    } if (400..500).contains(status) => Refused::unprocessable(
+      "filing-refused",
+      format!("the job service refused the item with {status} {}: {}", answer.code, answer.error),
+    ),
+    other => Refused::upstream(other.to_string()),
+  }
+}
+
+/// A text the job service takes, refused where it is empty.
+fn given(field: &str, text: &str) -> Result<(), Refused> {
+  if bmo_text::js::trim(text).is_empty() {
+    Err(Refused::bad_request(format!("{field} is empty")))
   } else {
-    format!("{}…", text.chars().take(limit).collect::<String>())
+    Ok(())
   }
 }
 
-/// A moment as an instant: Unix seconds written as UTC with milliseconds.
-fn instant(seconds: i64) -> String {
-  chrono::DateTime::from_timestamp(seconds, 0)
-    .unwrap_or_default()
-    .format("%Y-%m-%dT%H:%M:%S%.3fZ")
-    .to_string()
-}
+/// `POST /reviews/{reviewId}/filings`: an item filed from a review.
+pub struct FileItem;
 
-/// What the owner wrote in the filing dialog.
-pub struct Asked<'a> {
-  pub title: &'a str,
-  pub to_do: &'a str,
-  pub conclusion: Option<&'a str>,
-}
+impl Route for FileItem {
+  const METHOD: Method = Method::POST;
+  const PATH: &'static str = "/reviews/{reviewId}/filings";
 
-/// What a filing is worded with beyond the review: the worker's label, who requests it, how much of the
-/// excerpt it carries, and when it is filed.
-pub struct Context<'a> {
-  pub label: &'a str,
-  pub requester: &'a str,
-  pub excerpt_clip: usize,
-  pub filed_at: i64,
-}
+  async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    let review = review_of(&mut call).await?;
+    let asked: NewFiling = call.body().await?;
 
-/// The item filed from a review: what the work is, what is to be done, the thread whole and in order, and what it
-/// came to.
-pub fn filing(
-  words: &Words,
-  review: &Review,
-  thread: &[Turn],
-  asked: &Asked<'_>,
-  context: &Context<'_>,
-) -> Filing {
-  let filing = &words.filing;
-  let id = review.id.to_string();
-  let place = place(words, review);
-  let source = words.fill(&filing.source, &[("id", &id)]);
-  let owner_filed = words.fill(&filing.owner_filed, &[("id", &id), ("at", &instant(context.filed_at))]);
-  let mut what = vec![
-    words.fill(
-      &filing.what,
-      &[
-        ("label", context.label),
-        ("worker", &review.worker),
-        ("root", &review.root),
-        ("commit", &review.commit_sha),
-        ("place", &place),
-      ],
-    ),
-    filing.pinned.clone(),
-  ];
+    given("title", &asked.title)?;
+    given("brief", &asked.brief)?;
+    given("queueName", &asked.queue_name)?;
 
-  if let Some(excerpt) = &review.excerpt {
-    what.extend([String::new(), filing.excerpt.clone(), clip(excerpt, context.excerpt_clip)]);
+    let standing = call.standing();
+    let item = NewItem {
+      title: asked.title,
+      brief: asked.brief,
+      queue_name: asked.queue_name,
+      labels: labels_of(&review),
+      ..NewItem::default()
+    };
+    let created = standing.job.create_item(&item).await.map_err(|failure| refused(&failure))?;
+    let mut writing = standing.events.write().await;
+    let mut transaction = records::begin(standing.store.pool()).await?;
+    let filing = records::write_filing(&mut transaction, review.id, created.id, now_ms()).await?;
+    let changed = records::review_in(&mut transaction, review.id)
+      .await?
+      .ok_or_else(|| Refused::failed("the review just filed from is gone"))?;
+
+    writing.record(&mut transaction, FILING_CREATED, review.id, &filing).await?;
+    writing.record(&mut transaction, REVIEW_CHANGED, review.id, &changed).await?;
+    records::commit(transaction).await?;
+    writing.announce();
+
+    Ok(answer(StatusCode::CREATED, &filing))
   }
 
-  let part = |kind: PartKind, source: &str, text: &str| FilingPart {
-    kind,
-    source: source.to_owned(),
-    text: text.to_owned(),
-  };
-  let mut parts = vec![
-    part(PartKind::Title, &source, asked.title),
-    part(PartKind::What, &source, &what.join("\n")),
-    part(PartKind::Do, &owner_filed, asked.to_do.trim()),
-  ];
-
-  for turn in thread {
-    let marks = [("id", id.as_str()), ("at", &instant(turn.said_at))];
-
-    parts.push(if turn.by_owner() {
-      part(PartKind::Instruction, &words.fill(&filing.owner_turn, &marks), &turn.text)
-    } else {
-      part(PartKind::Reply, &words.fill(&filing.agent_turn, &marks), &turn.text)
-    });
-  }
-
-  parts.push(match asked.conclusion.map(str::trim).filter(|conclusion| !conclusion.is_empty()) {
-    Some(conclusion) => part(PartKind::Conclusion, &owner_filed, conclusion),
-    None => part(
-      PartKind::Conclusion,
-      &source,
-      &words.fill(&filing.conclusion, &[("id", &id), ("label", context.label), ("place", &place)]),
-    ),
-  });
-
-  Filing {
-    worker: review.worker.clone(),
-    requester: context.requester.to_owned(),
-    parts,
+  fn stated(&self, generator: &mut SchemaGenerator) -> Stated {
+    Stated {
+      id: "createFiling",
+      tag: "reviews",
+      summary: "File an item from a review into the job service.",
+      parameters: vec![review_key()],
+      body: Some(schema_of::<NewFiling>(generator)),
+      answer: (201, json_of::<Filing>(generator)),
+      codes: vec!["not-found", "filing-refused", "upstream-failed"],
+    }
   }
 }
+
+crate::route!(FileItem);

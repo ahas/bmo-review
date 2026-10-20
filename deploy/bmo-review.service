@@ -1,7 +1,7 @@
 # The review service's user unit. A deployment runs it from its deploy tree, whose settings.local.toml links
 # to the data root's env/review.toml (docs/api.md, 「Settings」).
 [Unit]
-Description=bmo-review: the code review over the workers' checkouts
+Description=bmo-review: code review over git checkouts
 After=network-online.target
 # Without its settings the service has no listen address or token, so the unit does not start where the
 # deployment wrote none.
