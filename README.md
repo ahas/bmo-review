@@ -28,7 +28,7 @@ services stand on the new repositories; until then the only check is the build c
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
 | `.graph/` | The repository's code dependency graph |
 
-At the root stand the Cargo manifest, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
+At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `korean-ledger.json`, `settings.toml` and `settings.local.toml.example`, the example of the local settings a
 deployment gives.
 

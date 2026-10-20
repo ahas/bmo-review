@@ -7,6 +7,7 @@ name = "bmo-review"
 description = "Code review over git checkouts: reading at a revision, reviews, comments and filed items."
 version = "0.1.0-rev.1"
 edition = "2024"
+license = "MIT"
 publish = false
 
 [lib]
@@ -20,7 +21,7 @@ test = false
 [dependencies]
 axum = "0.8.9"
 # The graph service's published client: the projects and their checkouts.
-bmo-graph = { version = "=0.1.0-rev.1", path = "../graph" }
+bmo-graph = { version = "=0.2.0-rev.1", path = "../graph" }
 # The job service's published client: the items filed from a review.
 bmo-job-client = { version = "=0.1.0-rev.5", path = "../job/crates/client" }
 # Text handling the base library serves: a body and an excerpt cut on a character boundary.

@@ -1,6 +1,7 @@
 {
   "name": "bmo-review-client",
   "version": "0.1.0-rev.1",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "main": "./nuxt.config.ts",
