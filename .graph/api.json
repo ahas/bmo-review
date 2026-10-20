@@ -16,8 +16,8 @@
     "needs": [
       "console/screen"
     ],
-    "base": "1c324832b2c5735a67575701e9a0584ae68ed1fc",
-    "changed": 1792526265171,
+    "base": "539b4813369491ed029ca9af6db6e11062d129c7",
+    "changed": 1792530983857,
     "boundary": {
       "side": "exposes"
     }
