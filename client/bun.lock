@@ -12,7 +12,7 @@
       },
       "devDependencies": {
         "@nuxtjs/i18n": "^10.6.0",
-        "bmo-ui": "file:vendor/bmo-ui-0.1.0-rev.2.tgz",
+        "bmo-ui": "file:vendor/bmo-ui-0.1.0-rev.3.tgz",
         "nuxt": "^4.5.2",
         "openapi-typescript": "7.13.0",
         "typescript": "^5.9.3",
@@ -21,7 +21,7 @@
       },
       "peerDependencies": {
         "@nuxtjs/i18n": "^10.6.0",
-        "bmo-ui": "0.1.0-rev.2",
+        "bmo-ui": "0.1.0-rev.3",
         "nuxt": "^4.5.2",
         "vue-i18n": "^11.4.8",
       },
@@ -833,7 +833,7 @@
 
     "birpc": ["birpc@4.2.0", "", {}, "sha512-KxgKcZPfrtzJDDALHPguGpGJUrzdgpymyiQQgzFjWreHMOpWrnFNVREr5J48x2DBh8ZVioscrV1SBkDipGiX+Q=="],
 
-    "bmo-ui": ["bmo-ui@vendor/bmo-ui-0.1.0-rev.2.tgz", { "dependencies": { "@iconify-json/material-icon-theme": "^1.2.72", "@iconify-json/material-symbols": "^1.2.93", "@modelcontextprotocol/sdk": "^1.32.1", "@nuxt/ui": "^4.11.2", "@tanstack/vue-table": "8.21.3", "dayjs": "^1.11.23", "mermaid": "12.0.0", "monaco-editor": "^0.56.0", "tailwindcss": "^4.1.16", "vue": "^3.5.24", "vue-router": "^5.2.0", "zod": "^4.6.7" }, "peerDependencies": { "@nuxtjs/i18n": "^10.6.0", "nuxt": "^4.5.2", "vue-i18n": "^11.4.8" }, "bin": { "bmo-ui": "./bin/bmo-ui.ts" } }, "sha512-U3Z6nBJ0hAlfYYB7JvoPu5qBFJSAxdPtdyu4iG7rI2qwb796Z2OCQ3S0JAb1VKk4w9uCqDvJE2xFm2AG6hKLgw=="],
+    "bmo-ui": ["bmo-ui@vendor/bmo-ui-0.1.0-rev.3.tgz", { "dependencies": { "@iconify-json/material-icon-theme": "^1.2.72", "@iconify-json/material-symbols": "^1.2.93", "@modelcontextprotocol/sdk": "^1.32.1", "@nuxt/ui": "^4.11.2", "@tanstack/vue-table": "8.21.3", "dayjs": "^1.11.23", "mermaid": "12.0.0", "monaco-editor": "^0.56.0", "tailwindcss": "^4.1.16", "vue": "^3.5.24", "vue-router": "^5.2.0", "zod": "^4.6.7" }, "peerDependencies": { "@nuxtjs/i18n": "^10.6.0", "nuxt": "^4.5.2", "vue-i18n": "^11.4.8" }, "bin": { "bmo-ui": "./bin/bmo-ui.ts" } }, "sha512-Z4Hn+LQpUD94MXl8EEz1TJpb2m9nd3GcV3faG+UeRJwcmaX8tpqcyLH7ZTSh4cqCfwnbhLBmPZzGOLPdqazVsw=="],
 
     "body-parser": ["body-parser@2.3.0", "", { "dependencies": { "bytes": "^3.1.2", "content-type": "^2.0.0", "debug": "^4.4.3", "http-errors": "^2.0.1", "iconv-lite": "^0.7.2", "on-finished": "^2.4.1", "qs": "^6.15.2", "raw-body": "^3.0.2", "type-is": "^2.1.0" } }, "sha512-2cGmJupaNgg+QUwVLAucDuWuoMZ6EX9iHDRswZ5lsNYEmwPaRknMPCLZz07yTzVq/83p4o/wzbDZbBrTvGGTIw=="],
 
