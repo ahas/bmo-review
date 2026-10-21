@@ -1,2 +1,4 @@
 /target
 /settings.local.toml
+.graph/*
+!.graph/settings.toml
