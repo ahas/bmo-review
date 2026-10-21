@@ -6,6 +6,7 @@ pub mod client;
 pub mod events;
 pub mod health;
 pub mod http;
+pub mod import;
 pub mod mcp;
 pub mod openapi;
 pub mod review;

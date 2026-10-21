@@ -2,6 +2,7 @@
 //! (`docs/api.md`).
 
 use std::io::Write;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use bmo_review::client::ReviewClient;
@@ -32,6 +33,18 @@ enum Word {
   },
   /// Prints the OpenAPI document, as `docs/openapi.json` keeps it.
   Openapi,
+  /// Moves the old archive's code reviews from the item's export into this service's store (TODO #1923).
+  Import {
+    /// The export directory the item's export hand wrote.
+    #[arg(long)]
+    export: PathBuf,
+    /// The store's SQLite file; made and migrated where it does not stand.
+    #[arg(long)]
+    database: PathBuf,
+    /// Reads the export and reports what it would write, writing nothing.
+    #[arg(long)]
+    dry_run: bool,
+  },
 }
 
 #[tokio::main]
@@ -42,6 +55,25 @@ async fn main() -> ExitCode {
     let written = std::io::stdout().lock().write_all(bmo_review::openapi::openapi_json().as_bytes());
 
     return if written.is_ok() { ExitCode::SUCCESS } else { ExitCode::FAILURE };
+  }
+
+  // The import reads its own arguments and never the deployment's settings.
+  if let Word::Import {
+    export,
+    database,
+    dry_run,
+  } = &command.word
+  {
+    return match bmo_review::import::run(database, export, *dry_run).await {
+      Ok(report) => {
+        report.lines().iter().for_each(|line| println!("{line}"));
+        if report.sample.failures.is_empty() { ExitCode::SUCCESS } else { ExitCode::FAILURE }
+      }
+      Err(why) => {
+        eprintln!("bmo-review: {why}");
+        ExitCode::FAILURE
+      }
+    };
   }
 
   let settings = match Settings::load() {
@@ -64,6 +96,7 @@ async fn main() -> ExitCode {
       }
     }
     Word::Openapi => Ok(()),
+    Word::Import { .. } => unreachable!("the import is answered before the settings are read"),
   };
 
   match done {
