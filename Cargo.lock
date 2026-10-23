@@ -286,7 +286,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-review"
-version = "0.1.0-rev.1"
+version = "0.1.0-rev.2"
 dependencies = [
  "axum",
  "bmo-graph",
@@ -302,6 +302,7 @@ dependencies = [
  "schemars",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "thiserror",
  "tokio",

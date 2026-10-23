@@ -12,11 +12,13 @@ under `plugin/skills/`.
 
 ## Tests
 
-The repository carries one test, the repository-wide personal-data check in `tests/personal_data.rs`
-(`PERSONAL-DATA.md`), and runs it with `cargo test --test personal_data`. The behaviour tests are deferred:
-they are written and run here once the minimal services stand on the new repositories, and `docs/inventory.md`
-lists what the old behaviour was held to. Until they stand, the build check is `cargo check --all-targets` and
-the bundle's typecheck.
+The repository carries the repository-wide personal-data check in `tests/personal_data.rs` (`PERSONAL-DATA.md`),
+run with `cargo test --test personal_data`; the import's test in `tests/import.rs`; and the console contract's
+test in `tests/screen.rs`, which reads the manifest the service answers through bmo-ui's `consoleManifest`
+reading (run by Bun in `client/`, so the bundle's install must stand), and holds the guard's refusals and the
+bundle's versioned paths. The other behaviour tests are deferred: they are written and run here once the minimal
+services stand on the new repositories, and `docs/inventory.md` lists what the old behaviour was held to. Until
+they stand, the build check is `cargo check --all-targets` and the bundle's typecheck.
 
 ## Layout
 
@@ -25,10 +27,10 @@ the bundle's typecheck.
 | `src/` | The service, its client, its OpenAPI document and its MCP server, one crate split into its own modules |
 | `migrations/` | The store, its tables made by these statements in order |
 | `plugin/` | The harness plugin's skill, `bmo-review` |
-| `client/` | The console bundle: the code review screen and its own Korean pack, a project of its own |
+| `client/` | The console bundle: the code review screen, its own Korean pack and its build under `bundle/`, a project of its own |
 | `deploy/` | The service's user unit |
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
-| `tests/` | The repository-wide personal-data check, `personal_data.rs` |
+| `tests/` | The repository-wide personal-data check, `personal_data.rs`, the import's test and the console contract's test |
 | `.graph/` | The repository's code dependency graph |
 
 At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
@@ -37,11 +39,13 @@ local settings a deployment gives.
 
 ## The console bundle
 
-`client/` holds the code review screen as a console bundle by bmo-ui's console plugin contract at 0.1.0-rev.2,
-packed as `bmo-review-client`: a Nuxt layer on top of bmo-ui, declared by `client/console-bundle.json`. A console
-extends it as it extends bmo-ui and attaches it by that declaration alone; the screen calls this service's routes
-at the address bmo-ui's `relay` module answers for `review`, and its words are its own pack under `client/i18n/`
-(`docs/api.md`, 「The console bundle」). For the bundle's own install and typecheck a packed copy of bmo-ui stands
+`client/` holds the code review screen as a console bundle by bmo-ui's console plugin contract at 0.1.0-rev.7.
+`bun run bundle` builds it into `client/dist/` as a browser module with its stylesheet and words, which the
+service answers with its manifest at `GET /console-manifest`; a deployment builds it into the release before the
+release goes live. The same screen is packed as `bmo-review-client` by `bun pm pack`, a Nuxt layer on top of
+bmo-ui declared by `client/console-bundle.json`, for a console that extends the layer instead. The screen calls
+this service's routes at the address bmo-ui's `relay` module answers for `review`, and its words are its own pack
+under `client/i18n/` (`docs/api.md`, 「The console bundle」). For the bundle's own install and typecheck a packed copy of bmo-ui stands
 in `client/vendor/`. Its types are generated from the OpenAPI document by `bun run api`. The bundle's check is
 `bun install --frozen-lockfile && bun run typecheck` inside `client/`.
 

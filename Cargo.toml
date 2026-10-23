@@ -5,7 +5,7 @@
 [package]
 name = "bmo-review"
 description = "Code review over git checkouts: reading at a revision, reviews, comments and filed items."
-version = "0.1.0-rev.1"
+version = "0.1.0-rev.2"
 edition = "2024"
 license = "MIT"
 publish = false
@@ -44,6 +44,8 @@ schemars = "1.2.3"
 serde = { version = "1.0.229", features = ["derive"] }
 # Answers keep their fields in the order they are written.
 serde_json = { version = "1.0.151", features = ["preserve_order"] }
+# The console bundle's version, a digest of its files.
+sha2 = "0.10.9"
 # The store: reviews, comments, filings and events in one SQLite file.
 sqlx = { version = "0.8.6", default-features = false, features = ["sqlite", "runtime-tokio", "macros", "migrate"] }
 thiserror = "2.0.21"

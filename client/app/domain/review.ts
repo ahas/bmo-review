@@ -26,8 +26,17 @@ const SERVICE = "review";
 // The most one page of a list holds.
 const PAGE = 1_000;
 
+// The path every call stands under: the service's screen prefix where the service's own module carries the
+// screen, which its entry sets before the screen stands, and none where a console builds the screen in as a layer
+// (docs/api.md, 「The console bundle」).
+let prefix = "";
+
+export function callUnder(path: string): void {
+  prefix = path;
+}
+
 function address(path: string): string {
-  return relayAddress(SERVICE, path);
+  return relayAddress(SERVICE, `${prefix}${path}`);
 }
 
 function segment(key: string): string {

@@ -26,6 +26,7 @@ pub struct Settings {
   pub store: Store,
   pub graph: Peer,
   pub job: Peer,
+  pub screen: Screen,
   pub limits: Limits,
 }
 
@@ -43,6 +44,13 @@ pub struct Server {
 pub struct Store {
   /// The SQLite file; a relative one is read from where the process starts.
   pub path: PathBuf,
+}
+
+/// The console bundle.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Screen {
+  /// The folder the bundle's build writes; a relative one is read from where the process starts.
+  pub bundle: PathBuf,
 }
 
 /// A unit this service calls: its base address and the token it takes.

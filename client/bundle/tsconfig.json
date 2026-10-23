@@ -1,0 +1,5 @@
+{
+  // The served module's entry, read with the screen as Nuxt prepares it.
+  "extends": "../.nuxt/tsconfig.app.json",
+  "include": ["../.nuxt/nuxt.d.ts", "./entry.ts", "../app/**/*"]
+}

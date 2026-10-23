@@ -21,18 +21,27 @@ const DESCRIPTION: &str = "Code review over git checkouts: projects named as the
   through its client. Who wrote a review or a comment is an opaque authorName. Bodies are JSON with camelCase \
   keys; times are integers of epoch milliseconds. A list is a page, `after` being the cursor each route states. \
   A revision is seven to sixty-four hex characters, HEAD where absent. A file's path stands as the rest of the \
-  path. Every failure is answered in the error shape with its status. The harness plugin's tools, each a thin \
-  call of one route, are stated under `x-tools`.";
+  path. Every failure is answered in the error shape with its status. Every route is answered again under \
+  `/screen`, the console bundle's API prefix, where a call is also refused 403 `forbidden` unless its \
+  `Owner-Role` header names `member` or `administrator`; the console bundle's manifest, words and files are \
+  stated under the `screen` tag. The harness plugin's tools, each a thin call of one route, are stated under \
+  `x-tools`.";
 
 /// Each code a route can answer, its status and what it means.
 const CODES: &[(&str, u16, &str)] = &[
   ("bad-request", 400, "the body, the query or the path is not the shape the route takes"),
   ("unauthorized", 401, "the bearer token is missing or wrong"),
+  (
+    "forbidden",
+    403,
+    "under /screen, the call's Owner-Role is missing or does not allow member",
+  ),
   ("no-route", 404, "no route answers the method and path"),
   (
     "not-found",
     404,
-    "nothing stands at the project, the revision, the path or the review the request names",
+    "nothing stands at the project, the revision, the path, the review or the bundle's file the request names, or \
+     no bundle stands",
   ),
   ("conflict", 409, "the review's states do not allow the change"),
   ("gone", 410, "the events since the number asked for are no longer kept"),

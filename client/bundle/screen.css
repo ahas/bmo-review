@@ -1,0 +1,8 @@
+/* The served module's stylesheet (docs/api.md, 「The console bundle」): the utility classes the screen's own
+   files use and the screen's own sheet, built on bmo-ui's tokens. bmo-ui's stylesheet is taken for reference
+   alone, so its theme and Nuxt UI's are read and none of their rules are written here: the console draws with
+   its own copy of both. */
+@reference "bmo-ui/app/assets/css/main.css";
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "../app";
+@import "../app/assets/css/review.css";

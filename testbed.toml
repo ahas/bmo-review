@@ -63,3 +63,10 @@ env_links = [{ link = "settings.local.toml", target = "env/review.toml" }]
 units = ["deploy/*.service"]
 # Answers 0 once the service the deployed settings name answers ready (docs/api.md, 「Health」).
 health = "~/.local/share/bmo-review/deploy/bin/bmo-review health"
+
+# The console bundle built into the release before it goes live, into the folder the service reads when it starts
+# (docs/api.md, 「The console bundle」); the release's setup has installed the bundle's packages.
+[[deploy.step]]
+id = "console-bundle"
+command = "cd client && bun run bundle"
+phase = "before-flip"

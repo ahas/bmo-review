@@ -21,6 +21,11 @@ token = ""
 address = "http://127.0.0.1:7841"
 token = ""
 
+[screen]
+# The folder the console bundle's build writes (`bun run bundle` in client/): its module, its stylesheet and its
+# words. A relative one is read from where the process starts; where none stands, the service answers no screen.
+bundle = "client/dist"
+
 # The ceilings of reading a checkout and of what a review and a comment take (docs/code-review.md).
 [limits]
 # A file's body past this many bytes carries only its beginning; a NUL within the first binary_probe bytes

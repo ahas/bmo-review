@@ -206,6 +206,7 @@ import { refusalText } from "../domain/refusals";
 import { findDefinitions, listCommits, postComment, readFile } from "../domain/review";
 import { fileIcon } from "bmo-ui/app/domain/file-icons";
 import { countText } from "bmo-ui/app/domain/numbers";
+import { useDarkScheme } from "bmo-ui/app/domain/scheme";
 import { fileTabLabel } from "bmo-ui/app/domain/tabs";
 
 import type { ContextMenuItem } from "@nuxt/ui";
@@ -297,7 +298,7 @@ const posting = ref(false);
 const postFailure = ref("");
 const zoneNodes = shallowRef(new Map<string, HTMLElement>());
 const box = useTemplateRef<HTMLElement>("box");
-const colorMode = useColorMode();
+const dark = useDarkScheme();
 // Where each open file was being read, so going back to a tab goes back to that place. What is remembered belongs
 // to the version it was read in, which is why the revision is asked for with the path.
 const readAt = readingPlaces();
@@ -744,7 +745,7 @@ async function prepareEditor(): Promise<void> {
       return;
     }
 
-    view = openReviewView(t, box.value, colorMode.value === "dark");
+    view = openReviewView(t, box.value, dark.value);
 
     // A press in the margin chooses that line; a second press widens the choice when it was asked to, with shift
     // on a keyboard's screen and always on a narrow one, where a finger has no shift.
@@ -798,10 +799,7 @@ watch(inline, (on) => {
     // A browser that keeps nothing forgets the choice, which is all there is to lose.
   }
 });
-watch(
-  () => colorMode.value,
-  (mode) => view?.paint(mode === "dark")
-);
+watch(dark, (on) => view?.paint(on));
 
 // The commit's subject stands on the chip as soon as the file does.
 watch(

@@ -10,6 +10,7 @@ pub mod import;
 pub mod mcp;
 pub mod openapi;
 pub mod review;
+pub mod screen;
 pub mod settings;
 pub mod store;
 pub mod wire;

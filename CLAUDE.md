@@ -70,13 +70,17 @@ These hold every bmo repository, and every change here (archive document #301, i
   that moves a feature's files, symbols or edges updates its node in the checkout. Its area files are generated
   and untracked, so a fresh checkout builds them again, while `settings.toml` is the repository's configuration
   and stays tracked.
-- Tests live in `tests/`; no test module stands in `src/`. The repository carries the personal-data check
-  there; the behaviour tests are deferred for now (README.md).
+- Tests live in `tests/`; no test module stands in `src/`. The repository carries the personal-data check,
+  the import's test and the console contract's test there; the other behaviour tests are deferred for now
+  (README.md).
 
 ## The stages of a change
 
-1. **Writing:** the only check is `cargo check --all-targets`, and for the bundle its typecheck.
+1. **Writing:** the only check is `cargo check --all-targets`, and for the bundle its typecheck, `bun run typecheck`
+   in `client/`, which reads the screen and its build.
 2. **Review:** read the whole diff against the document governing it, then `cargo fmt --all --check`
    and `cargo clippy --all-targets -- -D warnings`.
 3. **Verification:** the tests touched, then the whole suite once, output written to a file and the
-   file read. The behaviour tests are deferred, so the suite holds the personal-data check alone.
+   file read. The behaviour tests are deferred, so the suite holds the personal-data check, the import's test
+   and the console contract's test, which reads the manifest through Bun in `client/` and so needs the bundle's
+   install.

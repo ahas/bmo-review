@@ -1,22 +1,22 @@
 # The code review screen
 
-The screen this repository's console bundle carries (`client/`), attached to a console by its declaration
-(`docs/api.md`, 「The console bundle」). What is read from which revision, how paths are fenced and what is
+The screen this repository's console bundle carries (`client/`), attached to a console by the manifest the
+service answers (`docs/api.md`, 「The console bundle」). What is read from which revision, how paths are fenced and what is
 excluded, and how reviews, comments and filings behave are `docs/code-review.md`; this document is the screen's
 shape. Every word it shows stands in the bundle's own pack, by key under `code.`.
 
 ## Where it stands
 
 - **The place a reader browses, reads and reviews** each project's checkout. A console serves it at `/code`,
-  under the title and icon the declaration names. Code is only read; what is written is reviews, comments and
+  under the title and icon the manifest names, to a reader holding the `member` role or the `administrator`. Code is only read; what is written is reviews, comments and
   filed items.
 - **What it is built with.** The editor is bmo-ui's read-only Monaco code view, and the sections are bmo-ui's
   splitter and tabs. No docking library and no workbench are brought in: the console's sections are one set of
   splitters and narrow-screen tabs, and a second layout system would move separately inside the same console.
   Switching several files by tab and a comment standing beside a line are built with the editor's markers and the
   space between lines.
-- **Every call goes to the review service** at the address bmo-ui's `relay` module answers for `review`, the event
-  stream included.
+- **Every call goes to the review service** at the address bmo-ui's `relay` module answers for `review`, under the
+  service's screen prefix `/screen`, the event stream included (`docs/api.md`, 「The console bundle」).
 
 ## Sections
 

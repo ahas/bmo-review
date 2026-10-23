@@ -20,6 +20,7 @@ use serde::de::DeserializeOwned;
 
 use crate::events::Events;
 use crate::openapi::Stated;
+use crate::screen::{self, Bundle};
 use crate::settings::Settings;
 use crate::store::Store;
 use crate::wire::WireError;
@@ -175,14 +176,18 @@ pub struct Standing {
   pub graph: GraphClient,
   /// The job service's client, at the address the settings name.
   pub job: JobClient,
+  /// The console bundle, where its folder stands.
+  pub bundle: Option<Arc<Bundle>>,
 }
 
 impl Standing {
-  /// What the service stands on, or why a client of another unit cannot be made.
+  /// What the service stands on, or why a client of another unit cannot be made or the console bundle's folder
+  /// is no bundle.
   pub fn new(settings: Settings, store: Store) -> Result<Self, String> {
     let graph = GraphClient::new(&settings.graph.address, &settings.graph.token);
     let job = JobClient::new(&settings.job.address, &settings.job.token)
       .map_err(|why| format!("the job service's address does not read: {why}"))?;
+    let bundle = Bundle::read(&settings.screen.bundle)?.map(Arc::new);
 
     Ok(Self {
       settings: Arc::new(settings),
@@ -190,6 +195,7 @@ impl Standing {
       store,
       graph,
       job,
+      bundle,
     })
   }
 }
@@ -321,7 +327,8 @@ async fn no_route(request: Request) -> Response {
   .into_response()
 }
 
-/// The router answering every registered route behind the token, or what is wrong with the routes linked in.
+/// The router answering every registered route behind the token, and again under the screen's prefix behind the
+/// reader's role as well, or what is wrong with the routes linked in.
 pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
   let faults = route_faults();
 
@@ -353,9 +360,12 @@ pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
   }
 
   let standing = Arc::new(standing);
-  let router = by_path
+  let routes = by_path
     .into_iter()
-    .fold(Router::new(), |router, (path, methods)| router.route(path, methods.fallback(no_route)))
+    .fold(Router::new(), |router, (path, methods)| router.route(path, methods.fallback(no_route)));
+  let guarded = routes.clone().fallback(no_route).layer(middleware::from_fn(screen::require_role));
+  let router = routes
+    .nest(screen::PREFIX, guarded)
     .fallback(no_route)
     .layer(middleware::from_fn_with_state(standing.clone(), require_token));
 

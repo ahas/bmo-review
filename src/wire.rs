@@ -2,9 +2,11 @@
 //! them, the MCP server's tools take and give them, and the OpenAPI document is written from them, so the four
 //! never part.
 
+use std::collections::BTreeMap;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 pub use crate::review::definitions::Kind as DefinitionKind;
 
@@ -24,6 +26,52 @@ pub struct Health {
   pub reason: Option<String>,
   pub version: String,
 }
+
+/// The console bundle's manifest, in the shape bmo-ui's console plugin contract states (`docs/api.md`, 「The
+/// console bundle」).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ScreenManifest {
+  /// The bundle's name, its words' namespace.
+  pub name: String,
+  /// The key, in the bundle's words, of the screen's name in a console's menu.
+  pub title: String,
+  /// The icon drawn beside that name.
+  pub icon: String,
+  /// The path the screen stands under.
+  pub screen_path: String,
+  /// The name a console relays the service under.
+  pub service_name: String,
+  /// The path of the bundle's module.
+  pub bundle: String,
+  /// The path of the bundle's stylesheet.
+  pub stylesheet: String,
+  /// The path of the bundle's words.
+  pub words: String,
+  /// The path every call the screen makes stands under.
+  pub api_prefix: String,
+  /// The least role a reader holds to open the screen.
+  pub role: Role,
+  /// Whether every call the screen makes needs the reader's owner key.
+  pub owner_key: bool,
+  /// Whether the screen reads the event stream.
+  pub events: bool,
+  /// Whether the screen opens a WebSocket.
+  pub websocket: bool,
+  /// The event kinds a console may raise as a notice to a reader not on the screen.
+  pub push_kinds: Vec<String>,
+}
+
+/// A role a reader holds, as `Owner-Role` names it: an administrator holds every role a member holds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum Role {
+  Administrator,
+  Member,
+}
+
+/// The console bundle's words: each locale's tree under the locale's code.
+pub type Words = BTreeMap<String, Map<String, Value>>;
 
 /// One page of a list: its items, and whether anything stands past the last of them.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
