@@ -62,5 +62,5 @@ in `client/vendor/`. Its types are generated from the OpenAPI document by `bun r
 
 ## Version
 
-`VERSION` holds the repository's version, the crate's own, `0.1.0-rev.<n>` before the first release.
-`docs/api.md`, 「Versions」, says which change is a bump.
+`VERSION` holds the repository's version, the crate's own, `0.1.0-rev.<n>` before the first release. It moves
+only at a release the owner declares (`docs/api.md`, 「Versions」).

@@ -21,11 +21,11 @@ test = false
 [dependencies]
 axum = "0.8.9"
 # The graph service's published client: the projects and their checkouts.
-bmo-graph = { version = "=0.4.0-rev.2", path = "../graph" }
+bmo-graph = { path = "../graph" }
 # The job service's published client: the items filed from a review.
-bmo-job-client = { version = "=0.1.0-rev.7", path = "../job/crates/client" }
+bmo-job-client = { path = "../job/crates/client" }
 # Text handling the base library serves: a body and an excerpt cut on a character boundary.
-bmo-text = { version = "0.1.0-rev.5", path = "../../base/text", default-features = false }
+bmo-text = { path = "../../base/text", default-features = false }
 clap = { version = "4.6.7", features = ["derive"] }
 # The settings: the built-in defaults, the deployment's files and the environment, layered in that order.
 config = { version = "0.15", default-features = false, features = ["toml"] }

@@ -33,8 +33,8 @@ These hold every bmo repository, and every change here (archive document #301, i
 - **Every other unit is reached through its API,** never through its code, its tables or its files.
   The routes this service serves and every call it makes to another unit are listed in `docs/api.md`.
   A project's checkout is read only through git, at a revision, as `docs/code-review.md` fences it.
-- **Another service is called only through the client it publishes,** pinned at the version `docs/api.md`
-  names; no client of another service is written here. A call a sibling does not serve is not invented.
+- **Another service is called only through the client it publishes,** taken from its checkout by path and never
+  pinned to a version (bmo-chat's `docs/conventions.md`, 「Versions」); no client of another service is written here. A call a sibling does not serve is not invented.
 - **The service knows nothing of what calls it.** Its routes, fields and tools name no agent, worker,
   room, owner or console; who writes is the caller's opaque `authorName`.
 - **Dependencies:** crates from the registry pinned in `Cargo.toml`, and among other repositories only

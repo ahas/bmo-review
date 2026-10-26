@@ -4,8 +4,8 @@ Every route this service answers, its events, its codes, the calls it makes, its
 bundle and its settings. What the code review does is `docs/code-review.md`, and the screen is
 `docs/screen.md`; this document says how it is asked. The OpenAPI 3.1 document, `docs/openapi.json`, states the
 same routes, bodies and tools as JSON Schemas generated from the service's own types; `bmo-review openapi` prints
-it. A change to anything here changes this document and that one in the same commit and follows the version rule
-(「Versions」).
+it. A change to anything here changes this document and that one in the same commit; what moves the version is
+「Versions」.
 
 ## Conventions
 
@@ -159,10 +159,10 @@ open and migrated.
 Each unit is reached only through the client it publishes, at the base address and with the token the settings
 name, and its contract is that unit's own document.
 
-- **bmo-graph,** through `bmo_graph::client` at 0.4.0-rev.2: `GET /projects` for the projects, a page at a time
+- **bmo-graph,** through `bmo_graph::client`, taken from its checkout beside this one: `GET /projects` for the projects, a page at a time
   with the caller's cursor, and `GET /projects/{projectName}` for the one a request names; this service reads a
   project's `name` and `checkout`.
-- **bmo-job,** through `bmo-job-client` at 0.1.0-rev.7: `POST /items` for a filing, with the caller's `title`,
+- **bmo-job,** through `bmo-job-client`, taken from its checkout beside this one: `POST /items` for a filing, with the caller's `title`,
   `brief` and `queueName`, and as `labels` the review's `reviewId`, `projectName` and `revision`; this service
   reads the item's `id`.
 - **git,** run in a project's checkout as `docs/code-review.md` 「How git is called」 states, reading only.
@@ -277,6 +277,7 @@ binary (a deployment's root); then `BMO_REVIEW_<TABLE>__<KEY>` in the environmen
 ## Versions
 
 The repository has one version, the crate's, which its health, its OpenAPI document and its MCP server answer.
-Before its first release it is `0.1.0-rev.<n>`, `n` counting the version bumps since `0.1.0`, as bmo-chat's
-`docs/conventions.md` 「Versions」 states; every change to this document's routes, fields, codes, events, tools or
-settings is one bump.
+It moves only at a release the owner declares, as bmo-chat's `docs/conventions.md` 「Versions」 states: before the
+first release it is `0.1.0-rev.<n>`, `n` counting the releases since `0.1.0`, and a commit, a deploy or a change to
+this document's routes, fields, codes, events, tools or settings moves none. A deployment is told apart by its
+commit. A sibling unit is taken from its checkout by path, never pinned to a version.
