@@ -159,7 +159,7 @@ open and migrated.
 Each unit is reached only through the client it publishes, at the base address and with the token the settings
 name, and its contract is that unit's own document.
 
-- **bmo-graph,** through `bmo_graph::client` at 0.4.0-rev.1: `GET /projects` for the projects, a page at a time
+- **bmo-graph,** through `bmo_graph::client` at 0.4.0-rev.2: `GET /projects` for the projects, a page at a time
   with the caller's cursor, and `GET /projects/{projectName}` for the one a request names; this service reads a
   project's `name` and `checkout`.
 - **bmo-job,** through `bmo-job-client` at 0.1.0-rev.7: `POST /items` for a filing, with the caller's `title`,

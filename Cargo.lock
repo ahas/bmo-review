@@ -240,7 +240,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-graph"
-version = "0.4.0-rev.1"
+version = "0.4.0-rev.2"
 dependencies = [
  "axum",
  "bmo-text",
