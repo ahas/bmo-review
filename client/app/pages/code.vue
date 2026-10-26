@@ -3,7 +3,8 @@
        by side with the component library's boundaries and the two at the sides fold away; where there is not,
        the code stands alone and the other two rise from the bottom edge. -->
   <UDashboardPanel id="code" :ui="{ body: 'p-0 sm:p-0 gap-0 sm:gap-0 overflow-y-hidden [&>*]:max-w-none' }">
-    <template #header>
+    <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own. -->
+    <template v-if="!barOffered" #header>
       <UDashboardNavbar :title="$t('code.title.screen')" icon="i-material-symbols-rate-review-outline" />
     </template>
 
@@ -134,6 +135,7 @@
 </template>
 
 <script setup lang="ts">
+import { inject } from "vue";
 import { useI18n } from "vue-i18n";
 import { CODE_VIEW } from "../../shared/config";
 import { commentCounts, defaultTarget, openTab, placeText, readKeptCodeTabs, shortSha } from "../domain/code";
@@ -156,6 +158,8 @@ import type { SplitterItem } from "@nuxt/ui";
 // tabs, pinned or not, is kept in this browser, and so is how wide the parts are.
 
 const { t } = useI18n();
+// Whether a console offers its title bar, under the key bmo-ui's bundle contract names.
+const barOffered = inject("bmo-console-title-bar", null) !== null;
 const SIDES: SplitterItem[] = [
   { slot: "explorer", minSize: 14, defaultSize: 22, collapsible: true, collapsedSize: 0 },
   { slot: "code", minSize: 35, defaultSize: 53 },

@@ -11,7 +11,8 @@ import type { ConsoleBundleModule } from "bmo-ui/shared/console-manifest";
 callUnder("/screen");
 
 const screen: ConsoleBundleModule = {
-  routes: [{ path: "/code", name: "code", component: () => import("../app/pages/code.vue") }]
+  // The route asks for the console's title bar (bmo-ui's `docs/console-bundles.md`, the title bar).
+  routes: [{ path: "/code", name: "code", component: () => import("../app/pages/code.vue"), meta: { consoleTitleBar: true } }]
 };
 
 export default screen;

@@ -15,6 +15,10 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
   splitters and narrow-screen tabs, and a second layout system would move separately inside the same console.
   Switching several files by tab and a comment standing beside a line are built with the editor's markers and the
   space between lines.
+- **Under the console's title bar.** The screen's route asks for the console's bar in its meta, so a console that
+  offers its bar (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar) draws it over the screen
+  under the manifest's title and icon, and the screen draws no bar of its own. Found without that offer it draws its
+  own bar, named and marked the same.
 - **Every call goes to the review service** at the address bmo-ui's `relay` module answers for `review`, under the
   service's screen prefix `/screen`, the event stream included (`docs/api.md`, 「The console bundle」).
 
