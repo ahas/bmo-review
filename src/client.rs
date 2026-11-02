@@ -2,8 +2,6 @@
 //! bodies of [`crate::wire`], and a failure read back as its status, code and sentence. It carries the contract
 //! and no caller's policy.
 
-use std::time::Duration;
-
 use reqwest::header::{ACCEPT, AUTHORIZATION};
 use reqwest::{Method, RequestBuilder, Url};
 use serde::Serialize;
@@ -17,9 +15,6 @@ use crate::wire::{
 
 /// The query of a route that takes none.
 const NO_QUERY: [(&str, &str); 0] = [];
-
-/// How long one call waits for its answer.
-const PATIENCE: Duration = Duration::from_secs(60);
 
 /// Why a call came to no answer of the route's shape.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
@@ -55,7 +50,6 @@ impl ReviewClient {
   pub fn new(base: &str, token: &str) -> Called<Self> {
     let base = Url::parse(base).map_err(|why| ClientFailure::Unreached(format!("{base}: {why}")))?;
     let http = reqwest::Client::builder()
-      .timeout(PATIENCE)
       .build()
       .map_err(|why| ClientFailure::Unreached(why.to_string()))?;
 

@@ -1,20 +1,17 @@
 //! git, run in a worker's checkout (`docs/code-review.md`, 「How git is called」): an argument list with no
-//! shell, pathspecs taken literally, output read up to a cap and the run held to a time limit.
+//! shell, pathspecs taken literally, output read up to a cap and the run lasting until git ends.
 
 use std::path::Path;
 use std::process::Stdio;
-use std::time::Duration;
 
 use tokio::io::AsyncReadExt;
 use tokio::process::{Child, Command};
-use tokio::time::{Instant, timeout_at};
 
-/// The cap and the time limit a run takes where it names none.
+/// The cap a run takes where it names none.
 pub const OUTPUT_CAP: usize = 64 * 1024 * 1024;
-pub const TIME_LIMIT: Duration = Duration::from_secs(20);
 
-// The exit code a run stands under when it was ended by a signal or by its time limit: a failure, and one a
-// search reads as a run that did not finish.
+// The exit code a run stands under when it was ended by a signal or could not be waited for: a failure, and one
+// a search reads as a run that did not finish.
 const ENDED: i32 = 255;
 // How much is read from the output at a time.
 const CHUNK: usize = 64 * 1024;
@@ -52,15 +49,12 @@ enum Read {
   Closed,
   /// The cap was reached; `cut` where more stood beyond it.
   Capped { cut: bool },
-  /// The time limit came first.
-  Late,
 }
 
-/// One git command in `root`, its output read up to `cap` bytes and the run ended at `limit`. A run that
-/// reached its cap is ended there and stands as a success; one ended by its limit keeps what it wrote and
-/// stands as a failure.
-pub async fn git(root: &Path, args: &[&str], cap: usize, limit: Duration) -> Run {
-  let deadline = Instant::now() + limit;
+/// One git command in `root`, its output read up to `cap` bytes and the run waited for until git ends. A run
+/// that reached its cap is ended there and stands as a success. The run is the caller's future: dropping it, as
+/// a request whose caller left is dropped, ends git at once.
+pub async fn git(root: &Path, args: &[&str], cap: usize) -> Run {
   let mut command = Command::new("git");
 
   command
@@ -85,10 +79,9 @@ pub async fn git(root: &Path, args: &[&str], cap: usize, limit: Duration) -> Run
   let mut out = Vec::new();
   let mut chunk = vec![0; CHUNK];
   let read = loop {
-    let count = match timeout_at(deadline, stdout.read(&mut chunk)).await {
-      Err(_) => break Read::Late,
-      Ok(Err(_) | Ok(0)) => break Read::Closed,
-      Ok(Ok(count)) => count,
+    let count = match stdout.read(&mut chunk).await {
+      Err(_) | Ok(0) => break Read::Closed,
+      Ok(count) => count,
     };
     let room = cap - out.len();
 
@@ -105,18 +98,10 @@ pub async fn git(root: &Path, args: &[&str], cap: usize, limit: Duration) -> Run
       end(&mut child).await;
       Run { code: 0, out, cut }
     }
-    Read::Late => {
-      end(&mut child).await;
-      Run {
-        code: ENDED,
-        out,
-        cut: false,
-      }
-    }
     Read::Closed => {
-      let code = match timeout_at(deadline, child.wait()).await {
-        Ok(Ok(status)) => status.code().unwrap_or(ENDED),
-        _ => {
+      let code = match child.wait().await {
+        Ok(status) => status.code().unwrap_or(ENDED),
+        Err(_) => {
           end(&mut child).await;
           ENDED
         }

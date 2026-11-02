@@ -36,16 +36,14 @@ binary_probe = 8000
 # beginning.
 tree_entries = 50000
 diff_bytes = 2000000
-# The content search: the words' length, the lines per file and in all, and its time.
+# The content search: the words' length, and the lines per file and in all.
 search_query = 200
 search_per_file = 5
 search_total = 200
-search_timeout_ms = 10000
-# The definition search: the lines read from one file, the definitions kept from it and in all, and its time.
+# The definition search: the lines read from one file, and the definitions kept from it and in all.
 definition_scan_per_file = 40
 definition_per_file = 5
 definition_total = 50
-definition_timeout_ms = 5000
 # How much of a matched line comes back, in characters.
 match_line = 300
 # How much of the lines a comment points at it keeps, in characters.

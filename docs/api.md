@@ -268,8 +268,8 @@ binary (a deployment's root); then `BMO_REVIEW_<TABLE>__<KEY>` in the environmen
 | `screen` | `bundle` | the folder the console bundle's build writes, read from where the process starts where it is relative |
 | `limits` | `file_bytes`, `binary_probe` | the body ceiling, and how far into a file a NUL marks it binary |
 | `limits` | `tree_entries`, `diff_bytes` | the most entries a tree page holds, and the diff ceiling |
-| `limits` | `search_query`, `search_per_file`, `search_total`, `search_timeout_ms` | the content search's ceilings |
-| `limits` | `definition_scan_per_file`, `definition_per_file`, `definition_total`, `definition_timeout_ms` | the definition search's ceilings |
+| `limits` | `search_query`, `search_per_file`, `search_total` | the content search's ceilings |
+| `limits` | `definition_scan_per_file`, `definition_per_file`, `definition_total` | the definition search's ceilings |
 | `limits` | `match_line` | how much of a matched line comes back |
 | `limits` | `excerpt` | how much of the lines a comment points at it keeps |
 | `limits` | `title`, `comment`, `author_name` | the ceilings of a review's title, a comment's text and an author's name |

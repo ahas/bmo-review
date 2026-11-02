@@ -6,10 +6,9 @@
 
 use std::collections::HashMap;
 use std::path::Path;
-use std::time::Duration;
 
 use super::definitions::{self, Definition};
-use super::git::{OUTPUT_CAP, Run, TIME_LIMIT, git};
+use super::git::{OUTPUT_CAP, Run, git};
 use super::secrets::{is_secret_folder, is_secret_path};
 use crate::settings::Limits;
 use crate::wire::{Commit, EntryKind, FileSource, Match, ProjectState, TreeEntry};
@@ -106,13 +105,7 @@ pub async fn resolve_commit(root: &Path, asked: &str) -> Option<String> {
 
 /// The full hash an object name the service wrote verifies to as a commit.
 async fn verified(root: &Path, object: &str) -> Option<String> {
-  let run = git(
-    root,
-    &["rev-parse", "--verify", "--quiet", "--end-of-options", object],
-    SMALL,
-    TIME_LIMIT,
-  )
-  .await;
+  let run = git(root, &["rev-parse", "--verify", "--quiet", "--end-of-options", object], SMALL).await;
   let full = run.text().trim().to_owned();
   let whole = (full.len() == 40 || full.len() == 64) && full.bytes().all(|byte| byte.is_ascii_hexdigit());
 
@@ -140,7 +133,7 @@ pub async fn describe(root: &Path, hashes: &[String]) -> Option<Vec<Commit>> {
   args.extend(hashes.iter().map(String::as_str));
   args.push("--");
 
-  let run = git(root, &args, OUTPUT_CAP, TIME_LIMIT).await;
+  let run = git(root, &args, OUTPUT_CAP).await;
 
   run.ok().then(|| commits_of(&run.text()))
 }
@@ -172,7 +165,7 @@ pub async fn head_of(root: &Path) -> Result<String, ProjectState> {
     return Err(ProjectState::Missing);
   }
 
-  if !git(root, &["rev-parse", "--show-toplevel"], 4096, TIME_LIMIT).await.ok() {
+  if !git(root, &["rev-parse", "--show-toplevel"], 4096).await.ok() {
     return Err(ProjectState::NotGit);
   }
 
@@ -185,9 +178,8 @@ pub async fn checkout_state(root: &Path) -> Standing {
     Ok(head) => head,
     Err(state) => return Standing::unreadable(state),
   };
-  let branch = git(root, &["symbolic-ref", "--quiet", "--short", "HEAD"], SMALL, TIME_LIMIT).await;
-  let status =
-    git(root, &["status", "--porcelain", "--untracked-files=no", "-z"], STATUS_CAP, TIME_LIMIT).await;
+  let branch = git(root, &["symbolic-ref", "--quiet", "--short", "HEAD"], SMALL).await;
+  let status = git(root, &["status", "--porcelain", "--untracked-files=no", "-z"], STATUS_CAP).await;
 
   Standing {
     state: ProjectState::Ready,
@@ -260,7 +252,6 @@ pub async fn list_tree(root: &Path, commit: &str) -> Option<Vec<TreeEntry>> {
     root,
     &["ls-tree", "-r", "-t", "-l", "-z", "--full-tree", "--end-of-options", commit],
     OUTPUT_CAP,
-    TIME_LIMIT,
   )
   .await;
 
@@ -284,7 +275,6 @@ async fn tree_line(root: &Path, commit: &str, path: &str) -> Option<TreeLine> {
     root,
     &["ls-tree", "-l", "-z", "--full-tree", "--end-of-options", commit, "--", path],
     LINE_CAP,
-    TIME_LIMIT,
   )
   .await;
 
@@ -330,7 +320,7 @@ pub async fn read_tree_file(root: &Path, commit: &str, path: &str, limits: &Limi
     return None;
   }
 
-  let run = git(root, &["cat-file", "blob", &line.object], limits.file_bytes, TIME_LIMIT).await;
+  let run = git(root, &["cat-file", "blob", &line.object], limits.file_bytes).await;
 
   if !run.ok() {
     return None;
@@ -392,7 +382,7 @@ pub async fn list_commits(
     args.push(path);
   }
 
-  let run = git(root, &args, OUTPUT_CAP, TIME_LIMIT).await;
+  let run = git(root, &args, OUTPUT_CAP).await;
 
   if !run.ok() {
     return Err(ListFailure::Unreadable);
@@ -421,13 +411,7 @@ pub async fn read_commit_diff(root: &Path, commit: &str, limits: &Limits) -> Opt
     return Some(described);
   }
 
-  let parents = git(
-    root,
-    &["rev-list", "--parents", "-n", "1", "--end-of-options", commit],
-    SMALL,
-    TIME_LIMIT,
-  )
-  .await;
+  let parents = git(root, &["rev-list", "--parents", "-n", "1", "--end-of-options", commit], SMALL).await;
 
   if !parents.ok() {
     return None;
@@ -448,7 +432,7 @@ pub async fn read_commit_diff(root: &Path, commit: &str, limits: &Limits) -> Opt
   args.push("--");
   args.extend(described.files.iter().map(String::as_str));
 
-  let run = git(root, &args, limits.diff_bytes, TIME_LIMIT).await;
+  let run = git(root, &args, limits.diff_bytes).await;
 
   if !run.ok() {
     return None;
@@ -484,7 +468,7 @@ fn matches_of(output: &str, commit: &str, limits: &Limits) -> Vec<Match> {
   matches
 }
 
-/// What a search found, and whether a ceiling or the time cut it.
+/// What a search found, and whether a ceiling cut it.
 #[derive(Clone, Debug)]
 pub struct Found<T> {
   pub items: Vec<T>,
@@ -492,12 +476,12 @@ pub struct Found<T> {
 }
 
 /// The lines of one revision that hold the words, as written and ignoring case. Binary files are passed over, a
-/// secret's lines never come back, and the search stops at its ceilings and its time. git's grep takes no
+/// secret's lines never come back, and the search stops at its ceilings. git's grep takes no
 /// end-of-options marker: the words go in as the value of its pattern option.
 pub async fn search_tree(root: &Path, commit: &str, query: &str, limits: &Limits) -> Found<Match> {
   let most = format!("--max-count={}", limits.search_per_file);
   let args = ["grep", "-I", "-n", "-i", "-F", "-z", "--no-color", &most, "-e", query, commit, "--"];
-  let run = git(root, &args, SEARCH_CAP, Duration::from_millis(limits.search_timeout_ms)).await;
+  let run = git(root, &args, SEARCH_CAP).await;
   let mut items: Vec<Match> = matches_of(&run.text(), commit, limits)
     .into_iter()
     .filter(|found| !is_secret_path(&found.path))
@@ -523,7 +507,7 @@ pub async fn find_definitions(
   let most = format!("--max-count={}", limits.definition_scan_per_file);
   let pattern = definitions::definition_pattern(name);
   let args = ["grep", "-I", "-n", "-E", "-z", "--no-color", &most, "-e", &pattern, commit, "--"];
-  let run: Run = git(root, &args, SEARCH_CAP, Duration::from_millis(limits.definition_timeout_ms)).await;
+  let run: Run = git(root, &args, SEARCH_CAP).await;
   let mut taken: HashMap<String, usize> = HashMap::new();
   let mut items = Vec::new();
 

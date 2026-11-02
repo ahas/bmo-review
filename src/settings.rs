@@ -77,16 +77,12 @@ pub struct Limits {
   pub search_per_file: usize,
   /// The content search's lines in all.
   pub search_total: usize,
-  /// The content search's time.
-  pub search_timeout_ms: u64,
   /// The definition search's lines read from one file.
   pub definition_scan_per_file: usize,
   /// The definitions kept from one file.
   pub definition_per_file: usize,
   /// The definitions in all.
   pub definition_total: usize,
-  /// The definition search's time.
-  pub definition_timeout_ms: u64,
   /// How much of a matched line comes back, in characters.
   pub match_line: usize,
   /// How much of the lines a comment points at it keeps, in characters.

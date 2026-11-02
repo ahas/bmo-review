@@ -91,6 +91,8 @@
 - **Revisions** are passed only as full hashes the service resolved itself.
 - **So request words are never read as git options.** Paths are read as literal paths, not patterns.
 - **What git answers is read in its machine formats:** NUL-separated records wherever git offers them.
+- **A run lasts until git ends.** No clock cuts it: its output is read up to a cap, a run past its cap is ended
+  there, and a run whose request is dropped (the caller left) ends its git at once.
 
 ### What is excluded
 
@@ -122,8 +124,8 @@
 - **Content search** is done by the service with git's text search on that revision.
   - **Matching:** the words are literal, not a regex; case is ignored; binary files are skipped.
   - **Exclusions:** lines of excluded files do not appear in results.
-  - **Limits:** results are capped per file and in total, and time has a ceiling too. A search the ceilings or
-    the time cut says there is more.
+  - **Limits:** results are capped per file and in total. A search runs until git has searched the whole
+    revision, however long that takes, and one the ceilings cut says there is more.
 - **Definition search** is done by the service with git's text search on that revision, for a name.
   - **What may be asked:** a word of letters, digits, underscore and dollar that does not begin with a digit, of
     two characters at least, and not a keyword of the reader's language (of any language where no reader's file
@@ -138,10 +140,10 @@
     of that revision is the fence, as it is for reading.
   - **Order:** the reader's own file first, then a declaration before a bare re-export, then the files nearest
     the reader's path, then the same language, then path order, so one answer never reshuffles itself.
-  - **Limits:** five to a file and fifty in all, with a time ceiling of its own. The five to a file are five
-    definitions counted after the dropping, not five lines read: more lines than that are read from one file, up
-    to a ceiling of their own, so that lines another language's pattern found never stand in the places of the
-    declarations under them. What is over is dropped without being stated.
+  - **Limits:** five to a file and fifty in all, and the search runs until git is done. The five to a file are
+    five definitions counted after the dropping, not five lines read: more lines than that are read from one
+    file, up to a ceiling of their own, so that lines another language's pattern found never stand in the places
+    of the declarations under them. What is over is dropped without being stated.
   - **Nothing found** is an empty answer, not an error.
 
 ## Reviews

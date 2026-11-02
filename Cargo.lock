@@ -240,7 +240,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-graph"
-version = "0.4.0-rev.2"
+version = "0.1.0-rev.1"
 dependencies = [
  "axum",
  "bmo-text",
@@ -269,7 +269,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-job-client"
-version = "0.1.0-rev.7"
+version = "0.1.0-rev.8"
 dependencies = [
  "futures-util",
  "hex",
@@ -296,6 +296,7 @@ dependencies = [
  "config",
  "futures-util",
  "inventory",
+ "libsqlite3-sys",
  "regex",
  "reqwest",
  "rmcp",
