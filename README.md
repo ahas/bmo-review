@@ -13,7 +13,7 @@ under `plugin/skills/`.
 ## Tests
 
 The repository carries the repository-wide personal-data check in `tests/personal_data.rs` (`PERSONAL-DATA.md`),
-run with `cargo test --test personal_data`; the import's test in `tests/import.rs`; and the console contract's
+run with `cargo test --test main personal_data::`; the import's test in `tests/import.rs`; and the console contract's
 test in `tests/screen.rs`, which reads the manifest the service answers through bmo-ui's `consoleManifest`
 reading (run by Bun in `client/`, so the bundle's install must stand), and holds the guard's refusals and the
 bundle's versioned paths. The other behaviour tests are deferred: they are written and run here once the minimal

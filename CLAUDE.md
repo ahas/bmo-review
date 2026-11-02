@@ -70,9 +70,10 @@ These hold every bmo repository, and every change here (archive document #301, i
   that moves a feature's files, symbols or edges updates its node in the checkout. Its area files are generated
   and untracked, so a fresh checkout builds them again, while `settings.toml` is the repository's configuration
   and stays tracked.
-- Tests live in `tests/`; no test module stands in `src/`. The repository carries the personal-data check,
-  the import's test and the console contract's test there; the other behaviour tests are deferred for now
-  (README.md).
+- Tests live in `tests/`, one test target, `tests/main.rs`, each file of tests a module of it (bmo-chat's
+  `docs/conventions.md`, 「Rust builds」); no test module stands in `src/`. The repository carries the
+  personal-data check, the import's test and the console contract's test there; the other behaviour tests are
+  deferred for now (README.md).
 
 ## The stages of a change
 

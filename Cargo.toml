@@ -9,6 +9,8 @@ version = "0.1.0-rev.2"
 edition = "2024"
 license = "MIT"
 publish = false
+# One test target, the harness at tests/main.rs (bmo-chat's docs/conventions.md, 「Rust builds」).
+autotests = false
 
 [lib]
 test = false
@@ -55,10 +57,19 @@ tokio = { version = "1.53.3", features = ["io-std", "io-util", "macros", "net", 
 # The event stream's live part, a broadcast read as a stream.
 tokio-stream = { version = "0.1.19", default-features = false, features = ["sync"] }
 
+[[test]]
+name = "main"
+path = "tests/main.rs"
+
 # Build output kept small: line tables alone for a backtrace, split out, and no incremental cache.
 [profile.dev]
 debug = "line-tables-only"
 split-debuginfo = "unpacked"
+incremental = false
+
+[profile.test]
+debug = "line-tables-only"
+strip = "debuginfo"
 incremental = false
 
 [profile.release]

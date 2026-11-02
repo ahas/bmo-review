@@ -23,7 +23,7 @@ check_script = "typecheck"
 # dependencies the manifests name. The ledger names each Korean pack file with its count of Hangul lines; a
 # code file it does not name is allowed none. Beside the base libraries, the dependencies take the published
 # clients of the upstreams the service calls (docs/api.md, 「Calls this service makes」).
-quick = ["korean", "layout", "dependencies"]
+quick = ["korean", "layout", "dependencies", "cargo-profile"]
 korean_ledger = "korean-ledger.json"
 base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-ui", "bmo-text", "bmo-graph", "bmo-job-client"]
 
