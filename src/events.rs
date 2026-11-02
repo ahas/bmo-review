@@ -14,7 +14,7 @@ use schemars::generate::SchemaGenerator;
 use serde::Serialize;
 use serde_json::json;
 use sqlx::{FromRow, Sqlite, Transaction};
-use tokio::sync::{Mutex, MutexGuard, broadcast};
+use tokio::sync::{Mutex, MutexGuard, broadcast, watch};
 use tokio_stream::wrappers::BroadcastStream;
 
 use crate::http::{Call, MOST_PAGE, PAGE, Refused, Route, answer, page_size};
@@ -42,6 +42,8 @@ pub struct Events {
   live: broadcast::Sender<Event>,
   // Held from a write's start to its events' announcement, so live readers hear the numbers in order.
   writing: Arc<Mutex<()>>,
+  // Set once the service is told to stop: every live stream ends then, so the stop waits on no reader.
+  stopping: Arc<watch::Sender<bool>>,
 }
 
 /// A write under way: its events are numbered inside its transaction and announced once it is committed.
@@ -166,7 +168,13 @@ impl Events {
       store,
       live: broadcast::channel(BACKLOG).0,
       writing: Arc::new(Mutex::new(())),
+      stopping: Arc::new(watch::channel(false).0),
     }
+  }
+
+  /// Ends every live stream: the service is stopping.
+  pub fn end_streams(&self) {
+    self.stopping.send_replace(true);
   }
 
   /// Starts a write whose events are announced in number order.
@@ -243,6 +251,7 @@ impl Route for EventStream {
 
     // The live channel is heard before the window is read, so nothing published between the two is lost.
     let live = BroadcastStream::new(events.live.subscribe());
+    let mut stopping = events.stopping.subscribe();
     let kept = events.since(after, &narrowing, None).await?;
     let replayed = kept.last().map_or(after, |event| event.id);
     let live = live
@@ -253,11 +262,16 @@ impl Route for EventStream {
 
         std::future::ready(wanted)
       });
-    let sent = stream::iter(kept).chain(live).map(|event| {
-      let data = serde_json::to_string(&event).unwrap_or_default();
+    let sent = stream::iter(kept)
+      .chain(live)
+      .map(|event| {
+        let data = serde_json::to_string(&event).unwrap_or_default();
 
-      Ok::<_, Infallible>(Sent::default().id(event.id.to_string()).event(event.kind.clone()).data(data))
-    });
+        Ok::<_, Infallible>(Sent::default().id(event.id.to_string()).event(event.kind.clone()).data(data))
+      })
+      .take_until(async move {
+        let _ = stopping.wait_for(|stopping| *stopping).await;
+      });
 
     let mut response = Sse::new(sent).keep_alive(KeepAlive::new().interval(KEEP_ALIVE)).into_response();
 

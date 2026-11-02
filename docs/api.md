@@ -126,6 +126,8 @@ open and migrated.
   last 1,000 events in its store; a resume from before them is answered 410 `gone`, and the reader reads the
   collections again.
 - **A page** takes `after` and `limit`. The stream says a comment line every fifteen seconds.
+- **A stream ends when the service is told to stop,** so a stop waits on no reader; the reader resumes with the
+  number of the last event it read.
 
 | Kind | When | `data` |
 |---|---|---|

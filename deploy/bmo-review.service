@@ -13,7 +13,9 @@ WorkingDirectory=%h/.local/share/bmo-review/deploy
 ExecStart=%h/.local/share/bmo-review/deploy/bin/bmo-review serve
 Restart=always
 RestartSec=2
-TimeoutStopSec=30
+# A stop waits for the service to end on its SIGTERM, which ends the event streams and lets the requests in hand
+# finish; it is never escalated to a kill.
+TimeoutStopSec=infinity
 
 [Install]
 WantedBy=default.target
