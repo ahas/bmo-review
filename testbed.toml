@@ -68,6 +68,12 @@ units = ["deploy/*.service"]
 # Answers 0 once the service the deployed settings name answers ready (docs/api.md, 「Health」).
 health = "~/.local/share/bmo-review/deploy/bin/bmo-review health"
 
+# The console screen the service brings: once it is up, the deployment probes its console face against bmo-ui's
+# console plugin contract, reaching it as `console-reach` answers from the deployed settings (docs/api.md,
+# 「The console face」).
+[deploy.console]
+reach = "~/.local/share/bmo-review/deploy/bin/bmo-review console-reach"
+
 # The console bundle built into the release before it goes live, into the folder the service reads when it starts
 # (docs/api.md, 「The console face」); the release's setup has installed the bundle's packages.
 [[deploy.step]]

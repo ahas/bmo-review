@@ -285,6 +285,7 @@ name = "bmo-graph"
 version = "0.1.0-rev.1"
 dependencies = [
  "axum",
+ "bmo-console-face",
  "bmo-text",
  "clap",
  "futures-util",

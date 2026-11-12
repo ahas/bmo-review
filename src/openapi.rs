@@ -24,8 +24,8 @@ const DESCRIPTION: &str = "Code review over git checkouts: projects named as the
   A revision is seven to sixty-four hex characters, HEAD where absent. A file's path stands as the rest of the \
   path. Every failure is answered in the error shape with its status. Every route takes the service token; \
   where a console face stands, every route is answered again under `/screen`, the console's prefix, to the \
-  console credential alone, refused 403 `forbidden` unless its `Owner-Role` opens the screen, and the console \
-  face's manifest and files, by bmo-ui's console plugin contract, are stated under the `console` tag. The \
+  console credential alone and guarded as bmo-ui's console plugin contract states, and the console face's \
+  manifest and files are stated under the `console` tag. The \
   harness plugin's tools, each a thin call of one route, are stated under `x-tools`.";
 
 /// Each code a route can answer, its status and what it means.
