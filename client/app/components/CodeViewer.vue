@@ -15,9 +15,10 @@
     />
 
     <!-- The editor's toolbar: the explorer's side, which revision, what of the file is not shown, and what can be
-         done to the file, with the reviews' side last. -->
+         done to the file, with the reviews' side last. A lone button stands in a cell of its own, since the row
+         stretches what stands straight in it; how much room each cell keeps is the toolbar's. -->
     <ToolBar :label="$t('code.label.file')">
-      <span class="!px-1">
+      <span>
         <UTooltip :text="props.explorerTool.label">
           <UButton
             color="neutral"
@@ -32,7 +33,7 @@
         </UTooltip>
       </span>
 
-      <span v-if="props.path !== null" class="min-w-0 shrink! !px-1">
+      <span v-if="props.path !== null" class="min-w-0 shrink!">
         <USelectMenu
           :model-value="props.revision ?? undefined"
           :items="commitItems"
@@ -66,11 +67,9 @@
 
       <span v-if="source?.cut === true && !reading" class="text-warning" role="status">{{ $t("code.shared.status.head_only") }}</span>
 
-      <span class="ms-auto !px-1">
-        <ActionGroup :actions="actions" :properties="properties" :properties-title="props.path" :label="$t('code.aria.file_menu')" />
-      </span>
+      <ActionGroup class="ms-auto" :actions="actions" :properties="properties" :properties-title="props.path" :label="$t('code.aria.file_menu')" />
 
-      <span v-if="!props.narrow" class="!px-1">
+      <span v-if="!props.narrow">
         <UTooltip :text="props.reviewsTool.label">
           <UButton
             color="neutral"

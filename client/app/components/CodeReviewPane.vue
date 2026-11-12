@@ -2,10 +2,11 @@
   <!-- The review part: the project's reviews, or one review and its comments. -->
   <div class="flex min-h-0 flex-col gap-2 pt-3">
     <template v-if="props.openId === null">
-      <div class="flex items-center gap-2 px-3">
-        <p class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted">{{ $t("code.title.reviews") }}</p>
+      <!-- The head: the title on a row of its own, where no sheet's title names the part already, and the action on
+           the row under it, at its right end. -->
+      <p v-if="!props.sheet" class="truncate px-3 text-sm font-medium text-highlighted">{{ $t("code.title.reviews") }}</p>
+      <div v-if="props.revision !== null" class="flex items-center justify-end gap-2 px-3">
         <UButton
-          v-if="props.revision !== null"
           size="sm"
           color="neutral"
           variant="subtle"
@@ -49,48 +50,42 @@
     </template>
 
     <template v-else>
+      <!-- The head: the review's title on a row of its own; under it the way back to the list at the left end, what
+           the review is, and what can be done to it at the right end; under those the items filed from it. -->
+      <p v-if="review !== null" class="px-3 text-sm font-medium break-words text-highlighted">{{ review.title }}</p>
       <div class="flex items-center gap-2 px-3">
         <UTooltip :text="$t('code.action.back_to_reviews')">
-          <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('code.action.back_to_reviews')" @click="emit('close')" />
+          <UButton size="sm" color="neutral" variant="ghost" square icon="i-material-symbols-arrow-back" :aria-label="$t('code.action.back_to_reviews')" @click="emit('close')" />
         </UTooltip>
-        <button
-          v-if="review !== null"
-          type="button"
-          class="flex min-h-9 min-w-0 flex-1 flex-col rounded-sm px-1 text-start transition-colors hover:bg-elevated active:bg-accented focus-inset"
-          :title="$t('code.action.view_revision', { revision: shortSha(review.revision) })"
-          @click="emit('go', review)"
-        >
-          <span class="truncate text-sm font-medium text-highlighted">{{ review.title }}</span>
-          <span class="flex min-w-0 items-center gap-1 text-sm text-muted">
-            <UBadge size="sm" :color="STATE_COLORS[review.state]" variant="subtle" :label="$t(STATE_LABELS[review.state])" />
-            <span class="truncate">{{ review.authorName }} · <span class="font-mono">{{ shortSha(review.revision) }}</span></span>
+        <template v-if="review !== null">
+          <UBadge size="sm" :color="STATE_COLORS[review.state]" variant="subtle" :label="$t(STATE_LABELS[review.state])" class="shrink-0" />
+          <span class="min-w-0 truncate text-sm text-muted">{{ review.authorName }}</span>
+          <UTooltip :text="$t('code.action.view_revision', { revision: shortSha(review.revision) })">
+            <UButton size="sm" color="neutral" variant="ghost" class="shrink-0 font-mono" :label="shortSha(review.revision)" @click="emit('go', review)" />
+          </UTooltip>
+          <span class="ms-auto flex shrink-0 items-center gap-1">
+            <UTooltip :text="stateAction">
+              <UButton
+                size="sm"
+                color="neutral"
+                variant="ghost"
+                square
+                :icon="review.state === 'closed' ? 'i-material-symbols-lock-open-outline' : 'i-material-symbols-check-circle-outline'"
+                :aria-label="stateAction"
+                :loading="changing"
+                @click="toggleState"
+              />
+            </UTooltip>
+            <UTooltip :text="$t('code.action.file_item')">
+              <UButton size="sm" color="neutral" variant="ghost" square icon="i-material-symbols-playlist-add" :aria-label="$t('code.action.file_item')" @click="filing = true" />
+            </UTooltip>
           </span>
-        </button>
-      </div>
-
-      <div v-if="review !== null" class="flex flex-wrap items-center gap-1 px-3 text-sm text-muted">
-        <template v-if="review.itemIds.length > 0">
-          {{ $t("code.label.filed_items") }}
-          <span v-for="id in review.itemIds" :key="id" class="font-mono text-highlighted tabular-nums">#{{ id }}</span>
         </template>
-        <span class="ms-auto flex items-center gap-1">
-          <UTooltip :text="stateAction">
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              square
-              :icon="review.state === 'closed' ? 'i-material-symbols-lock-open-outline' : 'i-material-symbols-check-circle-outline'"
-              :aria-label="stateAction"
-              :loading="changing"
-              @click="toggleState"
-            />
-          </UTooltip>
-          <UTooltip :text="$t('code.action.file_item')">
-            <UButton size="sm" color="neutral" variant="ghost" square icon="i-material-symbols-playlist-add" :aria-label="$t('code.action.file_item')" @click="filing = true" />
-          </UTooltip>
-        </span>
       </div>
+      <p v-if="review !== null && review.itemIds.length > 0" class="flex flex-wrap items-center gap-1 px-3 text-sm text-muted">
+        {{ $t("code.label.filed_items") }}
+        <span v-for="id in review.itemIds" :key="id" class="font-mono text-highlighted tabular-nums">#{{ id }}</span>
+      </p>
       <p v-if="changeFailure !== ''" class="px-3 text-sm text-error" role="alert">{{ changeFailure }}</p>
 
       <ContentSkeleton v-if="review === null && readFailure === ''" class="px-3" :rows="4" listClass="flex flex-col gap-3" :label="$t('code.status.reviews_loading')">
@@ -193,6 +188,8 @@ interface Props {
   revision: string | null;
   folders: ReadonlySet<string> | null;
   openId: number | null;
+  // Whether the part stands in a sheet whose own title already names the reviews.
+  sheet?: boolean;
 }
 
 const { t } = useI18n();

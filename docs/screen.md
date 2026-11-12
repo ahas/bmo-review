@@ -18,7 +18,9 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
 - **Under the console's title bar.** The screen's route asks for the console's bar in its meta, so a console that
   offers its bar (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar) draws it over the screen
   under the manifest's title and icon, and the screen draws no bar of its own. Found without that offer it draws its
-  own bar, named and marked the same.
+  own bar, named and marked the same. Either bar holds the screen's name and mark alone: the screen lays nothing
+  beside the title, neither an action nor a way back. Its own row under the bar is the code's tab bar and toolbar,
+  which hold what acts on the open file (「The code」).
 - **Every call goes to the review service** at the address bmo-ui's `relay` module answers for `review`, under the
   service's screen prefix `/screen`, the event stream included (`docs/api.md`, 「The console bundle」).
 
@@ -64,7 +66,9 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
   that browser.
 - The toolbar under the tab bar carries the explorer's button, the revision, and at its right end the file's
   actions (go to definition, show line comments, file comment, read again and the properties, folded into one
-  vertical-dots menu), then the review section's button.
+  vertical-dots menu), then the review section's button. Each of its buttons is the component library's small
+  button at its own size, centred in the row, its hover and press filling only its own shape; how much room a cell
+  keeps is bmo-ui's toolbar's to decide off what the cell holds, and the screen sets none of it.
 - **The revision.** The toolbar's revision cell stands the short hash and, on a wide screen, the commit's subject,
   and a current mark if HEAD. If the work tree has uncommitted changes, their count stands in the properties.
   Pressing the cell opens revision choosing, as wide as its longest entry: commits that touched that file, newest
@@ -115,18 +119,24 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
 
 ## The review section
 
-- Its head names the reviews alone, with an open review button at its right end. Under it stands the list of the
-  project's reviews: those of the open revision first, newest first, then those of other revisions grouped per
-  revision under a short hash head. Each row stands the title, the state, the writer's name, the count of comments
-  and when it last changed. Pressing a review of another revision moves the screen to that revision and opens the
-  review there.
-- Opening a review stands the **review** instead of the list. The head stands a back button, the title, the
-  state, the revision's short hash, the close or reopen button and the file an item button. Below it the comments
-  stand in order, each with its writer's name, its time, its place (the whole, a folder, a file, a line or a
-  range) and its words as plain text, line breaks kept. Pressing a comment's place goes the code there. A line
+- **No button beside a title.** A head here is a title on a row of its own and, under it, a row holding the way back
+  at its left end, what states the thing in the middle, and the actions at its right end. Every button in those rows
+  is the component library's small button, its hover filling only its own shape.
+- Its head names the reviews on a row of their own, and the row under it stands the open review button at its right
+  end. On a narrow screen the sheet's own title names the reviews, so only that row stands. Under it stands the
+  list of the project's reviews: those of the open revision first, newest first, then those of other revisions
+  grouped per revision under a short hash head. Each row stands the title, the state, the writer's name, the count
+  of comments and when it last changed. Pressing a review of another revision moves the screen to that revision and
+  opens the review there.
+- Opening a review stands the **review** instead of the list. Its title stands on a row of its own. The row under
+  it stands the back button to the list at its left end, then the state, the writer's name and the revision's short
+  hash, which is a button going to that revision, and at its right end the close or reopen button and the file an
+  item button. The items filed from the review stand as their numbers on a line under that row. Below it the
+  comments stand in order, each with its writer's name, its time, its place (the whole, a folder, a file, a line or
+  a range) and its words as plain text, line breaks kept. Pressing a comment's place goes the code there. A line
   comment of a review of another revision than the one viewed stands its kept excerpt as code, so it reads even
-  where that revision no longer can. The items filed from the review stand as
-  their numbers. At the bottom the words box writes a comment on the whole review, with the writer's name.
+  where that revision no longer can. At the bottom the words box writes a comment on the whole review, with the
+  writer's name.
 - Sending stands the comment at once, and the screen reads the review again when the service's event says it
   moved.
 

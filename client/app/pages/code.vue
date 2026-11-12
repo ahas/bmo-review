@@ -50,6 +50,7 @@
           <template #body>
             <CodeReviewPane
               v-bind="paneProps"
+              sheet
               class="min-h-0 flex-1"
               @open="openReview"
               @close="closeReview"
