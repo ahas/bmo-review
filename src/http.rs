@@ -12,15 +12,16 @@ use axum::http::{Method, StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{MethodFilter, MethodRouter};
+use bmo_console_face::ConsoleFace;
 use bmo_graph::client::GraphClient;
 use bmo_job_client::JobClient;
 use schemars::generate::SchemaGenerator;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
+use crate::console;
 use crate::events::Events;
 use crate::openapi::Stated;
-use crate::screen::{self, Bundle};
 use crate::settings::Settings;
 use crate::store::Store;
 use crate::wire::WireError;
@@ -176,18 +177,18 @@ pub struct Standing {
   pub graph: GraphClient,
   /// The job service's client, at the address the settings name.
   pub job: JobClient,
-  /// The console bundle, where its folder stands.
-  pub bundle: Option<Arc<Bundle>>,
+  /// The console face, where a console credential is set and the bundle's folder holds a bundle.
+  pub face: Option<ConsoleFace>,
 }
 
 impl Standing {
-  /// What the service stands on, or why a client of another unit cannot be made or the console bundle's folder
-  /// is no bundle.
+  /// What the service stands on, or why a client of another unit cannot be made. A console face that cannot be
+  /// built leaves the service with none, and says why on standard error.
   pub fn new(settings: Settings, store: Store) -> Result<Self, String> {
     let graph = GraphClient::new(&settings.graph.address, &settings.graph.token);
     let job = JobClient::new(&settings.job.address, &settings.job.token)
       .map_err(|why| format!("the job service's address does not read: {why}"))?;
-    let bundle = Bundle::read(&settings.screen.bundle)?.map(Arc::new);
+    let face = console_face(&settings);
 
     Ok(Self {
       settings: Arc::new(settings),
@@ -195,9 +196,22 @@ impl Standing {
       store,
       graph,
       job,
-      bundle,
+      face,
     })
   }
+}
+
+// The console face of the settings, none where no console credential is set or the folder holds no bundle.
+fn console_face(settings: &Settings) -> Option<ConsoleFace> {
+  if settings.console.token.is_empty() {
+    eprintln!("bmo-review: the console face is not served: no console credential is set");
+
+    return None;
+  }
+
+  console::face(&settings.console.folder, &settings.console.token)
+    .inspect_err(|why| eprintln!("bmo-review: the console face is not served: {why}"))
+    .ok()
 }
 
 /// One request a route answers.
@@ -303,9 +317,25 @@ pub const PAGE: usize = 100;
 /// The most a list's page holds.
 pub const MOST_PAGE: usize = 1_000;
 
-/// Every request is let in only with the settings' token as its bearer; an empty token lets nobody in.
-async fn require_token(State(standing): State<Arc<Standing>>, request: Request, next: Next) -> Response {
-  let expected = standing.settings.server.token.as_str();
+/// A route at its own path is let in only with the service token as its bearer; an empty token lets nobody in.
+async fn require_service_token(
+  State(standing): State<Arc<Standing>>,
+  request: Request,
+  next: Next,
+) -> Response {
+  bearer_is(&standing.settings.server.token, request, next).await
+}
+
+/// A route under the console's prefix is let in only with the console credential as its bearer.
+async fn require_console_credential(
+  State(standing): State<Arc<Standing>>,
+  request: Request,
+  next: Next,
+) -> Response {
+  bearer_is(&standing.settings.console.token, request, next).await
+}
+
+async fn bearer_is(expected: &str, request: Request, next: Next) -> Response {
   let presented = request
     .headers()
     .get(header::AUTHORIZATION)
@@ -327,8 +357,9 @@ async fn no_route(request: Request) -> Response {
   .into_response()
 }
 
-/// The router answering every registered route behind the token, and again under the screen's prefix behind the
-/// reader's role as well, or what is wrong with the routes linked in.
+/// The router answering every registered route behind the service token, and, where a console face stands, its
+/// routes and every registered route again under the console's prefix, behind the console credential and the
+/// face's guard of the screen's role; or what is wrong with the routes linked in.
 pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
   let faults = route_faults();
 
@@ -363,11 +394,19 @@ pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
   let routes = by_path
     .into_iter()
     .fold(Router::new(), |router, (path, methods)| router.route(path, methods.fallback(no_route)));
-  let guarded = routes.clone().fallback(no_route).layer(middleware::from_fn(screen::require_role));
-  let router = routes
-    .nest(screen::PREFIX, guarded)
-    .fallback(no_route)
-    .layer(middleware::from_fn_with_state(standing.clone(), require_token));
+  let mut router = routes
+    .clone()
+    .layer(middleware::from_fn_with_state(standing.clone(), require_service_token));
 
-  Ok(router.with_state(standing))
+  if let Some(face) = &standing.face {
+    let prefix = face.manifest()["apiPrefix"].as_str().unwrap_or_default();
+    let screens = face
+      .guard_screens(routes)
+      .fallback(no_route)
+      .layer(middleware::from_fn_with_state(standing.clone(), require_console_credential));
+
+    router = router.nest(prefix, screens).merge(face.router());
+  }
+
+  Ok(router.fallback(no_route).with_state(standing))
 }

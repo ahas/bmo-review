@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import tailwind from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
+import { consoleBundle } from "bmo-ui/bundle/console-bundle.js";
 import autoImport from "unplugin-auto-import/vite";
 import components from "unplugin-vue-components/vite";
 import { defineConfig } from "vite";
@@ -12,18 +13,15 @@ import type { Options as AutoImportOptions } from "unplugin-auto-import/types";
 import type { ComponentResolver } from "unplugin-vue-components";
 import type { Plugin } from "vite";
 
-// The served module's build (docs/api.md, 「The console bundle」; bmo-ui's docs/console-bundles.md, 「What a bundle
-// is」): the screen built for the browser as one ECMAScript module with the chunks it loads, its stylesheet and its
-// words, written to dist/, the folder the service reads. `bun run bundle` runs it.
+// The served module's build (docs/api.md, 「The console face」; bmo-ui's docs/console-bundles.md, 「What a bundle is」
+// and 「The layer a bundle is built on」): the screen built for the browser as one ECMAScript module with the chunks
+// it loads, its stylesheet, its words and the layer it is built on, written to dist/, the folder the service reads.
+// `bun run bundle` runs it.
 
 // A path of the bundle's own project.
 function own(path: string): string {
   return fileURLToPath(new URL(`../${path}`, import.meta.url));
 }
-
-// The libraries the console shares with every bundle it loads, each left as the package's own path of what is
-// imported, so the console resolves it to the copy its app runs.
-const SHARED = /^(?:vue|vue-router|vue-i18n|nuxt\/app|@nuxt\/ui|bmo-ui)(?:\/|$)/;
 
 // What Nuxt hands a page of the layer without an import, imported from the shared libraries by name.
 const NAMED: AutoImportOptions["imports"] = ["vue", { "nuxt/app": ["useRoute", "useRouter"], "@nuxt/ui/composables/useToast": ["useToast"] }];
@@ -66,6 +64,10 @@ export default defineConfig({
   // The module runs in the browser alone.
   define: { "import.meta.client": "true", "import.meta.server": "false" },
   plugins: [
+    // bmo-ui's bundle build: the libraries the console shares left as the package's own path of what is imported,
+    // so the console resolves each to the copy its app runs, and the layer the bundle is built on written beside
+    // the module.
+    consoleBundle(),
     vue(),
     tailwind(),
     autoImport({ imports: NAMED, dts: false }),
@@ -78,7 +80,6 @@ export default defineConfig({
     cssCodeSplit: false,
     lib: { entry: { review: own("bundle/entry.ts") }, formats: ["es"], cssFileName: "review" },
     rolldownOptions: {
-      external: (id) => SHARED.test(id),
       output: {
         entryFileNames: "[name].js",
         chunkFileNames: "chunks/[name]-[hash].js",

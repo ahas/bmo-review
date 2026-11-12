@@ -3,7 +3,7 @@
   "info": {
     "title": "bmo-review",
     "version": "0.1.0-rev.2",
-    "description": "Code review over git checkouts: projects named as the graph service names them, their trees, files and commits at a revision, each commit's diff, content and definition searches, reviews of a revision with their comments on its lines, files and folders, and items a review files into the job service through its client. Who wrote a review or a comment is an opaque authorName. Bodies are JSON with camelCase keys; times are integers of epoch milliseconds. A list is a page, `after` being the cursor each route states. A revision is seven to sixty-four hex characters, HEAD where absent. A file's path stands as the rest of the path. Every failure is answered in the error shape with its status. Every route is answered again under `/screen`, the console bundle's API prefix, where a call is also refused 403 `forbidden` unless its `Owner-Role` header names `member` or `administrator`; the console bundle's manifest, words and files are stated under the `screen` tag. The harness plugin's tools, each a thin call of one route, are stated under `x-tools`."
+    "description": "Code review over git checkouts: projects named as the graph service names them, their trees, files and commits at a revision, each commit's diff, content and definition searches, reviews of a revision with their comments on its lines, files and folders, and items a review files into the job service through its client. Who wrote a review or a comment is an opaque authorName. Bodies are JSON with camelCase keys; times are integers of epoch milliseconds. A list is a page, `after` being the cursor each route states. A revision is seven to sixty-four hex characters, HEAD where absent. A file's path stands as the rest of the path. Every failure is answered in the error shape with its status. Every route takes the service token; where a console face stands, every route is answered again under `/screen`, the console's prefix, to the console credential alone, refused 403 `forbidden` unless its `Owner-Role` opens the screen, and the console face's manifest and files, by bmo-ui's console plugin contract, are stated under the `console` tag. The harness plugin's tools, each a thin call of one route, are stated under `x-tools`."
   },
   "servers": [
     {
@@ -29,9 +29,6 @@
   },
   "tags": [
     {
-      "name": "screen"
-    },
-    {
       "name": "events"
     },
     {
@@ -42,98 +39,12 @@
     },
     {
       "name": "reviews"
+    },
+    {
+      "name": "console"
     }
   ],
   "paths": {
-    "/bundle/{version}/{fileName}": {
-      "get": {
-        "operationId": "readBundleFile",
-        "tags": [
-          "screen"
-        ],
-        "summary": "One file of the console bundle, under its own media type.",
-        "responses": {
-          "200": {
-            "description": "One file of the console bundle, under its own media type.",
-            "content": {
-              "text/javascript": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/css": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        },
-        "x-codes": [
-          "unauthorized",
-          "bad-request",
-          "not-found",
-          "failed"
-        ],
-        "parameters": [
-          {
-            "name": "version",
-            "in": "path",
-            "required": true,
-            "description": "The bundle's version, as the manifest names it.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "fileName",
-            "in": "path",
-            "required": true,
-            "description": "The file's path in the bundle, its slashes as they are.",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ]
-      }
-    },
-    "/console-manifest": {
-      "get": {
-        "operationId": "readConsoleManifest",
-        "tags": [
-          "screen"
-        ],
-        "summary": "The console bundle's manifest.",
-        "responses": {
-          "200": {
-            "description": "The console bundle's manifest.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ScreenManifest"
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        },
-        "x-codes": [
-          "unauthorized",
-          "not-found",
-          "failed"
-        ]
-      }
-    },
     "/events": {
       "get": {
         "operationId": "listEvents",
@@ -1268,24 +1179,20 @@
         }
       }
     },
-    "/words": {
+    "/console-manifest": {
       "get": {
-        "operationId": "readWords",
+        "operationId": "readConsoleManifest",
         "tags": [
-          "screen"
+          "console"
         ],
-        "summary": "The console bundle's words, each locale's under its code.",
+        "summary": "The console face's manifest, by bmo-ui's console plugin contract, to the console's credential alone.",
         "responses": {
           "200": {
-            "description": "The console bundle's words, each locale's under its code.",
+            "description": "The console face's manifest, by bmo-ui's console plugin contract, to the console's credential alone.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "object",
-                    "additionalProperties": true
-                  }
+                  "type": "object"
                 }
               }
             }
@@ -1296,103 +1203,55 @@
         },
         "x-codes": [
           "unauthorized",
+          "failed"
+        ]
+      }
+    },
+    "/console/{file}": {
+      "get": {
+        "operationId": "readConsoleFile",
+        "tags": [
+          "console"
+        ],
+        "summary": "A file of the console bundle at the path the manifest names: the words to the console's credential alone, the module, the stylesheet and every other file to it with the manifest's role.",
+        "responses": {
+          "200": {
+            "description": "A file of the console bundle at the path the manifest names: the words to the console's credential alone, the module, the stylesheet and every other file to it with the manifest's role.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "forbidden",
           "not-found",
           "failed"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "path",
+            "required": true,
+            "description": "The file's name, as the manifest gives it.",
+            "schema": {
+              "type": "string"
+            }
+          }
         ]
       }
     }
   },
   "components": {
     "schemas": {
-      "ScreenManifest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "The bundle's name, its words' namespace."
-          },
-          "title": {
-            "type": "string",
-            "description": "The key, in the bundle's words, of the screen's name in a console's menu."
-          },
-          "icon": {
-            "type": "string",
-            "description": "The icon drawn beside that name."
-          },
-          "screenPath": {
-            "type": "string",
-            "description": "The path the screen stands under."
-          },
-          "serviceName": {
-            "type": "string",
-            "description": "The name a console relays the service under."
-          },
-          "bundle": {
-            "type": "string",
-            "description": "The path of the bundle's module."
-          },
-          "stylesheet": {
-            "type": "string",
-            "description": "The path of the bundle's stylesheet."
-          },
-          "words": {
-            "type": "string",
-            "description": "The path of the bundle's words."
-          },
-          "apiPrefix": {
-            "type": "string",
-            "description": "The path every call the screen makes stands under."
-          },
-          "role": {
-            "$ref": "#/components/schemas/Role",
-            "description": "The least role a reader holds to open the screen."
-          },
-          "ownerKey": {
-            "type": "boolean",
-            "description": "Whether every call the screen makes needs the reader's owner key."
-          },
-          "events": {
-            "type": "boolean",
-            "description": "Whether the screen reads the event stream."
-          },
-          "websocket": {
-            "type": "boolean",
-            "description": "Whether the screen opens a WebSocket."
-          },
-          "pushKinds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "The event kinds a console may raise as a notice to a reader not on the screen."
-          }
-        },
-        "required": [
-          "name",
-          "title",
-          "icon",
-          "screenPath",
-          "serviceName",
-          "bundle",
-          "stylesheet",
-          "words",
-          "apiPrefix",
-          "role",
-          "ownerKey",
-          "events",
-          "websocket",
-          "pushKinds"
-        ],
-        "description": "The console bundle's manifest, in the shape bmo-ui's console plugin contract states (`docs/api.md`, 「The\nconsole bundle」)."
-      },
-      "Role": {
-        "type": "string",
-        "enum": [
-          "administrator",
-          "member"
-        ],
-        "description": "A role a reader holds, as `Owner-Role` names it: an administrator holds every role a member holds."
-      },
       "EventPage": {
         "type": "object",
         "properties": {
@@ -2192,7 +2051,7 @@
     },
     "responses": {
       "Error": {
-        "description": "A failure, in the common error shape. The codes:\n- `bad-request` (400): the body, the query or the path is not the shape the route takes\n- `unauthorized` (401): the bearer token is missing or wrong\n- `forbidden` (403): under /screen, the call's Owner-Role is missing or does not allow member\n- `no-route` (404): no route answers the method and path\n- `not-found` (404): nothing stands at the project, the revision, the path, the review or the bundle's file the request names, or no bundle stands\n- `conflict` (409): the review's states do not allow the change\n- `gone` (410): the events since the number asked for are no longer kept\n- `unreadable-checkout` (422): the project's checkout is missing, in no git repository or without commits\n- `unknown-project` (422): a review names a project the graph service does not know\n- `unknown-revision` (422): a review names a revision that resolves to no commit of the project\n- `no-such-place` (422): a comment's place is no file or folder of the revision, or its lines lie off the file\n- `not-a-name` (422): the definition search does not take the word\n- `filing-refused` (422): the job service refused the item\n- `failed` (500): the service failed\n- `upstream-failed` (502): the graph service or the job service could not be reached or failed",
+        "description": "A failure, in the common error shape. The codes:\n- `bad-request` (400): the body, the query or the path is not the shape the route takes\n- `unauthorized` (401): the bearer token is missing or wrong\n- `forbidden` (403): under /screen, or for the console bundle's module and stylesheet, the console's call names no role that opens the screen\n- `no-route` (404): no route answers the method and path\n- `not-found` (404): nothing stands at the project, the revision, the path, the review or the console bundle's file the request names\n- `conflict` (409): the review's states do not allow the change\n- `gone` (410): the events since the number asked for are no longer kept\n- `unreadable-checkout` (422): the project's checkout is missing, in no git repository or without commits\n- `unknown-project` (422): a review names a project the graph service does not know\n- `unknown-revision` (422): a review names a revision that resolves to no commit of the project\n- `no-such-place` (422): a comment's place is no file or folder of the revision, or its lines lie off the file\n- `not-a-name` (422): the definition search does not take the word\n- `filing-refused` (422): the job service refused the item\n- `failed` (500): the service failed\n- `upstream-failed` (502): the graph service or the job service could not be reached or failed",
         "content": {
           "application/json": {
             "schema": {
@@ -2206,7 +2065,7 @@
       "bearer": {
         "type": "http",
         "scheme": "bearer",
-        "description": "The service's token, from the caller's own configuration."
+        "description": "The service token, from the caller's own configuration; under /screen and on the console face's routes, the console's credential alone."
       }
     }
   },

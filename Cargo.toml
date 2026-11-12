@@ -22,6 +22,8 @@ test = false
 
 [dependencies]
 axum = { version = "0.8.9", features = ["macros", "multipart", "ws"] }
+# The console face, by bmo-ui's console plugin contract: the manifest, the bundle's files and their guard.
+bmo-console-face = { path = "../../base/chat/console-face" }
 # The graph service's published client: the projects and their checkouts.
 bmo-graph = { path = "../graph" }
 # The job service's published client: the items filed from a review.
@@ -48,8 +50,6 @@ schemars = "1.2.3"
 serde = { version = "1.0.229", features = ["derive"] }
 # Answers keep their fields in the order they are written.
 serde_json = { version = "1.0.151", features = ["preserve_order"] }
-# The console bundle's version, a digest of its files.
-sha2 = "0.10.9"
 # The store: reviews, comments, filings and events in one SQLite file.
 sqlx = { version = "0.8.6", default-features = false, features = ["sqlite", "runtime-tokio", "macros", "migrate"] }
 thiserror = "2.0.21"

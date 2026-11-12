@@ -4,7 +4,7 @@
 [server]
 # Where the service answers, as host:port.
 listen = "127.0.0.1:3340"
-# The bearer token every caller presents. A deployment names its own.
+# The service token every caller of the routes at their own paths presents. A deployment names its own.
 token = ""
 
 [store]
@@ -21,10 +21,14 @@ token = ""
 address = "http://127.0.0.1:7841"
 token = ""
 
-[screen]
-# The folder the console bundle's build writes (`bun run bundle` in client/): its module, its stylesheet and its
-# words. A relative one is read from where the process starts; where none stands, the service answers no screen.
-bundle = "client/dist"
+# The console face (docs/api.md, 「The console face」).
+[console]
+# The console's credential; empty, the console reaches nothing.
+token = ""
+# The folder the console bundle's build writes (`bun run bundle` in client/): its module, its stylesheet, its
+# words and the layer it was built on. A relative one is read from where the process starts; where no bundle can
+# be read from it, the service serves no console face.
+folder = "client/dist"
 
 # The ceilings of reading a checkout and of what a review and a comment take (docs/code-review.md).
 [limits]

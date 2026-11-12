@@ -4,7 +4,9 @@
   "icon": "i-material-symbols-rate-review-outline",
   "screenPath": "/code",
   "serviceName": "review",
-  "languagePack": "i18n",
+  "apiPrefix": "/screen",
+  "role": "member",
+  "ownerKey": false,
   "events": true,
   "websocket": false,
   "pushKinds": []

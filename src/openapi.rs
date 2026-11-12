@@ -7,6 +7,7 @@ use schemars::JsonSchema;
 use schemars::generate::SchemaGenerator;
 use serde_json::{Map, Value, json};
 
+use crate::console;
 use crate::events::{COMMENT_CREATED, FILING_CREATED, REVIEW_CHANGED, REVIEW_CREATED};
 use crate::http::routes;
 use crate::mcp::{ENTRY, MCP, PLUGIN, generator, tools};
@@ -21,11 +22,11 @@ const DESCRIPTION: &str = "Code review over git checkouts: projects named as the
   through its client. Who wrote a review or a comment is an opaque authorName. Bodies are JSON with camelCase \
   keys; times are integers of epoch milliseconds. A list is a page, `after` being the cursor each route states. \
   A revision is seven to sixty-four hex characters, HEAD where absent. A file's path stands as the rest of the \
-  path. Every failure is answered in the error shape with its status. Every route is answered again under \
-  `/screen`, the console bundle's API prefix, where a call is also refused 403 `forbidden` unless its \
-  `Owner-Role` header names `member` or `administrator`; the console bundle's manifest, words and files are \
-  stated under the `screen` tag. The harness plugin's tools, each a thin call of one route, are stated under \
-  `x-tools`.";
+  path. Every failure is answered in the error shape with its status. Every route takes the service token; \
+  where a console face stands, every route is answered again under `/screen`, the console's prefix, to the \
+  console credential alone, refused 403 `forbidden` unless its `Owner-Role` opens the screen, and the console \
+  face's manifest and files, by bmo-ui's console plugin contract, are stated under the `console` tag. The \
+  harness plugin's tools, each a thin call of one route, are stated under `x-tools`.";
 
 /// Each code a route can answer, its status and what it means.
 const CODES: &[(&str, u16, &str)] = &[
@@ -34,14 +35,15 @@ const CODES: &[(&str, u16, &str)] = &[
   (
     "forbidden",
     403,
-    "under /screen, the call's Owner-Role is missing or does not allow member",
+    "under /screen, or for the console bundle's module and stylesheet, the console's call names no role that \
+     opens the screen",
   ),
   ("no-route", 404, "no route answers the method and path"),
   (
     "not-found",
     404,
-    "nothing stands at the project, the revision, the path, the review or the bundle's file the request names, or \
-     no bundle stands",
+    "nothing stands at the project, the revision, the path, the review or the console bundle's file the request \
+     names",
   ),
   ("conflict", 409, "the review's states do not allow the change"),
   ("gone", 410, "the events since the number asked for are no longer kept"),
@@ -215,6 +217,16 @@ pub fn openapi() -> Value {
     paths.entry(path).or_insert_with(|| json!({}))[method] = stated.operation();
   }
 
+  for (path, stated) in console::stated() {
+    let tag = json!({ "name": stated.tag });
+
+    if !tags.contains(&tag) {
+      tags.push(tag);
+    }
+
+    paths.entry(path).or_insert_with(|| json!({}))["get"] = stated.operation();
+  }
+
   let x_tools: Vec<Value> = tools()
     .iter()
     .map(|tool| {
@@ -256,7 +268,8 @@ pub fn openapi() -> Value {
         "bearer": {
           "type": "http",
           "scheme": "bearer",
-          "description": "The service's token, from the caller's own configuration.",
+          "description": "The service token, from the caller's own configuration; under /screen and on the console \
+            face's routes, the console's credential alone.",
         },
       },
     },

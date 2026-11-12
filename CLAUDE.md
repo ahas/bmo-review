@@ -20,7 +20,7 @@ These hold every bmo repository, and every change here (archive document #301, i
 - `docs/` is the canonical statement of what the service does; the code is one realisation of it.
   Before changing code, read the document covering that area: `docs/code-review.md` for what is read,
   fenced, written and filed, `docs/screen.md` for the console screen, `docs/api.md` for the routes, the
-  events, the codes, the calls, the client, the harness plugin, the console bundle and the settings, and
+  events, the codes, the calls, the client, the harness plugin, the console face and the settings, and
   `docs/inventory.md` for what came from where. `docs/openapi.json` is generated from the code by
   `bmo-review openapi` and changes with any route, body or tool.
 - A change that would make a document wrong or incomplete repairs the document first, stating what is
@@ -38,8 +38,8 @@ These hold every bmo repository, and every change here (archive document #301, i
 - **The service knows nothing of what calls it.** Its routes, fields and tools name no agent, worker,
   room, owner or console; who writes is the caller's opaque `authorName`.
 - **Dependencies:** crates from the registry pinned in `Cargo.toml`, and among other repositories only
-  the base libraries `bmo-chat`, `bmo-chat-client`, `bmo-ui` and `bmo-text`, and the published clients
-  of the upstreams this service calls, `bmo-graph` and `bmo-job-client`.
+  the base libraries `bmo-chat`, `bmo-chat-client`, `bmo-console-face`, `bmo-ui` and `bmo-text`, and the
+  published clients of the upstreams this service calls, `bmo-graph` and `bmo-job-client`.
 - **The plumbing knows no route.** A route registers itself beside its own answer; adding one changes no
   file but its own.
 - **No lookup table standing in for polymorphism.** A value that differs per kind of place or per
@@ -72,7 +72,7 @@ These hold every bmo repository, and every change here (archive document #301, i
   and stays tracked.
 - Tests live in `tests/`, one test target, `tests/main.rs`, each file of tests a module of it (bmo-chat's
   `docs/conventions.md`, 「Rust builds」); no test module stands in `src/`. The repository carries the
-  personal-data check, the import's test and the console contract's test there; the other behaviour tests are
+  personal-data check, the import's test and the console face's test there; the other behaviour tests are
   deferred for now (README.md).
 
 ## The stages of a change
@@ -83,5 +83,5 @@ These hold every bmo repository, and every change here (archive document #301, i
    and `cargo clippy --all-targets -- -D warnings`.
 3. **Verification:** the tests touched, then the whole suite once, output written to a file and the
    file read. The behaviour tests are deferred, so the suite holds the personal-data check, the import's test
-   and the console contract's test, which reads the manifest through Bun in `client/` and so needs the bundle's
-   install.
+   and the console face's test, which reads the served manifest through bmo-ui's own reading on the release
+   `client/vendor/` holds, run by Bun.

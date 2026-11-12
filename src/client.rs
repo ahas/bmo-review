@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 use crate::wire::{
   Comment, CommentQuery, Commit, CommitQuery, Definition, DefinitionQuery, Event, EventQuery, FileQuery,
   FileSource, Filing, Health, Match, MatchQuery, NewComment, NewFiling, NewReview, Page, Project,
-  ProjectQuery, Review, ReviewChange, ReviewQuery, ScreenManifest, TreeEntry, TreeQuery, WireError, Words,
+  ProjectQuery, Review, ReviewChange, ReviewQuery, TreeEntry, TreeQuery, WireError,
 };
 
 /// The query of a route that takes none.
@@ -112,42 +112,6 @@ impl ReviewClient {
   /// `GET /health`.
   pub async fn health(&self) -> Called<Health> {
     self.get(&["health"], &NO_QUERY).await
-  }
-
-  /// `GET /console-manifest`.
-  pub async fn screen_manifest(&self) -> Called<ScreenManifest> {
-    self.get(&["console-manifest"], &NO_QUERY).await
-  }
-
-  /// `GET /words`.
-  pub async fn words(&self) -> Called<Words> {
-    self.get(&["words"], &NO_QUERY).await
-  }
-
-  /// `GET /bundle/{version}/{fileName}`: the file's bytes as they came.
-  pub async fn bundle_file(&self, version: &str, file_name: &str) -> Called<Vec<u8>> {
-    let segments: Vec<&str> = ["bundle", version].into_iter().chain(file_name.split('/')).collect();
-    let answered = self
-      .http
-      .get(self.address(&segments))
-      .header(AUTHORIZATION, format!("Bearer {}", self.token))
-      .send()
-      .await
-      .map_err(|why| ClientFailure::Unreached(why.to_string()))?;
-    let status = answered.status().as_u16();
-    let bytes = answered.bytes().await.map_err(|why| ClientFailure::Unreadable(why.to_string()))?;
-
-    if !(200..300).contains(&status) {
-      let body = String::from_utf8_lossy(&bytes).into_owned();
-
-      return Err(ClientFailure::Answered {
-        status,
-        answer: serde_json::from_str(&body).ok(),
-        body,
-      });
-    }
-
-    Ok(bytes.to_vec())
   }
 
   /// `GET /events`, as a page.

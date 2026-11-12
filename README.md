@@ -13,10 +13,10 @@ under `plugin/skills/`.
 ## Tests
 
 The repository carries the repository-wide personal-data check in `tests/personal_data.rs` (`PERSONAL-DATA.md`),
-run with `cargo test --test main personal_data::`; the import's test in `tests/import.rs`; and the console contract's
-test in `tests/screen.rs`, which reads the manifest the service answers through bmo-ui's `consoleManifest`
-reading (run by Bun in `client/`, so the bundle's install must stand), and holds the guard's refusals and the
-bundle's versioned paths. The other behaviour tests are deferred: they are written and run here once the minimal
+run with `cargo test --test main personal_data::`; the import's test in `tests/import.rs`; and the console face's
+test in `tests/screen.rs`, which reads the manifest the service serves through bmo-ui's own reading on the release
+the client vendors, run by bmo-chat's `bmo-console-face` (Bun on the machine), and holds which credential each of
+the service's routes takes. The other behaviour tests are deferred: they are written and run here once the minimal
 services stand on the new repositories, and `docs/inventory.md` lists what the old behaviour was held to. Until
 they stand, the build check is `cargo check --all-targets` and the bundle's typecheck.
 
@@ -30,7 +30,7 @@ they stand, the build check is `cargo check --all-targets` and the bundle's type
 | `client/` | The console bundle: the code review screen, its own Korean pack and its build under `bundle/`, a project of its own |
 | `deploy/` | The service's user unit |
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
-| `tests/` | The repository-wide personal-data check, `personal_data.rs`, the import's test and the console contract's test |
+| `tests/` | The repository-wide personal-data check, `personal_data.rs`, the import's test and the console face's test |
 | `.graph/` | The repository's code dependency graph |
 
 At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
@@ -39,15 +39,14 @@ local settings a deployment gives.
 
 ## The console bundle
 
-`client/` holds the code review screen as a console bundle by bmo-ui's console plugin contract at 0.1.0-rev.7.
-`bun run bundle` builds it into `client/dist/` as a browser module with its stylesheet and words, which the
-service answers with its manifest at `GET /console-manifest`; a deployment builds it into the release before the
-release goes live. The same screen is packed as `bmo-review-client` by `bun pm pack`, a Nuxt layer on top of
-bmo-ui declared by `client/console-bundle.json`, for a console that extends the layer instead. The screen calls
-this service's routes at the address bmo-ui's `relay` module answers for `review`, and its words are its own pack
-under `client/i18n/` (`docs/api.md`, 「The console bundle」). For the bundle's own install and typecheck a packed copy of bmo-ui stands
-in `client/vendor/`. Its types are generated from the OpenAPI document by `bun run api`. The bundle's check is
-`bun install --frozen-lockfile && bun run typecheck` inside `client/`.
+`client/` holds the code review screen as a console bundle under bmo-ui's console plugin contract (bmo-ui
+`docs/console-bundles.md`), built on the bmo-ui release bmo-chat's `shared-versions.toml` pins, whose file stands in
+`client/vendor/` as the release verb wrote it. `bun run bundle` builds it into `client/dist/` with bmo-ui's bundle
+build, and a deployment builds it into the release before the release goes live. The service serves it through
+bmo-chat's `bmo-console-face` (`docs/api.md`, 「The console face」), and its words are its own pack under
+`client/i18n/`. The same sources are typechecked as a Nuxt project; its types are generated from the OpenAPI
+document by `bun run api`. The bundle's check is `bun install --frozen-lockfile && bun run typecheck` inside
+`client/`.
 
 ## Documents
 
@@ -55,7 +54,7 @@ in `client/vendor/`. Its types are generated from the OpenAPI document by `bun r
 |---|---|
 | `docs/code-review.md` | The code review: the projects, the revision read, the fence and exclusions, search, reviews, comments and filing |
 | `docs/screen.md` | The console screen's shape |
-| `docs/api.md` | The routes, their answers and codes, the events, the calls to other units, the client, the harness plugin, the console bundle and the settings |
+| `docs/api.md` | The routes, their answers and codes, the events, the calls to other units, the client, the harness plugin, the console face and the settings |
 | `docs/openapi.json` | The same routes, bodies and tools as the OpenAPI 3.1 document generated from the service's types |
 | `docs/inventory.md` | What this repository takes from the old repository, with each set's count and source |
 | `PERSONAL-DATA.md` | What may never stand in this repository: a person's name, address, path, device or network details, a room member's, a company's, or a line of an actual conversation, and the check that holds it |

@@ -26,7 +26,7 @@ pub struct Settings {
   pub store: Store,
   pub graph: Peer,
   pub job: Peer,
-  pub screen: Screen,
+  pub console: Console,
   pub limits: Limits,
 }
 
@@ -35,7 +35,8 @@ pub struct Settings {
 pub struct Server {
   /// Where the service answers.
   pub listen: SocketAddr,
-  /// The bearer token every caller presents; an empty one lets no caller in.
+  /// The service token, the bearer every caller of the routes at their own paths presents; an empty one lets no
+  /// caller in.
   pub token: String,
 }
 
@@ -46,11 +47,13 @@ pub struct Store {
   pub path: PathBuf,
 }
 
-/// The console bundle.
+/// The console face (`docs/api.md`, 「The console face」).
 #[derive(Clone, Debug, Deserialize)]
-pub struct Screen {
+pub struct Console {
+  /// The console's credential; an empty one leaves the service with no console face.
+  pub token: String,
   /// The folder the bundle's build writes; a relative one is read from where the process starts.
-  pub bundle: PathBuf,
+  pub folder: PathBuf,
 }
 
 /// A unit this service calls: its base address and the token it takes.

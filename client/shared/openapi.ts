@@ -4,40 +4,6 @@
  */
 
 export interface paths {
-    "/bundle/{version}/{fileName}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One file of the console bundle, under its own media type. */
-        get: operations["readBundleFile"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/console-manifest": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The console bundle's manifest. */
-        get: operations["readConsoleManifest"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/events": {
         parameters: {
             query?: never;
@@ -262,15 +228,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/words": {
+    "/console-manifest": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** The console bundle's words, each locale's under its code. */
-        get: operations["readWords"];
+        /** The console face's manifest, by bmo-ui's console plugin contract, to the console's credential alone. */
+        get: operations["readConsoleManifest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/console/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A file of the console bundle at the path the manifest names: the words to the console's credential alone, the module, the stylesheet and every other file to it with the manifest's role. */
+        get: operations["readConsoleFile"];
         put?: never;
         post?: never;
         delete?: never;
@@ -283,45 +266,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * @description The console bundle's manifest, in the shape bmo-ui's console plugin contract states (`docs/api.md`, 「The
-         *     console bundle」).
-         */
-        ScreenManifest: {
-            /** @description The bundle's name, its words' namespace. */
-            name: string;
-            /** @description The key, in the bundle's words, of the screen's name in a console's menu. */
-            title: string;
-            /** @description The icon drawn beside that name. */
-            icon: string;
-            /** @description The path the screen stands under. */
-            screenPath: string;
-            /** @description The name a console relays the service under. */
-            serviceName: string;
-            /** @description The path of the bundle's module. */
-            bundle: string;
-            /** @description The path of the bundle's stylesheet. */
-            stylesheet: string;
-            /** @description The path of the bundle's words. */
-            words: string;
-            /** @description The path every call the screen makes stands under. */
-            apiPrefix: string;
-            /** @description The least role a reader holds to open the screen. */
-            role: components["schemas"]["Role"];
-            /** @description Whether every call the screen makes needs the reader's owner key. */
-            ownerKey: boolean;
-            /** @description Whether the screen reads the event stream. */
-            events: boolean;
-            /** @description Whether the screen opens a WebSocket. */
-            websocket: boolean;
-            /** @description The event kinds a console may raise as a notice to a reader not on the screen. */
-            pushKinds: string[];
-        };
-        /**
-         * @description A role a reader holds, as `Owner-Role` names it: an administrator holds every role a member holds.
-         * @enum {string}
-         */
-        Role: "administrator" | "member";
         /** @description One page of a list: its items, and whether anything stands past the last of them. */
         EventPage: {
             items: components["schemas"]["Event"][];
@@ -599,9 +543,9 @@ export interface components {
          * @description A failure, in the common error shape. The codes:
          *     - `bad-request` (400): the body, the query or the path is not the shape the route takes
          *     - `unauthorized` (401): the bearer token is missing or wrong
-         *     - `forbidden` (403): under /screen, the call's Owner-Role is missing or does not allow member
+         *     - `forbidden` (403): under /screen, or for the console bundle's module and stylesheet, the console's call names no role that opens the screen
          *     - `no-route` (404): no route answers the method and path
-         *     - `not-found` (404): nothing stands at the project, the revision, the path, the review or the bundle's file the request names, or no bundle stands
+         *     - `not-found` (404): nothing stands at the project, the revision, the path, the review or the console bundle's file the request names
          *     - `conflict` (409): the review's states do not allow the change
          *     - `gone` (410): the events since the number asked for are no longer kept
          *     - `unreadable-checkout` (422): the project's checkout is missing, in no git repository or without commits
@@ -629,55 +573,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    readBundleFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The bundle's version, as the manifest names it. */
-                version: string;
-                /** @description The file's path in the bundle, its slashes as they are. */
-                fileName: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description One file of the console bundle, under its own media type. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/javascript": string;
-                    "text/css": string;
-                    "application/octet-stream": string;
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
-    readConsoleManifest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The console bundle's manifest. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScreenManifest"];
-                };
-            };
-            default: components["responses"]["Error"];
-        };
-    };
     listEvents: {
         parameters: {
             query?: {
@@ -1141,7 +1036,7 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
-    readWords: {
+    readConsoleManifest: {
         parameters: {
             query?: never;
             header?: never;
@@ -1150,17 +1045,37 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The console bundle's words, each locale's under its code. */
+            /** @description The console face's manifest, by bmo-ui's console plugin contract, to the console's credential alone. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: {
-                            [key: string]: unknown;
-                        };
-                    };
+                    "application/json": Record<string, never>;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    readConsoleFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The file's name, as the manifest gives it. */
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A file of the console bundle at the path the manifest names: the words to the console's credential alone, the module, the stylesheet and every other file to it with the manifest's role. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
             default: components["responses"]["Error"];

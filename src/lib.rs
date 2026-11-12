@@ -3,6 +3,7 @@
 //! harness plugin's MCP server (`docs/code-review.md`, `docs/api.md`).
 
 pub mod client;
+pub mod console;
 pub mod events;
 pub mod health;
 pub mod http;
@@ -10,7 +11,6 @@ pub mod import;
 pub mod mcp;
 pub mod openapi;
 pub mod review;
-pub mod screen;
 pub mod settings;
 pub mod store;
 pub mod wire;

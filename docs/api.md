@@ -1,7 +1,7 @@
 # The review service's boundary
 
 Every route this service answers, its events, its codes, the calls it makes, its harness plugin, its console
-bundle and its settings. What the code review does is `docs/code-review.md`, and the screen is
+face and its settings. What the code review does is `docs/code-review.md`, and the screen is
 `docs/screen.md`; this document says how it is asked. The OpenAPI 3.1 document, `docs/openapi.json`, states the
 same routes, bodies and tools as JSON Schemas generated from the service's own types; `bmo-review openapi` prints
 it. A change to anything here changes this document and that one in the same commit; what moves the version is
@@ -11,12 +11,12 @@ it. A change to anything here changes this document and that one in the same com
 
 The common wire format and the API design rules are bmo-chat's `docs/conventions.md`; this service keeps them.
 
-- **Every route needs `Authorization: Bearer <token>`,** the token of the settings; a missing or wrong token is
-  answered 401 `unauthorized`. An empty token in the settings lets no caller in.
-- **Every route is answered again under `/screen`,** the screen's prefix (「The console bundle」), where a call
-  carrying the token is also refused 403 `forbidden` when its `Owner-Role` header is missing or names no role
-  that allows `member`: `administrator` and `member` both do. A route answers under the prefix exactly as it
-  answers at its own path.
+- **Every route needs `Authorization: Bearer <token>`,** the service token (`[server] token`); a missing or wrong
+  token is answered 401 `unauthorized`. An empty token in the settings lets no caller in.
+- **Every route is answered again under `/screen`,** the console's prefix (「The console face」), to the console
+  credential (`[console] token`) alone and held there to the screen's role, as the console face guards it. A
+  route answers under the prefix exactly as it answers at its own path. Where no console face stands, nothing is
+  answered under the prefix.
 - **Bodies are JSON, both ways, with field names in camelCase.**
 - **Times are integers of epoch milliseconds,** each field ending in `At`, and a commit's time is `at`.
 - **A failure** is a non-2xx answer whose body is `code`, a kebab-case code a caller matches on, and `error`, an
@@ -141,10 +141,10 @@ open and migrated.
 | Status | Code | When |
 |---|---|---|
 | 400 | `bad-request` | the body, the query or the path is not the shape the route takes; the sentence names what is wrong |
-| 401 | `unauthorized` | no token, or not the one the settings name |
-| 403 | `forbidden` | under `/screen`, the call's `Owner-Role` is missing or does not allow `member` |
+| 401 | `unauthorized` | no token, or not the one the settings name for the route |
+| 403 | `forbidden` | under `/screen`, the console's call names no role that opens the screen |
 | 404 | `no-route` | no route answers the method and path |
-| 404 | `not-found` | nothing stands at the project, the revision, the path, the review or the bundle's file the request names, or no bundle stands |
+| 404 | `not-found` | nothing stands at the project, the revision, the path or the review the request names |
 | 409 | `conflict` | the review's states do not allow the change |
 | 410 | `gone` | the events since the number asked for are no longer kept |
 | 422 | `unreadable-checkout` | the project's checkout is missing, not in a git repository or without commits |
@@ -198,60 +198,30 @@ sentence alone where nothing answered.
 What a harness does first: it reads a change with `review_diff`, writes its findings with `review_create` and
 `review_comment`, and files a follow-up item with `review_file_item`.
 
-## The console bundle
+## The console face
 
-`client/` is the service's console bundle, conforming to bmo-ui's console plugin contract at 0.1.0-rev.7 (bmo-ui's
-`docs/console-bundles.md`). Its build, `bun run bundle` in `client/`, writes the folder the settings name
-(`screen.bundle`): the browser module `review.js`, whose default export holds the screen's one route, `/code`;
-the chunks and assets it loads by relative path; its stylesheet `review.css`; and its words `words.json`, each
-locale file of `client/i18n/` under the locale's code. The module leaves `vue`, `vue-router`, `vue-i18n`,
-`nuxt/app`, `@nuxt/ui` and `bmo-ui` unbundled, written as the package's own path of what it imports, and
-carries everything else itself.
+The code review screen is a console bundle under bmo-ui's console plugin contract (bmo-ui
+`docs/console-bundles.md`), which states the manifest, the bundle's files, the layer a bundle is built on and the
+guard of every route a console reaches. The service serves its console face through bmo-chat's `bmo-console-face`
+crate (bmo-chat `docs/console-face.md`), which assembles the manifest from the service's declaration, answers the
+bundle's files and guards them and the screen's routes as the contract states. This section names only what the
+review chooses within it.
 
-The service reads that folder when it starts. Where the folder does not stand it answers no screen:
-`GET /console-manifest` is answered 404 `not-found`, and so are the words and the bundle's files.
-
-| Route | Answer |
-|---|---|
-| `GET /console-manifest` | the manifest, JSON |
-| `GET /words` | the bundle's words, JSON |
-| `GET /bundle/{version}/{fileName}` | one file of the bundle, under its own media type |
-
-- **The manifest** is the contract's shape, answered to the token alone:
-
-  | Field | Value |
-  |---|---|
-  | `name` | `code`: its words' namespace and its components' prefix, `Code` |
-  | `title` | `code.title.screen` |
-  | `icon` | `i-material-symbols-rate-review-outline` |
-  | `screenPath` | `/code` |
-  | `serviceName` | `review` |
-  | `bundle` | `/screen/bundle/{version}/review.js` |
-  | `stylesheet` | `/screen/bundle/{version}/review.css` |
-  | `words` | `/words` |
-  | `apiPrefix` | `/screen` |
-  | `role` | `member` |
-  | `ownerKey` | false: no route reads the reader's owner key |
-  | `events` | true: the screen reads `GET /events` |
-  | `websocket` | false |
-  | `pushKinds` | none |
-
-- **The version** is a digest of every file the folder holds, by its path and its bytes, so the module's and
-  the stylesheet's paths change whenever any file of the bundle does. A file is answered only under the version
-  standing; under any other, or a name the folder does not hold, it is answered 404 `not-found`. What is answered
-  may be kept by the reader for as long as it likes.
-- **The words** are answered to the token alone. The bundle's files are answered under `/screen`, as the
-  manifest names them, so the role guards them like every call the screen makes.
-
-The screen calls only this service's routes, at the address bmo-ui's `relay` module answers for `review` and a
-path under `/screen`, the event stream included, and says a failure by its code in its own pack's words, as
-`code.error.<code>`.
-
-The same screen is also packed as `bmo-review-client` (`bun pm pack` in `client/`): a Nuxt layer on top of
-bmo-ui carrying the page, its components, its domain modules, its stylesheet and its words, declared by
-`client/console-bundle.json`, for a console that extends the layer and builds the screen in rather than loading
-the served module. The layer's screen calls the same routes at their own paths, without the prefix, since such a
-console sets no `Owner-Role`.
+- **The bundle.** Named `code`, its title the word `code.title.screen` and a review icon, its one screen under
+  `/code`, relayed as the service `review` with its calls under the prefix `/screen`.
+- **Its readers.** Every member and administrator, with no owner key: no route reads the reader's account, and
+  a review or a comment is signed with the name its writer gives.
+- **What it reads.** The event stream (「Events」), under the prefix like every call the screen makes. No
+  notice a console raises, no WebSocket, no share page, no sidebar count, no other service called and no route
+  relayed outside the prefix.
+- **Its files.** The folder `bun run bundle` builds in `client/` with bmo-ui's bundle build (`[console] folder`),
+  read once at start: the module `review.js`, the stylesheet `review.css`, the chunks they load and the words
+  `words.json`, each locale file of `client/i18n/` under the locale's code, beside the layer that build wrote.
+  A folder the face cannot be built from, or an empty console credential, leaves the service with no console
+  face: the console's routes answer 404 and nothing is answered under the prefix.
+- **The screen's routes.** Every route under `/screen`, held to the manifest's role for a call carrying the
+  console credential, and then to this document's own terms. The screen says a failure by its code in its own
+  pack's words, as `code.error.<code>`.
 
 ## Settings
 
@@ -263,11 +233,12 @@ binary (a deployment's root); then `BMO_REVIEW_<TABLE>__<KEY>` in the environmen
 | Table | Key | What it is |
 |---|---|---|
 | `server` | `listen` | where the service answers, as `host:port` |
-| `server` | `token` | the bearer token every caller presents |
+| `server` | `token` | the service token, the bearer every caller of the routes at their own paths presents |
 | `store` | `path` | the SQLite file the reviews, comments, filings and events stand in |
 | `graph` | `address`, `token` | bmo-graph's base address and the token it takes |
 | `job` | `address`, `token` | bmo-job's base address and the token it takes |
-| `screen` | `bundle` | the folder the console bundle's build writes, read from where the process starts where it is relative |
+| `console` | `token` | the console credential; empty, the console reaches nothing |
+| `console` | `folder` | the folder the console bundle's build writes, read from where the process starts where it is relative |
 | `limits` | `file_bytes`, `binary_probe` | the body ceiling, and how far into a file a NUL marks it binary |
 | `limits` | `tree_entries`, `diff_bytes` | the most entries a tree page holds, and the diff ceiling |
 | `limits` | `search_query`, `search_per_file`, `search_total` | the content search's ceilings |

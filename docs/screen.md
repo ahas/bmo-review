@@ -1,7 +1,7 @@
 # The code review screen
 
 The screen this repository's console bundle carries (`client/`), attached to a console by the manifest the
-service answers (`docs/api.md`, 「The console bundle」). What is read from which revision, how paths are fenced and what is
+service answers (`docs/api.md`, 「The console face」). What is read from which revision, how paths are fenced and what is
 excluded, and how reviews, comments and filings behave are `docs/code-review.md`; this document is the screen's
 shape. Every word it shows stands in the bundle's own pack, by key under `code.`.
 
@@ -22,7 +22,7 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
   beside the title, neither an action nor a way back. Its own row under the bar is the code's tab bar and toolbar,
   which hold what acts on the open file (「The code」).
 - **Every call goes to the review service** at the address bmo-ui's `relay` module answers for `review`, under the
-  service's screen prefix `/screen`, the event stream included (`docs/api.md`, 「The console bundle」).
+  service's screen prefix `/screen`, the event stream included (`docs/api.md`, 「The console face」).
 
 ## Sections
 

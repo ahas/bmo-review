@@ -25,7 +25,7 @@ check_script = "typecheck"
 # clients of the upstreams the service calls (docs/api.md, 「Calls this service makes」).
 quick = ["korean", "layout", "dependencies", "cargo-profile", "shared-versions"]
 korean_ledger = "korean-ledger.json"
-base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-ui", "bmo-text", "bmo-graph", "bmo-job-client"]
+base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-console-face", "bmo-ui", "bmo-text", "bmo-graph", "bmo-job-client"]
 
 # The repository whose root holds the shared versions the manifests and the lock hold to.
 [check.shared_versions]
@@ -69,7 +69,7 @@ units = ["deploy/*.service"]
 health = "~/.local/share/bmo-review/deploy/bin/bmo-review health"
 
 # The console bundle built into the release before it goes live, into the folder the service reads when it starts
-# (docs/api.md, 「The console bundle」); the release's setup has installed the bundle's packages.
+# (docs/api.md, 「The console face」); the release's setup has installed the bundle's packages.
 [[deploy.step]]
 id = "console-bundle"
 command = "cd client && bun run bundle"

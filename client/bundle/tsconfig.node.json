@@ -1,5 +1,5 @@
 {
-  // The served module's build and the manifest's reading, read as Nuxt reads its own configuration.
+  // The served module's build, read as Nuxt reads its own configuration.
   "extends": "../.nuxt/tsconfig.node.json",
-  "include": ["../.nuxt/nuxt.node.d.ts", "./vite.config.ts", "./read-manifest.ts"]
+  "include": ["../.nuxt/nuxt.node.d.ts", "./vite.config.ts"]
 }

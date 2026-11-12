@@ -4,11 +4,9 @@
 // adds only the review's own view on top of it. Like bmo-ui's editor, it is reached from the browser alone,
 // with a dynamic import once the code section is on the screen.
 //
-// Where a console builds the screen in as a layer, the editor here is the one bmo-ui's module set up. Where the
-// service's own module carries the screen, the module carries an editor of its own beside the console's, since
-// the editor is no library the console shares; bmo-ui's module then sets up the console's editor, and the worker
-// it names is the one every editor of the page starts, so what this module draws with is given the layer's two
-// themes and every tokenizer here. Said again to the editor bmo-ui's module set up, both change nothing.
+// The service's module carries an editor of its own beside the console's, since the editor is no library the
+// console shares; bmo-ui's module sets up the console's editor, and the worker it names is the one every editor
+// of the page starts, so what this module draws with is given the layer's two themes and every tokenizer here.
 
 import * as monaco from "monaco-editor/editor/editor.api";
 
