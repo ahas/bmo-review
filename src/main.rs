@@ -33,6 +33,9 @@ enum Word {
   },
   /// Prints the OpenAPI document, as `docs/openapi.json` keeps it.
   Openapi,
+  /// Prints how a console reaches the service, as the testbed's console probe asks it: the base address, the
+  /// console credential and the service token, as one JSON object.
+  ConsoleReach,
   /// Moves the old archive's code reviews from the item's export into this service's store (TODO #1923).
   Import {
     /// The export directory the item's export hand wrote.
@@ -96,6 +99,10 @@ async fn main() -> ExitCode {
       }
     }
     Word::Openapi => Ok(()),
+    Word::ConsoleReach => {
+      println!("{}", bmo_review::console::reach(&settings));
+      Ok(())
+    }
     Word::Import { .. } => unreachable!("the import is answered before the settings are read"),
   };
 

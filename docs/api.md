@@ -219,6 +219,10 @@ review chooses within it.
   `words.json`, each locale file of `client/i18n/` under the locale's code, beside the layer that build wrote.
   A folder the face cannot be built from, or an empty console credential, leaves the service with no console
   face: the console's routes answer 404 and nothing is answered under the prefix.
+- **How a deployment reaches it.** `bmo-review console-reach` prints, from the settings, one JSON object:
+  `address`, the service's base address as a console calls it (`http://` and `[server] listen`),
+  `consoleToken`, the console credential, and `token`, the service token. The testbed's console probe runs it
+  (bmo-testbed `docs/declaration.md`, `[deploy.console]`).
 - **The screen's routes.** Every route under `/screen`, held to the manifest's role for a call carrying the
   console credential, and then to this document's own terms. The screen says a failure by its code in its own
   pack's words, as `code.error.<code>`.

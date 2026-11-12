@@ -7,9 +7,10 @@ use std::path::Path;
 use bmo_console_face::{
   BundleFolder, CONSOLE_FILES_PREFIX, CONSOLE_MANIFEST_ROUTE, ConsoleFace, ConsoleFaceError,
 };
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::openapi::Stated;
+use crate::settings::Settings;
 
 /// The manifest fields the review decides, as bmo-ui's console plugin contract names them.
 pub const DECLARATION: &str = include_str!("console.json");
@@ -24,6 +25,16 @@ pub fn face(folder: &Path, credential: &str) -> Result<ConsoleFace, ConsoleFaceE
   let bundle = BundleFolder::new(folder, MODULE_FILE, WORDS_FILE).with_stylesheet(STYLESHEET_FILE);
 
   ConsoleFace::new(DECLARATION, &bundle, credential)
+}
+
+/// How a console reaches the service, from the settings (`docs/api.md`, 「The console face」): the base address a
+/// console calls, the console credential and the service token.
+pub fn reach(settings: &Settings) -> Value {
+  json!({
+    "address": format!("http://{}", settings.server.listen),
+    "consoleToken": settings.console.token,
+    "token": settings.server.token,
+  })
 }
 
 /// The face's routes as the OpenAPI document states them, each `GET` beside its path; the face answers them as

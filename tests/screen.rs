@@ -1,6 +1,7 @@
 //! The console face as the service serves it (`docs/api.md`, 「The console face」): the manifest read through
 //! bmo-ui's own reading of the contract on the release the client vendors, which credential each of the service's
-//! routes takes, and no face where no bundle is built. The face's own rules are bmo-console-face's tests'.
+//! routes takes, no face where no bundle is built, and the reach the testbed's console probe asks by. The face's
+//! own rules are bmo-console-face's tests'.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -145,4 +146,20 @@ async fn no_face_stands_where_no_bundle_is_built() {
   assert_eq!(get(&address, "/console-manifest", CONSOLE, None).await.0, 404);
   assert_eq!(get(&address, "/screen/health", CONSOLE, Some("member")).await.0, 404);
   assert_eq!(get(&address, "/health", SERVICE, None).await.0, 200);
+}
+
+#[test]
+fn the_reach_names_the_address_and_both_credentials() {
+  let folder = scratch("reach");
+  let environment = HashMap::from([
+    ("BMO_REVIEW_SERVER__LISTEN".to_owned(), "127.0.0.1:4711".to_owned()),
+    ("BMO_REVIEW_SERVER__TOKEN".to_owned(), SERVICE.to_owned()),
+    ("BMO_REVIEW_CONSOLE__TOKEN".to_owned(), CONSOLE.to_owned()),
+  ]);
+  let settings = Settings::read(&folder, Some(environment)).expect("the settings read");
+
+  assert_eq!(
+    bmo_review::console::reach(&settings),
+    json!({ "address": "http://127.0.0.1:4711", "consoleToken": CONSOLE, "token": SERVICE })
+  );
 }
