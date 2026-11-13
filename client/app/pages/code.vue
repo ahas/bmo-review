@@ -11,7 +11,9 @@
     <template #body>
       <p v-if="projectsFailure !== ''" role="alert" class="p-4 text-sm text-error">{{ projectsFailure }}</p>
 
-      <div v-if="narrow" class="flex min-h-0 flex-1 flex-col">
+      <!-- On a phone the screen's create button floats over the code, so the code ends the button's room above the
+           screen's foot. -->
+      <div v-if="narrow" class="flex min-h-0 flex-1 flex-col" :class="{ 'pb-(--bmo-create-room)': creating }">
         <CodeViewer
           v-bind="viewerProps"
           :explorer-tool="explorerTool"
@@ -29,6 +31,8 @@
           @origin="markOrigin"
           @definition="jumpToDefinition"
         />
+
+        <CreateButton v-if="creating" :label="$t('code.action.open_review')" @click="newReview" />
 
         <!-- The explorer, up from the bottom edge on a phone: it only chooses what the code shows. -->
         <UDrawer v-model:open="explorerDrawer" :title="$t('code.action.explorer')" :ui="FULL_SHEET">
@@ -170,6 +174,9 @@ const SIDES: SplitterItem[] = [
 const route = useRoute();
 const router = useRouter();
 const narrow = useNarrow(`(max-width: ${CODE_VIEW.tabsMaxPx}px)`);
+// A phone by the layer's own measure, where the create button floats over the screen rather than standing in the
+// review list's head.
+const phone = useNarrow();
 
 const projects = ref<Project[]>([]);
 const projectsLoading = ref(false);
@@ -240,6 +247,8 @@ const projectName = computed(() => queryText(route.query.project) ?? null);
 const project = computed(() => projects.value.find((one) => one.name === projectName.value) ?? null);
 const head = computed(() => project.value?.head ?? null);
 const revision = computed(() => queryText(route.query.revision) || head.value);
+// Whether the screen's create button floats over the code: on a phone, once there is a revision to review.
+const creating = computed(() => phone.value && revision.value !== null);
 const path = computed(() => queryText(route.query.path) || null);
 const line = computed(() => queryNumber(route.query.line));
 const folder = computed(() => queryText(route.query.folder));

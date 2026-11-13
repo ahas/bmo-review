@@ -2,18 +2,12 @@
   <!-- The review part: the project's reviews, or one review and its comments. -->
   <div class="flex min-h-0 flex-col gap-2 pt-3">
     <template v-if="props.openId === null">
-      <!-- The head: the title on a row of its own, where no sheet's title names the part already, and the action on
-           the row under it, at its right end. -->
+      <!-- The head: the title on a row of its own, where no sheet's title names the part already, and the screen's
+           create button on the row under it, at its right end. On a phone the screen floats that button over the
+           code instead, so the row stands nothing there. -->
       <p v-if="!props.sheet" class="truncate px-3 text-sm font-medium text-highlighted">{{ $t("code.title.reviews") }}</p>
-      <div v-if="props.revision !== null" class="flex items-center justify-end gap-2 px-3">
-        <UButton
-          size="sm"
-          color="neutral"
-          variant="subtle"
-          icon="i-material-symbols-rate-review-outline"
-          :label="$t('code.action.open_review')"
-          @click="emit('new')"
-        />
+      <div v-if="props.revision !== null && !phone" class="flex items-center justify-end gap-2 px-3">
+        <CreateButton :label="$t('code.action.open_review')" @click="emit('new')" />
       </div>
 
       <p v-if="props.failure !== ''" class="px-3 text-sm text-error" role="alert">{{ props.failure }}</p>
@@ -173,6 +167,7 @@ import { useAuthorName } from "../domain/kept";
 import { refusalText } from "../domain/refusals";
 import { changeReview, listComments, readReview, writeComment } from "../domain/review";
 import { useReviewRefresh } from "../domain/events";
+import { useNarrow } from "bmo-ui/app/domain/screen";
 
 import type { ShownKind } from "../domain/code";
 import type { Comment, Review } from "../../shared/types";
@@ -219,6 +214,8 @@ const changing = ref(false);
 const changeFailure = ref("");
 const filing = ref(false);
 const list = useTemplateRef<HTMLElement>("list");
+// A phone by the layer's own measure, where the create button floats over the screen rather than standing here.
+const phone = useNarrow();
 let asked = 0;
 
 const groups = computed(() => reviewGroups(props.reviews, props.revision));

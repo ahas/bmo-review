@@ -32,7 +32,9 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
   stands alone: the explorer opens from the toolbar's first button and the review section from the toolbar's
   menu, each as a sheet rising from the bottom, which back closes. Choosing a file in the explorer sheet puts it
   away and opens the file, and pressing a comment mark in the code opens that review in the review sheet; going to
-  a comment's place from the sheet puts it away and brings the code there.
+  a comment's place from the sheet puts it away and brings the code there. On a phone the new review button floats
+  over the code (「The review section」), and the code section ends the button's room above the screen's foot, the
+  layer's create room, so its last line and the chosen lines' bar stand clear of it.
 - The address carries the project, revision, path, line, chosen folder and open review, so the place can be
   handed over or reopened.
 - **The explorer and the review section keep their scrolls at their edges.** The fixed parts (the project choice,
@@ -54,8 +56,9 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
   comment count. The top line is the whole repository, and a folder comment there is a comment on the whole
   repository.
 - Choosing a folder shows the review section that folder's comments, and a bar below the tree stands the chosen
-  folder's name and a folder comment button. A tree line is itself a pressable place so no more buttons can go in
-  it, so work on a folder is handled by this bar outside the line.
+  folder's name and, at its right end, the folder comment button, an icon whose tooltip names it. A tree line is
+  itself a pressable place so no more buttons can go in it, so work on a folder is handled by this bar outside the
+  line.
 
 ## The code
 
@@ -91,15 +94,15 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
 - **The writer's name.** Every review and comment is signed with the name the reader gives in the writing box. The
   box asks for it the first time and that browser keeps it, prefilling it each time after.
 - **Commenting on a line.** Hovering the gutter beside a line number pops a plus mark on that line, and pressing it
-  writes that line's comment. Dragging to select several lines pops a comment button beside the selection, and
-  pressing writes that line range's comment. With lines chosen, holding shift and pressing another line number
-  widens the range to that line. The writing box opens right below the chosen lines, among the code: where it
-  anchors, the review it goes into, the name, the words box, send, cancel. Sending writes the comment and opens its
-  review in the review section.
+  writes that line's comment. Dragging to select several lines pops a comment button, its word alone, beside the
+  selection, and pressing writes that line range's comment. With lines chosen, holding shift and pressing another
+  line number widens the range to that line. The writing box opens right below the chosen lines, among the code:
+  where it anchors, the review it goes into, the name, the words box, send, cancel. Sending writes the comment and
+  opens its review in the review section.
 - On a narrow screen pressing a line number stands that line on a bar below the code, and pressing another line
-  number with one chosen widens the range without shift, since a finger has no shift. The bar's comment button
-  opens the writing box as a centred modal, not among the code. File, folder and whole-review comments are
-  written in the same modal on a wide screen too.
+  number with one chosen widens the range without shift, since a finger has no shift. The bar's cancel and comment
+  buttons are words alone, and the comment button opens the writing box as a centred modal, not among the code.
+  File, folder and whole-review comments are written in the same modal on a wide screen too.
 - **Going to a definition.** Pressing the right button anywhere in the code opens the code's own menu, which stands
   go to definition for the word under the press beside the comment button for the lines chosen. F12 does the same
   for the word the cursor stands on, and go to definition stands among the file's actions as well, which is a
@@ -122,9 +125,18 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
 - **No button beside a title.** A head here is a title on a row of its own and, under it, a row holding the way back
   at its left end, what states the thing in the middle, and the actions at its right end. Every button in those rows
   is the component library's small button, its hover filling only its own shape.
-- Its head names the reviews on a row of their own, and the row under it stands the open review button at its right
-  end. On a narrow screen the sheet's own title names the reviews, so only that row stands. Under it stands the
-  list of the project's reviews: those of the open revision first, newest first, then those of other revisions
+- **A new review is the screen's create button,** bmo-ui's one create button (its `docs/components.md`,
+  「Creating」), named a new review and answering the key `n`; pressing it opens the writing box for a new review.
+  The screen stands no other button of its own that creates: the folder comment button and the line comment buttons
+  act on a chosen place and carry an icon or a word, never both. Where the screen is wider than a phone it is the grey
+  icon at the right end of the row under the reviews' head, there while the review list stands; its key acts while
+  the button stands and nothing floats over the screen, so not while the review sheet is open on a narrow screen. On
+  a phone it floats at the screen's bottom right over the code, outside the sheets, which cover it while they stand;
+  nothing stands for it in the review sheet.
+- Its head names the reviews on a row of their own, and the row under it stands the new review button at its right
+  end. On a narrow screen the sheet's own title names the reviews, so only that row stands, and on a phone, where the
+  button floats, the row stands nothing. Under it stands the list of the project's reviews: those of the open
+  revision first, newest first, then those of other revisions
   grouped per revision under a short hash head. Each row stands the title, the state, the writer's name, the count
   of comments and when it last changed. Pressing a review of another revision moves the screen to that revision and
   opens the review there.

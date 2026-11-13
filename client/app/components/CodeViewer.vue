@@ -162,11 +162,11 @@
     </template>
 
     <!-- What a choice of lines turns into: beside a drag's end on a wide screen, and at the foot of the code on a
-         narrow one, where the box itself opens as a sheet. -->
+         narrow one, where the box itself opens as a sheet. These act on the lines chosen, not the screen's create
+         button, so they carry their word alone. -->
     <UButton
       v-if="dragged !== null && !props.narrow && chosen === null"
       size="sm"
-      icon="i-material-symbols-add-comment-outline"
       :label="$t('code.action.add_comment')"
       class="fixed z-20 shadow-md"
       :style="{ top: `${dragged.rect.top + dragged.rect.height + 4}px`, left: `${dragged.rect.left}px` }"
@@ -178,7 +178,7 @@
         <span class="font-mono">{{ narrowPlace }}</span>
       </span>
       <UButton size="sm" color="neutral" variant="ghost" :label="$t('code.shared.action.cancel')" @click="clearChoice" />
-      <UButton size="sm" icon="i-material-symbols-add-comment-outline" :label="$t('code.action.add_comment')" @click="openSheet" />
+      <UButton size="sm" :label="$t('code.action.add_comment')" @click="openSheet" />
     </div>
 
     <CodeDefinitionList v-model:open="choicesOpen" :definitions="choices" :at="choicesAt" @go="chooseDefinition" />

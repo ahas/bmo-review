@@ -151,7 +151,8 @@
         <div v-if="props.folder !== null" class="flex items-center gap-2 border-t border-default p-3">
           <UIcon name="i-material-symbols-folder-outline" class="size-4 shrink-0 text-muted" />
           <span class="min-w-0 flex-1 truncate font-mono text-sm text-highlighted">{{ props.folder === "" ? $t("code.label.whole_repository") : props.folder }}</span>
-          <UButton size="sm" color="neutral" variant="subtle" icon="i-material-symbols-add-comment-outline" :label="$t('code.label.comment_folder')" @click="emit('comment-folder', props.folder)" />
+          <!-- An action on the chosen folder, not the screen's create button: its icon alone, named by its tooltip. -->
+          <IconButton size="sm" icon="i-material-symbols-add-comment-outline" :label="$t('code.label.comment_folder')" @click="emit('comment-folder', props.folder)" />
         </div>
       </template>
     </template>
