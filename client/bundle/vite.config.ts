@@ -43,15 +43,22 @@ const sharedComponent: ComponentResolver = (name) => {
 };
 
 // The bundle's words: each locale file of i18n/ under the locale's code, as one JSON object.
+function readWords(): Record<string, Record<string, unknown>> {
+  return Object.fromEntries(
+    readdirSync(own("i18n"))
+      .filter((file) => extname(file) === ".json")
+      .map((file) => [basename(file, ".json"), JSON.parse(readFileSync(own(`i18n/${file}`), "utf8")) as Record<string, unknown>])
+  );
+}
+
+const WORDS = readWords();
+
+// The words written beside the module, as the service answers them.
 function words(): Plugin {
   return {
     name: "bmo-review-words",
     generateBundle() {
-      const locales = readdirSync(own("i18n"))
-        .filter((file) => extname(file) === ".json")
-        .map((file) => [basename(file, ".json"), JSON.parse(readFileSync(own(`i18n/${file}`), "utf8"))]);
-
-      this.emitFile({ type: "asset", fileName: "words.json", source: JSON.stringify(Object.fromEntries(locales)) });
+      this.emitFile({ type: "asset", fileName: "words.json", source: JSON.stringify(WORDS) });
     }
   };
 }
@@ -67,7 +74,7 @@ export default defineConfig({
     // bmo-ui's bundle build: the libraries the console shares left as the package's own path of what is imported,
     // so the console resolves each to the copy its app runs, and the layer the bundle is built on written beside
     // the module.
-    consoleBundle(),
+    consoleBundle({ name: "code", words: WORDS }),
     vue(),
     tailwind(),
     autoImport({ imports: NAMED, dts: false }),
