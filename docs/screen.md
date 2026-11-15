@@ -8,8 +8,10 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
 ## Where it stands
 
 - **The place a reader browses, reads and reviews** each project's checkout. A console serves it at `/code`,
-  under the title and icon the manifest names, to a reader holding the `member` role or the `administrator`. Code is only read; what is written is reviews, comments and
-  filed items.
+  under the title and icon the manifest names, to a reader holding the `member` role or the `administrator`. Its
+  sidebar entry stands in the console's administration section, among the services an administrator runs the
+  system with, as the manifest's `sidebarSection` names it. Code is only read; what is written is reviews,
+  comments and filed items.
 - **What it is built with.** The editor is bmo-ui's read-only Monaco code view, and the sections are bmo-ui's
   splitter and tabs. No docking library and no workbench are brought in: the console's sections are one set of
   splitters and narrow-screen tabs, and a second layout system would move separately inside the same console.

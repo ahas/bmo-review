@@ -114,6 +114,7 @@ async fn the_served_manifest_is_read_by_the_contract_on_the_vendored_release() {
   assert_eq!(read["serviceName"], "review");
   assert_eq!(read["apiPrefix"], "/screen");
   assert_eq!(read["role"], "member");
+  assert_eq!(read["sidebarSection"], "administration");
   assert_eq!(read["ownerKey"], false);
   assert_eq!(read["events"], true);
 }

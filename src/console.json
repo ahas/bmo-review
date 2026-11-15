@@ -6,6 +6,7 @@
   "serviceName": "review",
   "apiPrefix": "/screen",
   "role": "member",
+  "sidebarSection": "administration",
   "ownerKey": false,
   "events": true,
   "websocket": false,

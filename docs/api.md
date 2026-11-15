@@ -208,7 +208,8 @@ bundle's files and guards them and the screen's routes as the contract states. T
 review chooses within it.
 
 - **The bundle.** Named `code`, its title the word `code.title.screen` and a review icon, its one screen under
-  `/code`, relayed as the service `review` with its calls under the prefix `/screen`.
+  `/code`, relayed as the service `review` with its calls under the prefix `/screen`, its entry standing in the
+  console sidebar's `administration` section, among the services an administrator runs the system with.
 - **Its readers.** Every member and administrator, with no owner key: no route reads the reader's account, and
   a review or a comment is signed with the name its writer gives.
 - **What it reads.** The event stream (「Events」), under the prefix like every call the screen makes. No
