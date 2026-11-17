@@ -31,20 +31,8 @@ base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-console-face", "bmo-ui", "
 [check.shared_versions]
 repository = "bmo-chat"
 
-[[check.step]]
-id = "check"
-command = "cargo check --all-targets"
-lane = "wide"
-
-[[check.step]]
-id = "clippy"
-command = "cargo clippy --all-targets -- -D warnings"
-lane = "wide"
-
-[[check.step]]
-id = "fmt"
-command = "cargo fmt --all --check"
-
+# The Cargo crate is formatted, linted and type-checked by the testbed's own Cargo workspace check and change
+# check, so the declaration names no Cargo step.
 # The console plugin bundle is a project of its own under client/, typechecked against its own install.
 [[check.step]]
 id = "client-typecheck"
