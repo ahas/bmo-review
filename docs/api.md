@@ -24,7 +24,7 @@ The common wire format and the API design rules are bmo-chat's `docs/conventions
 - **A page** is `items` and `more`, whether anything stands past the last item. A list takes `limit`, 1 to 1,000
   and 100 where absent, and `after`, the cursor each route states: the next page is asked with the last item's
   cursor.
-- **A project** is named by the name agency keeps its repository under, `projectName`; **a revision** by
+- **A project** is named by the name the settings give it, `projectName`; **a revision** by
   seven to sixty-four hex characters, resolved to the full hash (`docs/code-review.md`, 「How revisions are
   accepted」), HEAD where left out or empty; **a path** by names joined by `/` relative to the repository, the
   empty path being the whole repository.
@@ -46,10 +46,10 @@ open and migrated.
 | `GET /projects/{projectName}/matches` | `q`, `revision`, `after`, `limit` | a page of matches |
 | `GET /projects/{projectName}/definitions` | `name`, `path`, `revision`, `after`, `limit` | a page of definitions |
 
-- **A project:** `name`, `checkout` (the absolute path agency names), `state` (`ready`, `missing`, `not-git` or
+- **A project:** `name`, `checkout` (the absolute path the settings name), `state` (`ready`, `missing`, `not-git` or
   `no-commits`), `head` (HEAD's full hash, null unless `ready`), `branch` (the branch HEAD names, null where it
   names none or the project is not `ready`) and `uncommittedCount` (the tracked files' uncommitted changes). The
-  cursor is the last project's `name`. Every repository agency keeps on this machine stands, an unreadable one with its state.
+  cursor is the last project's `name`. Every project the settings name stands, an unreadable one with its state.
 - **A tree entry:** `path`, `kind` (`file`, `folder`, `link` or `submodule`), `byteCount` (a file's bytes, null
   otherwise) and `pinnedRevision` (a submodule's revision, null otherwise). The entries are every one under
   `path`, at any depth, in path order, the excluded ones left out; the cursor is the last entry's `path`, and
@@ -74,7 +74,7 @@ open and migrated.
   empty page.
 - **The cursor of matches and definitions** is the count of items already read, since a search keeps nothing to
   key on; `more` is true where items stand past the page or a ceiling or the time cut the search.
-- **A project agency does not keep** is answered `not-found`, and so is a revision that resolves to no commit
+- **A project the settings do not name** is answered `not-found`, and so is a revision that resolves to no commit
   of it; a checkout that cannot be read is answered `unreadable-checkout`, its state in the sentence.
 
 ## Reviews
@@ -92,7 +92,7 @@ open and migrated.
 - **A review:** `id`, `projectName`, `revision` (the full hash), `title`, `state` (`open`, `answered` or
   `closed`), `authorName`, `commentCount`, `itemIds` (the job service's items filed from it, oldest first),
   `createdAt` and `changedAt`. The list's cursor is the last review's `id`, and each filter given narrows it.
-- **Opening a review** resolves the revision in the project's checkout; a project agency does not keep is
+- **Opening a review** resolves the revision in the project's checkout; a project the settings do not name is
   refused `unknown-project`, a revision that resolves to no commit `unknown-revision`, and a checkout that cannot
   be read `unreadable-checkout`. The title and the author's name are refused `bad-request` where empty or past
   their ceilings.
@@ -148,22 +148,19 @@ open and migrated.
 | 409 | `conflict` | the review's states do not allow the change |
 | 410 | `gone` | the events since the number asked for are no longer kept |
 | 422 | `unreadable-checkout` | the project's checkout is missing, not in a git repository or without commits |
-| 422 | `unknown-project` | a review names a project agency does not keep |
+| 422 | `unknown-project` | a review names a project the settings do not name |
 | 422 | `unknown-revision` | a review names a revision that resolves to no commit of the project |
 | 422 | `no-such-place` | a comment's place is no file or folder of the revision that may be shown, or its lines lie off the file |
 | 422 | `not-a-name` | the definition search does not take the word |
 | 422 | `filing-refused` | the job service refused the item |
 | 500 | `failed` | the service failed; the sentence is the failure |
-| 502 | `upstream-failed` | agency or the job service could not be reached or failed |
+| 502 | `upstream-failed` | the job service could not be reached or failed |
 
 ## Calls this service makes
 
 Each unit is reached only through the client it publishes, at the base address and with the token the settings
 name, and its contract is that unit's own document.
 
-- **agency,** through `bmo_agency_client`, taken from its checkout beside this one: `GET /repositories` for the
-  projects, cut into pages here in the order of their names, and `GET /repositories/{repositoryName}` for the one
-  a request names; this service reads a repository's `name`, `path` and `nodeName`.
 - **bmo-job,** through `bmo-job-client`, taken from its checkout beside this one: `POST /items` for a filing, with the caller's `title`,
   `brief` and `queueName`, and as `labels` the review's `reviewId`, `projectName` and `revision`; this service
   reads the item's `id`.
@@ -240,7 +237,7 @@ binary (a deployment's root); then `BMO_REVIEW_<TABLE>__<KEY>` in the environmen
 | `server` | `listen` | where the service answers, as `host:port` |
 | `server` | `token` | the service token, the bearer every caller of the routes at their own paths presents |
 | `store` | `path` | the SQLite file the reviews, comments, filings and events stand in |
-| `agency` | `address`, `token` | agency's base address and the token it takes |
+| `projects` | a list of `name`, `checkout` | the projects: each checkout that can be read, under the name it is asked by |
 | `job` | `address`, `token` | bmo-job's base address and the token it takes |
 | `console` | `token` | the console credential; empty, the console reaches nothing |
 | `console` | `folder` | the folder the console bundle's build writes, read from where the process starts where it is relative |

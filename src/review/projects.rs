@@ -1,10 +1,8 @@
-//! The projects (`docs/code-review.md`, 「Projects」): the repositories agency keeps on this machine, read through
-//! its client on each request, and what a request names in one looked up rather than trusted: a project's name
-//! becomes its checkout, and a revision a full hash of that checkout's own.
+//! The projects (`docs/code-review.md`, 「Projects」): the checkouts the settings name, and what a request names
+//! in one looked up rather than trusted: a project's name becomes its checkout, and a revision a full hash of
+//! that checkout's own.
 
 use std::path::PathBuf;
-
-use bmo_agency_client::{ClientFailure, Repository};
 
 use super::workspace::{head_of, resolve_commit};
 use crate::http::{Refused, Standing};
@@ -13,60 +11,48 @@ use crate::wire::ProjectState;
 /// One project's checkout.
 #[derive(Clone, Debug)]
 pub struct Checkout {
-  /// The name agency keeps the repository under.
+  /// The name the settings give the project.
   pub name: String,
   /// The absolute path of the checkout.
   pub root: PathBuf,
 }
 
-/// Agency's failure as this service answers it.
-fn upstream(failure: &ClientFailure) -> Refused {
-  Refused::upstream(format!("agency failed: {failure}"))
-}
-
-/// A repository as a project, or none for one that stands on another machine, whose checkout is not read here.
-fn checkout_of(repository: Repository) -> Option<Checkout> {
-  repository.node_name.is_none().then(|| Checkout {
-    name: repository.name,
-    root: PathBuf::from(repository.path),
-  })
-}
-
-/// A page of the projects in the order of their names, past the one `after` names, and whether more stand.
-pub async fn page(
-  standing: &Standing,
-  after: Option<&str>,
-  limit: usize,
-) -> Result<(Vec<Checkout>, bool), Refused> {
-  let listed = standing.agency.list_repositories().await.map_err(|failure| upstream(&failure))?;
-  let mut checkouts: Vec<Checkout> = listed
-    .items
-    .into_iter()
-    .filter_map(checkout_of)
-    .filter(|checkout| after.is_none_or(|after| checkout.name.as_str() > after))
+/// Every project the settings name, in the order of their names.
+fn named(standing: &Standing) -> Vec<Checkout> {
+  let mut checkouts: Vec<Checkout> = standing
+    .settings
+    .projects
+    .iter()
+    .map(|project| Checkout {
+      name: project.name.clone(),
+      root: PathBuf::from(&project.checkout),
+    })
     .collect();
 
   checkouts.sort_by(|one, other| one.name.cmp(&other.name));
-  let more = checkouts.len() > limit;
-  checkouts.truncate(limit);
-
-  Ok((checkouts, more))
+  checkouts
 }
 
-/// The checkout of the project a request names, or none where agency keeps no such repository on this machine.
-pub async fn find(standing: &Standing, name: &str) -> Result<Option<Checkout>, Refused> {
-  match standing.agency.get_repository(name).await {
-    Ok(repository) => Ok(checkout_of(repository)),
-    Err(ClientFailure::Answered { status: 404, .. }) => Ok(None),
-    Err(failure) => Err(upstream(&failure)),
-  }
+/// A page of the projects in the order of their names, past the one `after` names, and whether more stand.
+pub fn page(standing: &Standing, after: Option<&str>, limit: usize) -> (Vec<Checkout>, bool) {
+  let mut checkouts: Vec<Checkout> = named(standing)
+    .into_iter()
+    .filter(|checkout| after.is_none_or(|after| checkout.name.as_str() > after))
+    .collect();
+  let more = checkouts.len() > limit;
+
+  checkouts.truncate(limit);
+  (checkouts, more)
+}
+
+/// The checkout of the project a request names, or none where the settings name no such project.
+pub fn find(standing: &Standing, name: &str) -> Option<Checkout> {
+  named(standing).into_iter().find(|checkout| checkout.name == name)
 }
 
 /// The checkout of the project a route's path names.
-pub async fn require(standing: &Standing, name: &str) -> Result<Checkout, Refused> {
-  find(standing, name)
-    .await?
-    .ok_or_else(|| Refused::not_found(format!("agency keeps no project {name}")))
+pub fn require(standing: &Standing, name: &str) -> Result<Checkout, Refused> {
+  find(standing, name).ok_or_else(|| Refused::not_found(format!("no project is named {name}")))
 }
 
 /// Why a checkout with no HEAD to read cannot be read.

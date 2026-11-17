@@ -300,9 +300,9 @@ export interface components {
             items: components["schemas"]["Project"][];
             more: boolean;
         };
-        /** @description One project: a repository agency keeps on this machine, and where it stands. */
+        /** @description One project: a checkout the settings name, and where it stands. */
         Project: {
-            /** @description The name agency keeps the repository under. */
+            /** @description The name the settings give the project. */
             name: string;
             /** @description The absolute path of the checkout. */
             checkout: string;
@@ -549,13 +549,13 @@ export interface components {
          *     - `conflict` (409): the review's states do not allow the change
          *     - `gone` (410): the events since the number asked for are no longer kept
          *     - `unreadable-checkout` (422): the project's checkout is missing, in no git repository or without commits
-         *     - `unknown-project` (422): a review names a project agency does not keep
+         *     - `unknown-project` (422): a review names a project the settings do not name
          *     - `unknown-revision` (422): a review names a revision that resolves to no commit of the project
          *     - `no-such-place` (422): a comment's place is no file or folder of the revision, or its lines lie off the file
          *     - `not-a-name` (422): the definition search does not take the word
          *     - `filing-refused` (422): the job service refused the item
          *     - `failed` (500): the service failed
-         *     - `upstream-failed` (502): agency or the job service could not be reached or failed
+         *     - `upstream-failed` (502): the job service could not be reached or failed
          */
         Error: {
             headers: {
@@ -667,7 +667,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description The name agency keeps the repository under. */
+                /** @description The name the settings give the project. */
                 projectName: string;
             };
             cookie?: never;
@@ -691,7 +691,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description The name agency keeps the repository under. */
+                /** @description The name the settings give the project. */
                 projectName: string;
                 /** @description The commit, seven to sixty-four hex characters. */
                 commitId: string;
@@ -728,7 +728,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description The name agency keeps the repository under. */
+                /** @description The name the settings give the project. */
                 projectName: string;
             };
             cookie?: never;
@@ -755,7 +755,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description The name agency keeps the repository under. */
+                /** @description The name the settings give the project. */
                 projectName: string;
                 /** @description The file's path from the repository's root, its slashes standing as they are. */
                 filePath: string;
@@ -790,7 +790,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description The name agency keeps the repository under. */
+                /** @description The name the settings give the project. */
                 projectName: string;
             };
             cookie?: never;
@@ -823,7 +823,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description The name agency keeps the repository under. */
+                /** @description The name the settings give the project. */
                 projectName: string;
             };
             cookie?: never;

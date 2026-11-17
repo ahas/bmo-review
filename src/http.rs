@@ -12,7 +12,6 @@ use axum::http::{Method, StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{MethodFilter, MethodRouter};
-use bmo_agency_client::AgencyClient;
 use bmo_console_face::ConsoleFace;
 use bmo_job_client::JobClient;
 use schemars::generate::SchemaGenerator;
@@ -173,8 +172,6 @@ pub struct Standing {
   pub store: Store,
   /// The event log every reader of `GET /events` hears.
   pub events: Events,
-  /// Agency's client, at the address the settings name.
-  pub agency: AgencyClient,
   /// The job service's client, at the address the settings name.
   pub job: JobClient,
   /// The console face, where a console credential is set and the bundle's folder holds a bundle.
@@ -185,8 +182,6 @@ impl Standing {
   /// What the service stands on, or why a client of another unit cannot be made. A console face that cannot be
   /// built leaves the service with none, and says why on standard error.
   pub fn new(settings: Settings, store: Store) -> Result<Self, String> {
-    let agency = AgencyClient::new(&settings.agency.address, settings.agency.token.clone())
-      .map_err(|why| format!("agency's address does not read: {why}"))?;
     let job = JobClient::new(&settings.job.address, &settings.job.token)
       .map_err(|why| format!("the job service's address does not read: {why}"))?;
     let face = console_face(&settings);
@@ -195,7 +190,6 @@ impl Standing {
       settings: Arc::new(settings),
       events: Events::new(store.clone()),
       store,
-      agency,
       job,
       face,
     })

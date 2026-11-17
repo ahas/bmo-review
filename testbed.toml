@@ -25,7 +25,7 @@ check_script = "typecheck"
 # clients of the upstreams the service calls (docs/api.md, 「Calls this service makes」).
 quick = ["korean", "layout", "dependencies", "cargo-profile", "shared-versions"]
 korean_ledger = "korean-ledger.json"
-base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-console-face", "bmo-ui", "bmo-text", "bmo-agency-client", "bmo-job-client"]
+base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-console-face", "bmo-ui", "bmo-text", "bmo-job-client"]
 
 # The repository whose root holds the shared versions the manifests and the lock hold to.
 [check.shared_versions]

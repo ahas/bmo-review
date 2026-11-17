@@ -11,10 +11,8 @@ token = ""
 # The SQLite file the reviews, comments, filings and events stand in.
 path = "review.db"
 
-[agency]
-# Agency's base address and the token it takes: the repositories, which are the projects, and their checkouts.
-address = "http://127.0.0.1:13104"
-token = ""
+# The projects: each checkout that can be read, as a [[projects]] table with its `name` and the absolute path
+# of its `checkout`. None stands here; a deployment names its own.
 
 [job]
 # bmo-job's base address and the token it takes: the items filed from a review.

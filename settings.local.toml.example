@@ -8,9 +8,9 @@ token = "review-token"
 [store]
 path = "/srv/bmo-review/review.db"
 
-[agency]
-address = "http://127.0.0.1:13104"
-token = "agency-token"
+[[projects]]
+name = "example"
+checkout = "/srv/checkouts/example"
 
 [job]
 address = "http://127.0.0.1:7841"

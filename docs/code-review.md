@@ -17,12 +17,12 @@
 
 ### Where the projects come from
 
-- **The projects are agency's repositories.** A project is a repository agency keeps on this machine, under the
-  name agency keeps it by; this service keeps no list of its own and reads the list through agency's client on
-  each request. A repository placed on another machine is no project, since its checkout is not read here.
-- **The checkout** is the absolute path agency names. Its tree is the whole repository the checkout stands in,
-  as git reads it from that directory.
-- **A name agency does not keep** is no project.
+- **The projects are the ones the settings name.** A project is a checkout the deployment's settings list under
+  `projects`, each with the name it is asked by and the absolute path of its checkout; the list is read as the
+  service starts, and a project is added by adding its entry and restarting the service.
+- **The checkout** is the absolute path the settings name. Its tree is the whole repository the checkout stands
+  in, as git reads it from that directory.
+- **A name the settings do not give** is no project.
 
 ### Unreadable checkouts are listed with the reason
 
@@ -155,7 +155,7 @@ A review is **a titled conversation about one revision of one project**, opened 
 - **Its comments** stand under it, in the order they were written.
 - **The items filed from it** are remembered by the number the job service answered.
 - **Reviews are never deleted.**
-- **The store is this service's own.** It reads nothing of the job service's or agency's data but
+- **The store is this service's own.** It reads nothing of the job service's data but
   what their clients answer.
 
 ### Its states
@@ -206,5 +206,5 @@ A comment is **words on a place of the review's revision**. There are five kinds
 - **Nothing written to the checkout:** no files, no index, no refs. Only reading git commands are called.
 - **The only writes** are the reviews, comments, filings and events in this service's own store, and the items
   the job service creates when this service asks.
-- **The real checkout is read.** A project's checkout is the directory agency names, so every caller reads the
+- **The real checkout is read.** A project's checkout is the directory the settings name, so every caller reads the
   commits of the checkout itself.

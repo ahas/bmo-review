@@ -24,7 +24,9 @@ pub const ENVIRONMENT_PREFIX: &str = "BMO_REVIEW";
 pub struct Settings {
   pub server: Server,
   pub store: Store,
-  pub agency: Peer,
+  /// The projects: each checkout that can be read, under the name it is asked by.
+  #[serde(default)]
+  pub projects: Vec<Project>,
   pub job: Peer,
   pub console: Console,
   pub limits: Limits,
@@ -54,6 +56,13 @@ pub struct Console {
   pub token: String,
   /// The folder the bundle's build writes; a relative one is read from where the process starts.
   pub folder: PathBuf,
+}
+
+/// One project: the name it is asked by and the absolute path of its checkout.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Project {
+  pub name: String,
+  pub checkout: String,
 }
 
 /// A unit this service calls: its base address and the token it takes.

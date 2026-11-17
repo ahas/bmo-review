@@ -16,7 +16,7 @@ use crate::wire::WireError;
 /// Where the schemas the routes refer to stand in the document.
 const SCHEMAS: &str = "/components/schemas";
 
-const DESCRIPTION: &str = "Code review over git checkouts: projects named as agency names its repositories, \
+const DESCRIPTION: &str = "Code review over git checkouts: projects named as the settings name them, \
   their trees, files and commits at a revision, each commit's diff, content and definition searches, reviews of \
   a revision with their comments on its lines, files and folders, and items a review files into the job service \
   through its client. Who wrote a review or a comment is an opaque authorName. Bodies are JSON with camelCase \
@@ -52,7 +52,7 @@ const CODES: &[(&str, u16, &str)] = &[
     422,
     "the project's checkout is missing, in no git repository or without commits",
   ),
-  ("unknown-project", 422, "a review names a project agency does not keep"),
+  ("unknown-project", 422, "a review names a project the settings do not name"),
   (
     "unknown-revision",
     422,
@@ -66,11 +66,11 @@ const CODES: &[(&str, u16, &str)] = &[
   ("not-a-name", 422, "the definition search does not take the word"),
   ("filing-refused", 422, "the job service refused the item"),
   ("failed", 500, "the service failed"),
-  ("upstream-failed", 502, "agency or the job service could not be reached or failed"),
+  ("upstream-failed", 502, "the job service could not be reached or failed"),
 ];
 
 /// The codes every route reading a project can answer.
-pub const READING_CODES: &[&str] = &["not-found", "unreadable-checkout", "upstream-failed"];
+pub const READING_CODES: &[&str] = &["not-found", "unreadable-checkout"];
 
 /// One route as the document states it, which the route gives beside its answer.
 pub struct Stated {
@@ -160,11 +160,7 @@ fn key(name: &str, description: &str, schema: Value) -> Value {
 
 /// The path's project.
 pub fn project_key() -> Value {
-  key(
-    "projectName",
-    "The name agency keeps the repository under.",
-    json!({ "type": "string" }),
-  )
+  key("projectName", "The name the settings give the project.", json!({ "type": "string" }))
 }
 
 /// The path's review.
@@ -248,7 +244,7 @@ pub fn openapi() -> Value {
     "security": [{ "bearer": [] }],
     "x-layer": "upstream",
     "x-stage": 3,
-    "x-calls": ["job", "agency"],
+    "x-calls": ["job"],
     "x-harness": { "plugin": PLUGIN, "mcp": MCP, "entry": ENTRY },
     "tags": tags,
     "paths": paths,

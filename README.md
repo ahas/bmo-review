@@ -1,9 +1,9 @@
 # bmo-review
 
-Code review over git checkouts as one service with its own API: the repositories agency keeps, each
+Code review over git checkouts as one service with its own API: the checkouts its settings name, each
 read at a revision (its tree, its files, its commits and each commit's diff, a content search and a definition
 search), reviews of a revision with their comments on its lines, files and folders, and items filed from a
-review into the job service. Nothing is written to a checkout. Agency and the job service are reached
+review into the job service. Nothing is written to a checkout. The job service is reached
 only through the clients they publish, as `docs/api.md` lists.
 
 The service publishes its own client (`bmo_review::client`), its OpenAPI document (`docs/openapi.json`, printed

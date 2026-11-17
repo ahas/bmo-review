@@ -3,7 +3,7 @@
   "info": {
     "title": "bmo-review",
     "version": "0.1.0-rev.2",
-    "description": "Code review over git checkouts: projects named as agency names its repositories, their trees, files and commits at a revision, each commit's diff, content and definition searches, reviews of a revision with their comments on its lines, files and folders, and items a review files into the job service through its client. Who wrote a review or a comment is an opaque authorName. Bodies are JSON with camelCase keys; times are integers of epoch milliseconds. A list is a page, `after` being the cursor each route states. A revision is seven to sixty-four hex characters, HEAD where absent. A file's path stands as the rest of the path. Every failure is answered in the error shape with its status. Every route takes the service token; where a console face stands, every route is answered again under `/screen`, the console's prefix, to the console credential alone and guarded as bmo-ui's console plugin contract states, and the console face's manifest and files are stated under the `console` tag. The harness plugin's tools, each a thin call of one route, are stated under `x-tools`."
+    "description": "Code review over git checkouts: projects named as the settings name them, their trees, files and commits at a revision, each commit's diff, content and definition searches, reviews of a revision with their comments on its lines, files and folders, and items a review files into the job service through its client. Who wrote a review or a comment is an opaque authorName. Bodies are JSON with camelCase keys; times are integers of epoch milliseconds. A list is a page, `after` being the cursor each route states. A revision is seven to sixty-four hex characters, HEAD where absent. A file's path stands as the rest of the path. Every failure is answered in the error shape with its status. Every route takes the service token; where a console face stands, every route is answered again under `/screen`, the console's prefix, to the console credential alone and guarded as bmo-ui's console plugin contract states, and the console face's manifest and files are stated under the `console` tag. The harness plugin's tools, each a thin call of one route, are stated under `x-tools`."
   },
   "servers": [
     {
@@ -19,8 +19,7 @@
   "x-layer": "upstream",
   "x-stage": 3,
   "x-calls": [
-    "job",
-    "agency"
+    "job"
   ],
   "x-harness": {
     "plugin": "bmo-review",
@@ -192,7 +191,6 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "upstream-failed",
           "failed"
         ],
         "parameters": [
@@ -254,7 +252,6 @@
           "bad-request",
           "not-found",
           "unreadable-checkout",
-          "upstream-failed",
           "failed"
         ],
         "parameters": [
@@ -262,7 +259,7 @@
             "name": "projectName",
             "in": "path",
             "required": true,
-            "description": "The name agency keeps the repository under.",
+            "description": "The name the settings give the project.",
             "schema": {
               "type": "string"
             }
@@ -364,7 +361,6 @@
           "bad-request",
           "not-found",
           "unreadable-checkout",
-          "upstream-failed",
           "failed"
         ],
         "parameters": [
@@ -372,7 +368,7 @@
             "name": "projectName",
             "in": "path",
             "required": true,
-            "description": "The name agency keeps the repository under.",
+            "description": "The name the settings give the project.",
             "schema": {
               "type": "string"
             }
@@ -416,7 +412,6 @@
           "bad-request",
           "not-found",
           "unreadable-checkout",
-          "upstream-failed",
           "not-a-name",
           "failed"
         ],
@@ -425,7 +420,7 @@
             "name": "projectName",
             "in": "path",
             "required": true,
-            "description": "The name agency keeps the repository under.",
+            "description": "The name the settings give the project.",
             "schema": {
               "type": "string"
             }
@@ -529,7 +524,6 @@
           "bad-request",
           "not-found",
           "unreadable-checkout",
-          "upstream-failed",
           "failed"
         ],
         "parameters": [
@@ -537,7 +531,7 @@
             "name": "projectName",
             "in": "path",
             "required": true,
-            "description": "The name agency keeps the repository under.",
+            "description": "The name the settings give the project.",
             "schema": {
               "type": "string"
             }
@@ -594,7 +588,6 @@
           "bad-request",
           "not-found",
           "unreadable-checkout",
-          "upstream-failed",
           "failed"
         ],
         "parameters": [
@@ -602,7 +595,7 @@
             "name": "projectName",
             "in": "path",
             "required": true,
-            "description": "The name agency keeps the repository under.",
+            "description": "The name the settings give the project.",
             "schema": {
               "type": "string"
             }
@@ -693,7 +686,6 @@
           "bad-request",
           "not-found",
           "unreadable-checkout",
-          "upstream-failed",
           "failed"
         ],
         "parameters": [
@@ -701,7 +693,7 @@
             "name": "projectName",
             "in": "path",
             "required": true,
-            "description": "The name agency keeps the repository under.",
+            "description": "The name the settings give the project.",
             "schema": {
               "type": "string"
             }
@@ -892,7 +884,6 @@
           "unknown-project",
           "unknown-revision",
           "unreadable-checkout",
-          "upstream-failed",
           "failed"
         ],
         "requestBody": {
@@ -1347,7 +1338,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "The name agency keeps the repository under."
+            "description": "The name the settings give the project."
           },
           "checkout": {
             "type": "string",
@@ -1383,7 +1374,7 @@
           "state",
           "uncommittedCount"
         ],
-        "description": "One project: a repository agency keeps on this machine, and where it stands."
+        "description": "One project: a checkout the settings name, and where it stands."
       },
       "ProjectState": {
         "oneOf": [
@@ -2051,7 +2042,7 @@
     },
     "responses": {
       "Error": {
-        "description": "A failure, in the common error shape. The codes:\n- `bad-request` (400): the body, the query or the path is not the shape the route takes\n- `unauthorized` (401): the bearer token is missing or wrong\n- `forbidden` (403): under /screen, or for the console bundle's module and stylesheet, the console's call names no role that opens the screen\n- `no-route` (404): no route answers the method and path\n- `not-found` (404): nothing stands at the project, the revision, the path, the review or the console bundle's file the request names\n- `conflict` (409): the review's states do not allow the change\n- `gone` (410): the events since the number asked for are no longer kept\n- `unreadable-checkout` (422): the project's checkout is missing, in no git repository or without commits\n- `unknown-project` (422): a review names a project agency does not keep\n- `unknown-revision` (422): a review names a revision that resolves to no commit of the project\n- `no-such-place` (422): a comment's place is no file or folder of the revision, or its lines lie off the file\n- `not-a-name` (422): the definition search does not take the word\n- `filing-refused` (422): the job service refused the item\n- `failed` (500): the service failed\n- `upstream-failed` (502): agency or the job service could not be reached or failed",
+        "description": "A failure, in the common error shape. The codes:\n- `bad-request` (400): the body, the query or the path is not the shape the route takes\n- `unauthorized` (401): the bearer token is missing or wrong\n- `forbidden` (403): under /screen, or for the console bundle's module and stylesheet, the console's call names no role that opens the screen\n- `no-route` (404): no route answers the method and path\n- `not-found` (404): nothing stands at the project, the revision, the path, the review or the console bundle's file the request names\n- `conflict` (409): the review's states do not allow the change\n- `gone` (410): the events since the number asked for are no longer kept\n- `unreadable-checkout` (422): the project's checkout is missing, in no git repository or without commits\n- `unknown-project` (422): a review names a project the settings do not name\n- `unknown-revision` (422): a review names a revision that resolves to no commit of the project\n- `no-such-place` (422): a comment's place is no file or folder of the revision, or its lines lie off the file\n- `not-a-name` (422): the definition search does not take the word\n- `filing-refused` (422): the job service refused the item\n- `failed` (500): the service failed\n- `upstream-failed` (502): the job service could not be reached or failed",
         "content": {
           "application/json": {
             "schema": {
@@ -2078,7 +2069,7 @@
   "x-tools": [
     {
       "name": "review_projects",
-      "description": "The projects that can be read: each repository agency keeps on this machine, with its state and HEAD.",
+      "description": "The projects that can be read: each checkout the settings name, with its state and HEAD.",
       "input": {
         "description": "A list of projects: its cursor and size.",
         "type": "object",

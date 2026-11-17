@@ -88,8 +88,8 @@ impl Route for OpenReview {
     required("title", &asked.title, limits.title)?;
     required("authorName", &asked.author_name, limits.author_name)?;
 
-    let checkout = projects::find(standing, &asked.project_name).await?.ok_or_else(|| {
-      Refused::unprocessable("unknown-project", format!("agency keeps no project {}", asked.project_name))
+    let checkout = projects::find(standing, &asked.project_name).ok_or_else(|| {
+      Refused::unprocessable("unknown-project", format!("no project is named {}", asked.project_name))
     })?;
     let revision = projects::revision(&checkout, Some(&asked.revision)).await?.ok_or_else(|| {
       Refused::unprocessable(
@@ -127,7 +127,7 @@ impl Route for OpenReview {
       parameters: Vec::new(),
       body: Some(schema_of::<NewReview>(generator)),
       answer: (201, json_of::<Review>(generator)),
-      codes: vec!["unknown-project", "unknown-revision", "unreadable-checkout", "upstream-failed"],
+      codes: vec!["unknown-project", "unknown-revision", "unreadable-checkout"],
     }
   }
 }
@@ -305,8 +305,8 @@ async fn place_of(
       excerpt: None,
     });
   };
-  let checkout = projects::find(standing, &review.project_name).await?.ok_or_else(|| {
-    Refused::unprocessable("unknown-project", format!("agency keeps no project {}", review.project_name))
+  let checkout = projects::find(standing, &review.project_name).ok_or_else(|| {
+    Refused::unprocessable("unknown-project", format!("no project is named {}", review.project_name))
   })?;
 
   head_of(&checkout.root).await.map_err(|state| unreadable(&checkout.name, state))?;

@@ -254,17 +254,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bmo-agency-client"
-version = "0.1.0-rev.81"
-dependencies = [
- "reqwest",
- "schemars",
- "serde",
- "serde_json",
- "url",
-]
-
-[[package]]
 name = "bmo-console-face"
 version = "0.1.0-rev.9"
 dependencies = [
@@ -299,7 +288,6 @@ name = "bmo-review"
 version = "0.1.0-rev.2"
 dependencies = [
  "axum",
- "bmo-agency-client",
  "bmo-console-face",
  "bmo-job-client",
  "bmo-text",

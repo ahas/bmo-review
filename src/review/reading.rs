@@ -23,7 +23,7 @@ use crate::wire::{
 async fn project_of(call: &mut Call) -> Result<Checkout, Refused> {
   let name = call.path_param("projectName").await?;
 
-  require(call.standing(), &name).await
+  require(call.standing(), &name)
 }
 
 /// A page of a search's items, its cursor the count already read: whether more stand past the page, or the
@@ -49,7 +49,7 @@ impl Route for Projects {
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let query: ProjectQuery = call.query()?;
     let limit = page_size(query.limit, PAGE, MOST_PAGE)?;
-    let (checkouts, more) = projects::page(call.standing(), query.after.as_deref(), limit).await?;
+    let (checkouts, more) = projects::page(call.standing(), query.after.as_deref(), limit);
     let items = join_all(checkouts.into_iter().map(|checkout| async move {
       let standing = checkout_state(&checkout.root).await;
 
@@ -75,7 +75,7 @@ impl Route for Projects {
       parameters: query::<ProjectQuery>(generator),
       body: None,
       answer: (200, json_of::<Page<Project>>(generator)),
-      codes: vec!["upstream-failed"],
+      codes: vec![],
     }
   }
 }
