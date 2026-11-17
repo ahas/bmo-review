@@ -89,11 +89,11 @@ pub enum ProjectState {
   NoCommits,
 }
 
-/// One project: a checkout the graph service registers, and where it stands.
+/// One project: a repository agency keeps on this machine, and where it stands.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
-  /// The name the graph service registers it under.
+  /// The name agency keeps the repository under.
   pub name: String,
   /// The absolute path of the checkout.
   pub checkout: String,

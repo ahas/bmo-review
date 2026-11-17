@@ -1,11 +1,10 @@
-//! The projects (`docs/code-review.md`, 「Projects」): the checkouts the graph service registers, read through
+//! The projects (`docs/code-review.md`, 「Projects」): the repositories agency keeps on this machine, read through
 //! its client on each request, and what a request names in one looked up rather than trusted: a project's name
 //! becomes its checkout, and a revision a full hash of that checkout's own.
 
 use std::path::PathBuf;
 
-use bmo_graph::client::{ClientFailure, GraphClient};
-use bmo_graph::wire::ListQuery;
+use bmo_agency_client::{ClientFailure, Repository};
 
 use super::workspace::{head_of, resolve_commit};
 use crate::http::{Refused, Standing};
@@ -14,57 +13,50 @@ use crate::wire::ProjectState;
 /// One project's checkout.
 #[derive(Clone, Debug)]
 pub struct Checkout {
-  /// The name the graph service registers it under.
+  /// The name agency keeps the repository under.
   pub name: String,
   /// The absolute path of the checkout.
   pub root: PathBuf,
 }
 
-/// One call of the graph service's client, which waits on its answer, run where waiting holds up no other
-/// request's work.
-async fn graph<T, F>(standing: &Standing, call: F) -> Result<T, ClientFailure>
-where
-  T: Send + 'static,
-  F: FnOnce(&GraphClient) -> Result<T, ClientFailure> + Send + 'static,
-{
-  let client = standing.graph.clone();
-
-  tokio::task::spawn_blocking(move || call(&client))
-    .await
-    .unwrap_or_else(|why| Err(ClientFailure::Unreached(why.to_string())))
-}
-
-/// The graph service's failure as this service answers it.
+/// Agency's failure as this service answers it.
 fn upstream(failure: &ClientFailure) -> Refused {
-  Refused::upstream(format!("the graph service failed: {failure}"))
+  Refused::upstream(format!("agency failed: {failure}"))
 }
 
-/// A page of the graph service's projects, each with its checkout, and whether more stand.
-pub async fn page(standing: &Standing, query: ListQuery) -> Result<(Vec<Checkout>, bool), Refused> {
-  let page = graph(standing, move |client| client.projects(&query))
-    .await
-    .map_err(|failure| upstream(&failure))?;
-  let checkouts = page
+/// A repository as a project, or none for one that stands on another machine, whose checkout is not read here.
+fn checkout_of(repository: Repository) -> Option<Checkout> {
+  repository.node_name.is_none().then(|| Checkout {
+    name: repository.name,
+    root: PathBuf::from(repository.path),
+  })
+}
+
+/// A page of the projects in the order of their names, past the one `after` names, and whether more stand.
+pub async fn page(
+  standing: &Standing,
+  after: Option<&str>,
+  limit: usize,
+) -> Result<(Vec<Checkout>, bool), Refused> {
+  let listed = standing.agency.list_repositories().await.map_err(|failure| upstream(&failure))?;
+  let mut checkouts: Vec<Checkout> = listed
     .items
     .into_iter()
-    .map(|project| Checkout {
-      name: project.name,
-      root: PathBuf::from(project.checkout),
-    })
+    .filter_map(checkout_of)
+    .filter(|checkout| after.is_none_or(|after| checkout.name.as_str() > after))
     .collect();
 
-  Ok((checkouts, page.more))
+  checkouts.sort_by(|one, other| one.name.cmp(&other.name));
+  let more = checkouts.len() > limit;
+  checkouts.truncate(limit);
+
+  Ok((checkouts, more))
 }
 
-/// The checkout of the project a request names, or none where the graph service knows no such project.
+/// The checkout of the project a request names, or none where agency keeps no such repository on this machine.
 pub async fn find(standing: &Standing, name: &str) -> Result<Option<Checkout>, Refused> {
-  let asked = name.to_owned();
-
-  match graph(standing, move |client| client.project(&asked)).await {
-    Ok(project) => Ok(Some(Checkout {
-      name: project.name,
-      root: PathBuf::from(project.checkout),
-    })),
+  match standing.agency.get_repository(name).await {
+    Ok(repository) => Ok(checkout_of(repository)),
     Err(ClientFailure::Answered { status: 404, .. }) => Ok(None),
     Err(failure) => Err(upstream(&failure)),
   }
@@ -74,7 +66,7 @@ pub async fn find(standing: &Standing, name: &str) -> Result<Option<Checkout>, R
 pub async fn require(standing: &Standing, name: &str) -> Result<Checkout, Refused> {
   find(standing, name)
     .await?
-    .ok_or_else(|| Refused::not_found(format!("the graph service knows no project {name}")))
+    .ok_or_else(|| Refused::not_found(format!("agency keeps no project {name}")))
 }
 
 /// Why a checkout with no HEAD to read cannot be read.

@@ -89,10 +89,7 @@ impl Route for OpenReview {
     required("authorName", &asked.author_name, limits.author_name)?;
 
     let checkout = projects::find(standing, &asked.project_name).await?.ok_or_else(|| {
-      Refused::unprocessable(
-        "unknown-project",
-        format!("the graph service knows no project {}", asked.project_name),
-      )
+      Refused::unprocessable("unknown-project", format!("agency keeps no project {}", asked.project_name))
     })?;
     let revision = projects::revision(&checkout, Some(&asked.revision)).await?.ok_or_else(|| {
       Refused::unprocessable(
@@ -309,10 +306,7 @@ async fn place_of(
     });
   };
   let checkout = projects::find(standing, &review.project_name).await?.ok_or_else(|| {
-    Refused::unprocessable(
-      "unknown-project",
-      format!("the graph service knows no project {}", review.project_name),
-    )
+    Refused::unprocessable("unknown-project", format!("agency keeps no project {}", review.project_name))
   })?;
 
   head_of(&checkout.root).await.map_err(|state| unreadable(&checkout.name, state))?;

@@ -39,7 +39,7 @@ These hold every bmo repository, and every change here (archive document #301, i
   room, owner or console; who writes is the caller's opaque `authorName`.
 - **Dependencies:** crates from the registry pinned in `Cargo.toml`, and among other repositories only
   the base libraries `bmo-chat`, `bmo-chat-client`, `bmo-console-face`, `bmo-ui` and `bmo-text`, and the
-  published clients of the upstreams this service calls, `bmo-graph` and `bmo-job-client`.
+  published clients of the upstreams this service calls, `bmo-agency-client` and `bmo-job-client`.
 - **The plumbing knows no route.** A route registers itself beside its own answer; adding one changes no
   file but its own.
 - **No lookup table standing in for polymorphism.** A value that differs per kind of place or per
@@ -66,10 +66,6 @@ These hold every bmo repository, and every change here (archive document #301, i
 - `Cargo.toml` is the only manifest at the root, one crate split into its own modules, and no directory
   is named after its parent.
 - The console bundle stands in `client/`, a project of its own; the harness plugin's skill in `plugin/`.
-- **`.graph/` is the code dependency graph,** written only by `bmo graph` run in this checkout; a change
-  that moves a feature's files, symbols or edges updates its node in the checkout. Its area files are generated
-  and untracked, so a fresh checkout builds them again, while `settings.toml` is the repository's configuration
-  and stays tracked.
 - Tests live in `tests/`, one test target, `tests/main.rs`, each file of tests a module of it (bmo-chat's
   `docs/conventions.md`, 「Rust builds」); no test module stands in `src/`. The repository carries the
   personal-data check, the import's test and the console face's test there; the other behaviour tests are

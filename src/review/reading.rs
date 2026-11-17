@@ -3,7 +3,6 @@
 
 use axum::http::{Method, StatusCode};
 use axum::response::Response;
-use bmo_graph::wire::ListQuery;
 use futures_util::future::join_all;
 use schemars::generate::SchemaGenerator;
 
@@ -39,7 +38,7 @@ fn search_page<T>(found: Found<T>, after: Option<u32>, limit: Option<u32>) -> Re
   Ok(Page { items, more })
 }
 
-/// `GET /projects`: the graph service's projects, each with whether there is anything in it to read and where it
+/// `GET /projects`: the projects, each with whether there is anything in it to read and where it
 /// stands. A project whose checkout cannot be read stays in the list with its state rather than vanishing.
 pub struct Projects;
 
@@ -50,11 +49,7 @@ impl Route for Projects {
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let query: ProjectQuery = call.query()?;
     let limit = page_size(query.limit, PAGE, MOST_PAGE)?;
-    let asked = ListQuery {
-      after: query.after,
-      limit: u32::try_from(limit).ok(),
-    };
-    let (checkouts, more) = projects::page(call.standing(), asked).await?;
+    let (checkouts, more) = projects::page(call.standing(), query.after.as_deref(), limit).await?;
     let items = join_all(checkouts.into_iter().map(|checkout| async move {
       let standing = checkout_state(&checkout.root).await;
 

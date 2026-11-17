@@ -24,7 +24,7 @@ pub const ENVIRONMENT_PREFIX: &str = "BMO_REVIEW";
 pub struct Settings {
   pub server: Server,
   pub store: Store,
-  pub graph: Peer,
+  pub agency: Peer,
   pub job: Peer,
   pub console: Console,
   pub limits: Limits,

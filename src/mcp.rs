@@ -204,7 +204,7 @@ pub fn tools() -> Vec<ReviewTool> {
   vec![
     tool(
       "review_projects",
-      "The projects that can be read: each checkout the graph service registers, with its state and HEAD.",
+      "The projects that can be read: each repository agency keeps on this machine, with its state and HEAD.",
       "GET /projects",
       |client, query: ProjectQuery| async move { client.projects(&query).await },
     ),

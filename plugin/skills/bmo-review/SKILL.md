@@ -5,7 +5,7 @@ description: Review a change in a git checkout through the bmo-review MCP server
 
 # bmo-review
 
-The review service reads the checkouts the graph service registers, as projects, always at a revision: a
+The review service reads the repositories agency keeps on this machine, as projects, always at a revision: a
 commit's own git objects, never the work tree. It keeps reviews, each a titled conversation about one revision
 of one project, with comments on the whole review, on a folder, a file, a line or a range of lines of that
 revision, and it files follow-up items into the job service. The `bmo-review` MCP server gives a harness one
@@ -62,14 +62,14 @@ A tool error's text is JSON: `status`, `code` and `error`, the service's English
 
 - `not-found`: no project, revision, path or review stands at what was named; list again.
 - `unreadable-checkout`: the project's checkout is missing, not a git repository, or has no commits.
-- `unknown-project`, `unknown-revision`: a review names a project the graph does not know, or a revision that is
+- `unknown-project`, `unknown-revision`: a review names a project agency does not keep, or a revision that is
   no commit of it.
 - `no-such-place`: a comment's path is no file or folder of the review's revision, or its lines lie off the
   file or point into a folder or a file with no body.
 - `conflict`: a review cannot move to that state.
 - `filing-refused`: the job service refused the item, its code and sentence in the error; fix the queue or the
   fields and call again.
-- `upstream-failed`: the graph service or the job service could not answer.
+- `upstream-failed`: agency or the job service could not answer.
 - `bad-request`: the arguments are not the tool's shape; the sentence names what is wrong.
 
 An error with no `code` means the service could not be reached; check the address and that the service runs.

@@ -24,8 +24,8 @@ test = false
 axum = { version = "0.8.9", features = ["macros", "multipart", "ws"] }
 # The console face, by bmo-ui's console plugin contract: the manifest, the bundle's files and their guard.
 bmo-console-face = { path = "../../base/chat/console-face" }
-# The graph service's published client: the projects and their checkouts.
-bmo-graph = { path = "../graph" }
+# Agency's published client: the repositories, which are the projects, and their checkouts.
+bmo-agency-client = { path = "../agency/crates/client" }
 # The job service's published client: the items filed from a review.
 bmo-job-client = { path = "../job/crates/client" }
 # Text handling the base library serves: a body and an excerpt cut on a character boundary.

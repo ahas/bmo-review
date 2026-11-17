@@ -1,9 +1,9 @@
 # bmo-review
 
-Code review over git checkouts as one service with its own API: the projects the graph service registers, each
+Code review over git checkouts as one service with its own API: the repositories agency keeps, each
 read at a revision (its tree, its files, its commits and each commit's diff, a content search and a definition
 search), reviews of a revision with their comments on its lines, files and folders, and items filed from a
-review into the job service. Nothing is written to a checkout. The graph service and the job service are reached
+review into the job service. Nothing is written to a checkout. Agency and the job service are reached
 only through the clients they publish, as `docs/api.md` lists.
 
 The service publishes its own client (`bmo_review::client`), its OpenAPI document (`docs/openapi.json`, printed
@@ -31,7 +31,6 @@ they stand, the build check is `cargo check --all-targets` and the bundle's type
 | `deploy/` | The service's user unit |
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
 | `tests/` | The repository-wide personal-data check, `personal_data.rs`, the import's test and the console face's test |
-| `.graph/` | The repository's code dependency graph |
 
 At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `PERSONAL-DATA.md`, `korean-ledger.json`, `settings.toml` and `settings.local.toml.example`, the example of the
