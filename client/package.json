@@ -17,7 +17,7 @@
     "check": "bun run typecheck"
   },
   "dependencies": {
-    "@nuxt/ui": "^4.11.2",
+    "@nuxt/ui": "4.12.2",
     "monaco-editor": "^0.56.0",
     "vue": "^3.5.24",
     "vue-router": "^5.2.0"
@@ -27,7 +27,7 @@
     "@tailwindcss/vite": "4.3.3",
     "@types/bun": "^1.3.4",
     "@vitejs/plugin-vue": "6.0.10",
-    "bmo-ui": "file:vendor/bmo-ui-0.1.0-rev.36.tgz",
+    "bmo-ui": "file:vendor/bmo-ui-0.1.0-rev.44.tgz",
     "nuxt": "^4.5.2",
     "openapi-typescript": "7.13.0",
     "playwright-core": "1.62.1",
@@ -38,5 +38,10 @@
     "vite": "8.3.4",
     "vue-i18n": "^11.4.8",
     "vue-tsc": "^3.2.0"
+  },
+  "patchedDependencies": {
+    "@nuxt/icon@2.5.1": "patches/nuxt-icon-2.5.1.patch",
+    "reka-ui@2.11.0": "patches/reka-ui-2.11.0.patch",
+    "@nuxt/ui@4.12.2": "patches/nuxt-ui-4.12.2.patch"
   }
 }
