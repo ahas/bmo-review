@@ -13,10 +13,13 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
   system with, as the manifest's `sidebarSection` names it. Code is only read; what is written is reviews,
   comments and filed items.
 - **What it is built with.** The editor is bmo-ui's read-only Monaco code view, and the sections are bmo-ui's
-  splitter and tabs. No docking library and no workbench are brought in: the console's sections are one set of
-  splitters and narrow-screen tabs, and a second layout system would move separately inside the same console.
-  Switching several files by tab and a comment standing beside a line are built with the editor's markers and the
-  space between lines.
+  splitter and tabs. Every value chosen from a list, the project, the search's scope, the revision and the review a
+  comment goes into, is chosen in bmo-ui's one select (its `docs/components.md`, 「Choosing a value」), so a list
+  offers its search once it holds more than seven choices and never with fewer, matching what each choice shows,
+  and an empty list says why. No docking library and no workbench are brought in: the console's sections are one
+  set of splitters and narrow-screen tabs, and a second layout system would move separately inside the same
+  console. Switching several files by tab and a comment standing beside a line are built with the editor's markers
+  and the space between lines.
 - **Under the console's title bar.** The screen's route asks for the console's bar in its meta, so a console that
   offers its bar (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar) draws it over the screen
   under the manifest's title and icon, and the screen draws no bar of its own. Found without that offer it draws its
@@ -77,7 +80,7 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
 - **The revision.** The toolbar's revision cell stands the short hash and, on a wide screen, the commit's subject,
   and a current mark if HEAD. If the work tree has uncommitted changes, their count stands in the properties.
   Pressing the cell opens revision choosing, as wide as its longest entry: commits that touched that file, newest
-  first, with short hash, subject and time, filterable by subject and hash. The current revision and the one
+  first, with short hash, subject, author and time. The current revision and the one
   being viewed stand at the top even if they did not touch that file, since a list without those two offers no
   place to return to. Choosing a revision opens the file at that point and the explorer tree becomes that
   revision's. While viewing a revision other than HEAD, below the toolbar stand a band saying a past revision is

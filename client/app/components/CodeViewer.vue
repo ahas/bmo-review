@@ -34,7 +34,7 @@
       </span>
 
       <span v-if="props.path !== null" class="min-w-0 shrink!">
-        <USelectMenu
+        <ChoiceSelect
           :model-value="props.revision ?? undefined"
           :items="commitItems"
           value-key="value"
@@ -43,11 +43,9 @@
           variant="ghost"
           icon="i-material-symbols-commit"
           :loading="commitsLoading"
-          :search-input="{ placeholder: $t('code.placeholder.filter_commits') }"
-          :filter-fields="['label', 'description']"
+          :empty="commitsFailure || undefined"
           :aria-label="$t('code.aria.choose_revision')"
           class="max-w-72 min-w-0"
-          :content="{ align: 'start' }"
           :ui="{ content: 'max-w-[min(48rem,calc(100vw-1rem))]' }"
           @update:open="(open: boolean) => open && loadCommits()"
           @update:model-value="(value: unknown) => typeof value === 'string' && emit('revision', value === props.head ? null : value)"
@@ -59,10 +57,7 @@
             </span>
             <UBadge v-if="props.revision === props.head" size="sm" color="neutral" variant="solid" :label="$t('code.label.current')" class="shrink-0" />
           </template>
-          <template #empty>
-            <span class="text-sm text-muted">{{ commitsFailure || $t("code.status.no_commits_listed") }}</span>
-          </template>
-        </USelectMenu>
+        </ChoiceSelect>
       </span>
 
       <span v-if="source?.cut === true && !reading" class="text-warning" role="status">{{ $t("code.shared.status.head_only") }}</span>

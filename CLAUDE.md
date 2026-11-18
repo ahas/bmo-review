@@ -68,8 +68,8 @@ These hold every bmo repository, and every change here (archive document #301, i
 - The console bundle stands in `client/`, a project of its own; the harness plugin's skill in `plugin/`.
 - Tests live in `tests/`, one test target, `tests/main.rs`, each file of tests a module of it (bmo-chat's
   `docs/conventions.md`, 「Rust builds」); no test module stands in `src/`. The repository carries the
-  personal-data check, the import's test and the console face's test there; the other behaviour tests are
-  deferred for now (README.md).
+  personal-data check, the import's test, the console face's test and the screen's select check there; the other
+  behaviour tests are deferred for now (README.md).
 
 ## The stages of a change
 
@@ -78,6 +78,6 @@ These hold every bmo repository, and every change here (archive document #301, i
 2. **Review:** read the whole diff against the document governing it, then `cargo fmt --all --check`
    and `cargo clippy --all-targets -- -D warnings`.
 3. **Verification:** the tests touched, then the whole suite once, output written to a file and the
-   file read. The behaviour tests are deferred, so the suite holds the personal-data check, the import's test
-   and the console face's test, which reads the served manifest through bmo-ui's own reading on the release
-   `client/vendor/` holds, run by Bun.
+   file read. The behaviour tests are deferred, so the suite holds the personal-data check, the import's test,
+   the console face's test, which reads the served manifest through bmo-ui's own reading on the release
+   `client/vendor/` holds, run by Bun, and the screen's select check.

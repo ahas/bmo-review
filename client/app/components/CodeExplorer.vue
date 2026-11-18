@@ -3,25 +3,17 @@
        the tree stands the folder chosen and what can be done with it, since a row of the tree is a
        button of its own and cannot hold another. -->
   <div class="flex min-h-0 flex-col gap-2 pt-3">
-    <USelectMenu :content="{ align: 'start' }"
+    <ChoiceSelect
       :model-value="props.project ?? undefined"
       :items="projectItems"
       value-key="value"
-      :search-input="false"
       size="sm"
       icon="i-material-symbols-folder-data-outline"
       :placeholder="$t('code.aria.choose_project')"
       :aria-label="$t('code.aria.choose_project')"
       class="mx-3 w-auto"
       @update:model-value="(value: unknown) => typeof value === 'string' && emit('project', value)"
-    >
-      <template #item-label="{ item }">
-        <span class="flex min-w-0 flex-col">
-          <span class="truncate">{{ item.label }}</span>
-          <span class="truncate text-sm text-muted">{{ item.note }}</span>
-        </span>
-      </template>
-    </USelectMenu>
+    />
 
     <p v-if="current !== null && current.state !== 'ready'" class="px-3 text-sm text-muted" role="status">
       {{ current.name }} · {{ stateText(current.state) }}
@@ -47,7 +39,7 @@
           </template>
         </UInput>
 
-        <USelect :content="{ align: 'start' }" v-model="mode" :items="MODES" size="sm" class="shrink-0" :aria-label="$t('code.shared.aria.search_scope')" />
+        <ChoiceSelect v-model="mode" :items="MODES" value-key="value" size="sm" class="shrink-0" :aria-label="$t('code.shared.aria.search_scope')" />
       </div>
 
       <ContentSkeleton v-if="props.tree === null && props.failure === ''" class="px-3" :rows="10" listClass="flex flex-col" :label="$t('code.status.files_loading')">
@@ -232,7 +224,7 @@ const projectItems = computed(() =>
   props.projects.map((one) => ({
     label: one.name,
     value: one.name,
-    note: one.state === "ready" ? (one.branch ?? t("code.label.no_branch")) : stateText(one.state),
+    description: one.state === "ready" ? (one.branch ?? t("code.label.no_branch")) : stateText(one.state),
     icon: one.state === "ready" ? "i-material-symbols-folder-data-outline" : "i-material-symbols-folder-off-outline"
   }))
 );

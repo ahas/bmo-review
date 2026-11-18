@@ -14,12 +14,11 @@
     </p>
 
     <div class="flex flex-wrap gap-2">
-      <USelect
+      <ChoiceSelect
         v-model="target"
         :items="targets"
         value-key="value"
         size="sm"
-        :content="{ align: 'start' }"
         :aria-label="$t('code.aria.choose_review')"
         class="min-w-40 flex-1"
       />
