@@ -3,5 +3,4 @@
 
 mod choices;
 mod import;
-mod personal_data;
 mod screen;

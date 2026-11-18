@@ -6,7 +6,7 @@ repository at its commit `3e4c032`, with `git ls-tree`, `git show` and `git grep
 command that lists a set stands beside it. Nothing here was copied with its history.
 
 The behaviour tests are deferred: they are written and run here once the minimal services stand on the new
-repositories, and the repository carries only the personal-data check beside them (`PERSONAL-DATA.md`). The
+repositories, and the testbed's `personal-data` check holds the personal-data rule meanwhile (`PERSONAL-DATA.md`). The
 deferred tests are listed below so that work knows what the old behaviour was held to.
 
 ## The server side: 18 files

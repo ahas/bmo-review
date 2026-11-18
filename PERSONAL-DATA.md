@@ -16,6 +16,7 @@ None of them stands in code, a comment, a document, a test fixture or a commit m
 - **Only two values are allowed:** the owner's name `ahas` and the address `dev@ahas.io`. No other name,
   handle or address is.
 
-The repository's checks hold it: `tests/personal_data.rs` reads every tracked file for a mail address, a home
-path, a telephone number, a token and a private network address. The check carries the patterns and the two
-allowed values; no list of the values it forbids is kept in the repository.
+The testbed's `personal-data` check, which the declaration enables, holds it: it reads every tracked file for a
+mail address, a home path, a telephone number, a token and a private network address before anything is built.
+The forms are the testbed's policy and the declaration names the allowed address; no list of the values it
+forbids is kept in the repository.

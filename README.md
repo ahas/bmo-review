@@ -12,8 +12,8 @@ under `plugin/skills/`.
 
 ## Tests
 
-The repository carries the repository-wide personal-data check in `tests/personal_data.rs` (`PERSONAL-DATA.md`),
-run with `cargo test --test main personal_data::`; the import's test in `tests/import.rs`; and the console face's
+The testbed's `personal-data` check holds the personal-data rule (`PERSONAL-DATA.md`). The repository carries
+the import's test in `tests/import.rs`; and the console face's
 test in `tests/screen.rs`, which reads the manifest the service serves through bmo-ui's own reading on the release
 the client vendors, run by bmo-chat's `bmo-console-face` (Bun on the machine), and holds which credential each of
 the service's routes takes; and the screen's select check in `tests/choices.rs`, which holds that every value the
@@ -31,7 +31,7 @@ they stand, the build check is `cargo check --all-targets` and the bundle's type
 | `client/` | The console bundle: the code review screen, its own Korean pack and its build under `bundle/`, a project of its own |
 | `deploy/` | The service's user unit |
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
-| `tests/` | The repository-wide personal-data check, `personal_data.rs`, the import's test, the console face's test and the screen's select check |
+| `tests/` | The import's test, the console face's test and the screen's select check |
 
 At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `PERSONAL-DATA.md`, `korean-ledger.json`, `settings.toml` and `settings.local.toml.example`, the example of the
