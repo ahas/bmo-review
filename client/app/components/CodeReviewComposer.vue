@@ -1,8 +1,9 @@
 <template>
   <!-- The box a new comment is written in: where it goes, the review it goes into, the writer's name, the words,
        and the two ends of it. It stands between the code lines on a wide screen and inside a sheet everywhere
-       else. -->
-  <form class="flex flex-col gap-2 rounded-md border border-default bg-default p-2" @submit.prevent="submit" @keydown.esc.prevent="emit('cancel')">
+       else, and draws no frame: the place it stands in is its one box. A dialog holding it stands its two ends in
+       the dialog's own foot and answers Esc itself. -->
+  <form class="flex flex-col gap-2" @submit.prevent="submit" @keydown.esc="escape">
     <p class="flex items-center gap-2 text-sm text-muted">
       <UIcon name="i-material-symbols-add-comment-outline" class="size-3.5 shrink-0" />
       <span class="min-w-0 truncate">
@@ -56,7 +57,7 @@
 
     <p v-if="props.failure !== ''" class="text-sm text-error" role="alert">{{ props.failure }}</p>
 
-    <div class="flex items-center justify-end gap-2">
+    <div v-if="!props.held" class="flex items-center justify-end gap-2">
       <UButton size="sm" color="neutral" variant="ghost" :label="$t('code.shared.action.cancel')" @click="emit('cancel')" />
       <UButton type="submit" size="sm" icon="i-material-symbols-send-outline" :label="$t('code.shared.action.send')" :disabled="!ready" :loading="props.busy" />
     </div>
@@ -65,6 +66,7 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { useOpenedWith } from "bmo-ui/app/domain/form-save";
 import { AUTHOR_LIMIT, COMMENT_LIMIT, TITLE_LIMIT } from "../../shared/config";
 import { STATE_LABELS } from "../domain/code";
 import { useAuthorName } from "../domain/kept";
@@ -83,9 +85,11 @@ interface Props {
   target: number | null;
   busy: boolean;
   failure: string;
+  // Whether a dialog holds it, standing its two ends in its own foot and closing on Esc itself.
+  held?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), { held: false });
 const emit = defineEmits<{ send: [draft: CommentDraft]; cancel: [] }>();
 const { t } = useI18n();
 
@@ -104,6 +108,18 @@ const targets = computed(() => [
 ]);
 
 const ready = computed(() => text.value.trim() !== "" && author.value.trim() !== "" && (target.value !== NEW || title.value.trim() !== ""));
+// What it holds against what it opened with. The writer's name is kept by the browser as it is typed, so leaving
+// takes none of it away.
+const changes = useOpenedWith(() => ({ text: text.value, title: title.value, target: target.value }));
+
+function escape(event: KeyboardEvent): void {
+  if (props.held) {
+    return;
+  }
+
+  event.preventDefault();
+  emit("cancel");
+}
 
 function submit(): void {
   if (!ready.value || props.busy) {
@@ -117,6 +133,8 @@ function submit(): void {
     text: text.value.trim()
   });
 }
+
+defineExpose({ ready, changes, submit });
 
 onMounted(async () => {
   await nextTick();

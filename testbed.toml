@@ -1,5 +1,6 @@
 # How the testbed checks, builds and deploys this repository, in the testbed's declaration format. The quick
-# checks hold the personal-data rule (PERSONAL-DATA.md); the behaviour tests are deferred (README.md).
+# checks hold the personal-data rule (PERSONAL-DATA.md); the suite runs the client's browser tests its manifest
+# declares, and the other behaviour tests are deferred (README.md).
 
 testbed = 0
 name = "bmo-review"

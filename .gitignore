@@ -1,3 +1,4 @@
 /target
 /settings.local.toml
 .graph/
+/node_modules

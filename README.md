@@ -17,8 +17,15 @@ the import's test in `tests/import.rs`; and the console face's
 test in `tests/screen.rs`, which reads the manifest the service serves through bmo-ui's own reading on the release
 the client vendors, run by bmo-chat's `bmo-console-face` (Bun on the machine), and holds which credential each of
 the service's routes takes; and the screen's select check in `tests/choices.rs`, which holds that every value the
-screen lets be chosen from a list stands in bmo-ui's one select. The other behaviour tests are deferred: they are written and run here once the minimal
-services stand on the new repositories, and `docs/inventory.md` lists what the old behaviour was held to. Until
+screen lets be chosen from a list stands in bmo-ui's one select. The console bundle carries one browser test,
+`client/tests/browser/composer-frame.test.ts`, which opens the screen in its dev host `client/dev-app/` over a
+stand-in of the service and reads off the page, in both schemes, that the box a comment is written in has one frame
+among the code at 1280 and in the modal at 360 and at 1280, that the modal asks before throwing written words away
+and closes at once with none, and that its foot stays on a screen as short as a phone's with its keyboard up
+(`docs/screen.md`, 「Reviewing」); the testbed runs it in its browser lane as the client's manifest declares, and
+the bundle's typecheck reads its types through `client/tests/tsconfig.json`.
+The other behaviour tests are deferred: they are written and run here once the minimal services stand on the new
+repositories, and `docs/inventory.md` lists what the old behaviour was held to. Until
 they stand, the build check is `cargo check --all-targets` and the bundle's typecheck.
 
 ## Layout
@@ -28,7 +35,7 @@ they stand, the build check is `cargo check --all-targets` and the bundle's type
 | `src/` | The service, its client, its OpenAPI document and its MCP server, one crate split into its own modules |
 | `migrations/` | The store, its tables made by these statements in order |
 | `plugin/` | The harness plugin's skill, `bmo-review` |
-| `client/` | The console bundle: the code review screen, its own Korean pack and its build under `bundle/`, a project of its own |
+| `client/` | The console bundle: the code review screen, its own Korean pack, its build under `bundle/`, its dev host under `dev-app/` and its browser tests, a project of its own |
 | `deploy/` | The service's user unit |
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
 | `tests/` | The import's test, the console face's test and the screen's select check |

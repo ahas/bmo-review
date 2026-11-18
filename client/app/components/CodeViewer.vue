@@ -125,21 +125,23 @@
     </UContextMenu>
 
     <!-- What stands between the code lines: each line comment of the revision shown folded to one cell, and the
-         box a new line comment is written in. Each is sent into a zone the editor keeps open for it. -->
+         box a new line comment is written in. Each is sent into a zone the editor keeps open for it. The writing
+         box draws no frame of its own, so its zone draws the one that sets it apart from the code. -->
     <template v-for="zone in zoneList" :key="zone.key">
       <Teleport v-if="zoneNodes.get(zone.key)" :to="zoneNodes.get(zone.key)">
         <div :ref="(element) => watchZone(zone.key, element as HTMLElement | null)" class="px-2 py-1 font-sans">
-          <CodeReviewComposer
-            v-if="zone.kind === 'composer' && chosen !== null"
-            :place="choicePlace"
-            :revision="shortSha(props.revision ?? '')"
-            :reviews="props.reviews"
-            :target="props.target"
-            :busy="posting"
-            :failure="postFailure"
-            @send="postLines"
-            @cancel="clearChoice"
-          />
+          <div v-if="zone.kind === 'composer' && chosen !== null" class="rounded-lg border border-default bg-default p-2">
+            <CodeReviewComposer
+              :place="choicePlace"
+              :revision="shortSha(props.revision ?? '')"
+              :reviews="props.reviews"
+              :target="props.target"
+              :busy="posting"
+              :failure="postFailure"
+              @send="postLines"
+              @cancel="clearChoice"
+            />
+          </div>
           <button
             v-else-if="zone.placed !== null"
             type="button"

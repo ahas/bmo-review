@@ -4,11 +4,16 @@
   "license": "MIT",
   "private": true,
   "type": "module",
+  "bmo": {
+    "browser": [
+      "tests/browser/*.test.ts"
+    ]
+  },
   "scripts": {
     "prepare": "bun x nuxi prepare",
     "api": "openapi-typescript ../docs/openapi.json -o shared/openapi.ts",
     "bundle": "vite build -c bundle/vite.config.ts",
-    "typecheck": "nuxi typecheck",
+    "typecheck": "nuxi typecheck && tsc -p tests/tsconfig.json",
     "check": "bun run typecheck"
   },
   "dependencies": {
@@ -25,6 +30,7 @@
     "bmo-ui": "file:vendor/bmo-ui-0.1.0-rev.36.tgz",
     "nuxt": "^4.5.2",
     "openapi-typescript": "7.13.0",
+    "playwright-core": "1.62.1",
     "tailwindcss": "4.3.3",
     "typescript": "^5.9.3",
     "unplugin-auto-import": "21.1.0",

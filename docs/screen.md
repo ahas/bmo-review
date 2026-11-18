@@ -102,12 +102,18 @@ shape. Every word it shows stands in the bundle's own pack, by key under `code.`
   writes that line's comment. Dragging to select several lines pops a comment button, its word alone, beside the
   selection, and pressing writes that line range's comment. With lines chosen, holding shift and pressing another
   line number widens the range to that line. The writing box opens right below the chosen lines, among the code:
-  where it anchors, the review it goes into, the name, the words box, send, cancel. Sending writes the comment and
-  opens its review in the review section.
+  where it anchors, the review it goes into, the name, the words box, send, cancel. Among the code the place it
+  opens in draws its one frame, a rounded border on the page's own background, which sets it apart from the code
+  lines; the writing box draws none of its own. Sending writes the comment and opens its review in the review
+  section.
 - On a narrow screen pressing a line number stands that line on a bar below the code, and pressing another line
   number with one chosen widens the range without shift, since a finger has no shift. The bar's cancel and comment
   buttons are words alone, and the comment button opens the writing box as a centred modal, not among the code.
-  File, folder and whole-review comments are written in the same modal on a wide screen too.
+  File, folder and whole-review comments are written in the same modal on a wide screen too. The modal is the
+  writing box's one frame there, and the box stands in it bare, with no border of its own: the modal's head names
+  what kind of comment it writes beside its close, and its foot holds cancel and send. Every way of closing it
+  while what it holds differs from what it opened with (the words, the review chosen, a new review's title) asks
+  first whether to throw that away; with nothing changed it closes at once.
 - **Going to a definition.** Pressing the right button anywhere in the code opens the code's own menu, which stands
   go to definition for the word under the press beside the comment button for the lines chosen. F12 does the same
   for the word the cursor stands on, and go to definition stands among the file's actions as well, which is a

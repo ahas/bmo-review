@@ -68,8 +68,9 @@ These hold every bmo repository, and every change here (archive document #301, i
 - The console bundle stands in `client/`, a project of its own; the harness plugin's skill in `plugin/`.
 - Tests live in `tests/`, one test target, `tests/main.rs`, each file of tests a module of it (bmo-chat's
   `docs/conventions.md`, 「Rust builds」); no test module stands in `src/`. The repository carries the
-  import's test, the console face's test and the screen's select check there; the other
-  behaviour tests are deferred for now (README.md).
+  import's test, the console face's test and the screen's select check there. The console bundle's browser tests
+  stand in `client/tests/browser/`, declared in the client's manifest, over its dev host `client/dev-app/`; the
+  other behaviour tests are deferred for now (README.md).
 
 ## The stages of a change
 
@@ -80,4 +81,5 @@ These hold every bmo repository, and every change here (archive document #301, i
 3. **Verification:** the tests touched, then the whole suite once, output written to a file and the
    file read. The behaviour tests are deferred, so the suite holds the import's test,
    the console face's test, which reads the served manifest through bmo-ui's own reading on the release
-   `client/vendor/` holds, run by Bun, and the screen's select check.
+   `client/vendor/` holds, run by Bun, the screen's select check, and the client's browser test of the writing
+   box's frame.

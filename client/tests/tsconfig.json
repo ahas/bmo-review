@@ -1,0 +1,17 @@
+{
+  // The browser tests and their host, read by the bundle's typecheck beside the screen: Bun runs them as written,
+  // so their types are read here and nowhere else.
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM"],
+    "types": ["bun"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["browser/**/*.ts"]
+}
