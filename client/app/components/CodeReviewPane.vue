@@ -187,7 +187,7 @@ interface Props {
   sheet?: boolean;
 }
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const toast = useToast();
 const props = defineProps<Props>();
 const emit = defineEmits<{
@@ -221,10 +221,11 @@ let asked = 0;
 const groups = computed(() => reviewGroups(props.reviews, props.revision));
 const stateAction = computed(() => (review.value?.state === "closed" ? t("code.action.reopen_review") : t("code.action.close_review")));
 
-const clock = new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+// A time in the locale the console speaks.
+const clock = computed(() => new Intl.DateTimeFormat(locale.value, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }));
 
 function timeText(at: number): string {
-  return clock.format(new Date(at));
+  return clock.value.format(new Date(at));
 }
 
 // A comment's place, its folder told from a file by the revision's tree where the review is of the one shown.

@@ -166,7 +166,7 @@ the 25 non-test files ask outside it, found by the literal keys they pass to the
 
 | Keys | Count | Here |
 |---|---|---|
-| `code.title` 2, `code.label` 46, `code.action` 14, `code.placeholder` 5, `code.aria` 12, `code.status` 17, `code.message` 4, `code.error` 28 | 128 | the bundle's own Korean pack, `client/i18n/ko.json`, those of what still stands carried and reworded from a review's place to a comment's, with a `code.error.<code>` for every code of `docs/api.md`; the talk's and the worker's are not carried |
+| `code.title` 2, `code.label` 46, `code.action` 14, `code.placeholder` 5, `code.aria` 12, `code.status` 17, `code.message` 4, `code.error` 28 | 128 | the bundle's own pack, `client/i18n/`, in each of its four locales (`docs/screen.md`), those of what still stands carried and reworded from a review's place to a comment's, with a `code.error.<code>` for every code of `docs/api.md`; the talk's and the worker's are not carried |
 | `common.action` (`cancel`, `clear_search`, `close`, `refresh`, `send`), `common.aria.search_scope`, `common.error` (`editor_failed`, `file_read_failed`, `renderer_failed`, `send_failed`), `common.label` (`code`, `count`, `line_number`, `line_range`, `link`, `name`, `path`, `rendered`, `size`, `speaker_bmo`, `speaker_owner`, `view`), `common.status` (`bmo_answering`, `head_only`, `source_loading`) | 25 | the bundle's own pack under `code.shared` with the same group and name; the speakers, the answering line, the rendered form and the renderer's and sending's failures are not carried |
 | `screens.label.code` | 1 | `code.title.screen` |
 | `common.error.say_to_bmo_empty`, `common.error.too_long` | 2 | not carried: the talk is the receiver's |

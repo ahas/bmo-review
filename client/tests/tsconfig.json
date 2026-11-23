@@ -1,6 +1,6 @@
 {
-  // The browser tests and their host, read by the bundle's typecheck beside the screen: Bun runs them as written,
-  // so their types are read here and nowhere else.
+  // The browser tests, their host and the language pack's test, read by the bundle's typecheck beside the screen:
+  // Bun runs them as written, so their types are read here and nowhere else.
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
@@ -13,5 +13,5 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["browser/**/*.ts"]
+  "include": ["browser/**/*.ts", "words/**/*.ts"]
 }

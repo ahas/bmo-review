@@ -365,7 +365,8 @@ const shownCommit = computed<Commit | null>(() => {
   return [listed.shown, listed.head, ...listed.touched].find((one) => one?.id === props.revision) ?? null;
 });
 
-const dateText = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+// A commit's time in the locale the console speaks.
+const dateText = computed(() => new Intl.DateTimeFormat(locale.value, { year: "numeric", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }));
 
 // What the file standing is, for the properties viewer.
 const properties = computed<BarProperty[] | null>(() => {
@@ -379,7 +380,7 @@ const properties = computed<BarProperty[] | null>(() => {
     { label: t("code.shared.label.path"), value: props.path, mono: true },
     ...(props.project === null ? [] : [{ label: t("code.label.project"), value: props.project }]),
     { label: t("code.label.revision"), value: commit === null ? shortSha(props.revision ?? "") : `${commit.shortId} ${commit.subject}` },
-    ...(commit === null ? [] : [{ label: t("code.label.authored"), value: `${commit.authorName} · ${dateText.format(new Date(commit.at))}` }]),
+    ...(commit === null ? [] : [{ label: t("code.label.authored"), value: `${commit.authorName} · ${dateText.value.format(new Date(commit.at))}` }]),
     ...(source.value === null ? [] : [{ label: t("code.shared.label.size"), value: fileSizeText(source.value.byteCount, locale.value) }]),
     ...(props.uncommitted > 0 ? [{ label: t("code.label.uncommitted"), value: t("code.shared.label.count", { n: countText(props.uncommitted) }) }] : [])
   ];
@@ -392,7 +393,7 @@ const commitItems = computed(() =>
   offeredCommits(commits.value?.touched ?? [], [commits.value?.head ?? null, shownCommit.value]).map((one) => ({
     label: `${one.shortId} ${one.subject}`,
     value: one.id,
-    description: `${one.authorName} · ${dateText.format(new Date(one.at))}${one.id === props.head ? ` · ${t("code.label.current_mark")}` : ""}`
+    description: `${one.authorName} · ${dateText.value.format(new Date(one.at))}${one.id === props.head ? ` · ${t("code.label.current_mark")}` : ""}`
   }))
 );
 

@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { countText } from "bmo-ui/app/domain/numbers";
+import { useI18n } from "vue-i18n";
 import { STATE_COLORS, STATE_LABELS } from "../domain/code";
 
 import type { Review } from "../../shared/types";
@@ -31,5 +32,8 @@ import type { Review } from "../../shared/types";
 const props = defineProps<{ review: Review }>();
 const emit = defineEmits<{ open: [] }>();
 
-const clock = new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const { locale } = useI18n();
+
+// The change's time in the locale the console speaks.
+const clock = computed(() => new Intl.DateTimeFormat(locale.value, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }));
 </script>

@@ -37,7 +37,7 @@ they stand, the build check is `cargo check --all-targets` and the bundle's type
 | `src/` | The service, its client, its OpenAPI document and its MCP server, one crate split into its own modules |
 | `migrations/` | The store, its tables made by these statements in order |
 | `plugin/` | The harness plugin's skill, `bmo-review` |
-| `client/` | The console bundle: the code review screen, its own Korean pack, its build under `bundle/`, its dev host under `dev-app/` and its browser tests, a project of its own |
+| `client/` | The console bundle: the code review screen, its own language pack in English, Korean, Japanese and Simplified Chinese, its build under `bundle/`, its dev host under `dev-app/` and its browser tests, a project of its own |
 | `deploy/` | The service's user unit |
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
 | `tests/` | The import's test, the console face's test and the screen's select check |

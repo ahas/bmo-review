@@ -52,8 +52,9 @@ These hold every bmo repository, and every change here (archive document #301, i
 
 - Everything in this repository is English: code, comments, strings, tests, documents, commit messages
   and branch names. No Korean in a code file or a test, written plainly or as escapes.
-- **The words a person reads are this repository's own Korean pack,** never a console's: the screen's
-  words in the console bundle's `client/i18n/`. Code names them by key. Every pack file is recorded in
+- **The words a person reads are this repository's own language pack,** never a console's: the screen's
+  words in the console bundle's `client/i18n/`, one file to a locale (English, Korean, Japanese and Simplified
+  Chinese). Code names them by key. Every pack file is recorded in
   `korean-ledger.json` with its count of Hangul lines; a code file the ledger does not name holds none.
 - What the service answers is an English sentence for a log and a kebab-case code the screen shows in
   its pack's words (`docs/api.md`, 「Codes」). No model prompt is written here.

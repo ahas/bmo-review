@@ -3,7 +3,10 @@
 The screen this repository's console bundle carries (`client/`), attached to a console by the manifest the
 service answers (`docs/api.md`, 「The console face」). What is read from which revision, how paths are fenced and what is
 excluded, and how reviews, comments and filings behave are `docs/code-review.md`; this document is the screen's
-shape. Every word it shows stands in the bundle's own pack, by key under `code.`.
+shape. Every word it shows stands in the bundle's own pack, by key under `code.`, in English, Korean, Japanese and
+Simplified Chinese (`en`, `ko`, `ja`, `zh-CN`, the locale codes the console speaks), and its dates and figures are
+written in the locale the console names. Every locale's file holds the English file's keys in its order, each word
+naming the same placeholders, and the pack's test holds them to it.
 
 ## Where it stands
 
