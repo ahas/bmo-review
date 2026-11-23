@@ -40,7 +40,7 @@ git 체크아웃 위에서 코드 리뷰를 하는, 자체 API를 갖춘 하나�
 | `docs/` | 서비스 동작에 대한 기준 문서와 OpenAPI 문서 |
 | `tests/` | 가져오기 테스트, 콘솔 페이스 테스트, 화면 선택 검사 |
 
-루트에는 Cargo 매니페스트, `LICENSE`, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
+루트에는 Cargo 매니페스트, `LICENSE`, `VERSION`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `PERSONAL-DATA.md`, `korean-ledger.json`, `settings.toml`, 그리고 배포 시 주는 로컬 설정의 예시인
 `settings.local.toml.example`이 있습니다.
 

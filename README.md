@@ -42,7 +42,7 @@ they stand, the build check is `cargo check --all-targets` and the bundle's type
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
 | `tests/` | The import's test, the console face's test and the screen's select check |
 
-At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
+At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `PERSONAL-DATA.md`, `korean-ledger.json`, `settings.toml` and `settings.local.toml.example`, the example of the
 local settings a deployment gives.
 

@@ -36,7 +36,7 @@
 | `docs/` | 描述服务行为的规范文档，以及 OpenAPI 文档 |
 | `tests/` | 导入测试、控制台入口测试和界面选择检查 |
 
-根目录下有 Cargo 清单、`LICENSE`、`VERSION`、`testbed.toml`、`rustfmt.toml`、`CLAUDE.md`、
+根目录下有 Cargo 清单、`LICENSE`、`VERSION`、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、
 `PERSONAL-DATA.md`、`korean-ledger.json`、`settings.toml`，以及部署时提供的本地设置示例
 `settings.local.toml.example`。
 
