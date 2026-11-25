@@ -11,7 +11,7 @@ const HEAD = "0123456789abcdef0123456789abcdef01234567";
 const AT = Date.UTC(2030, 4, 1);
 const TEXT = ["fn main() {", "    let answer = 42;", "    println!(\"{answer}\");", "}", ""].join("\n");
 
-const PROJECTS: Project[] = [{ name: PROJECT, checkout: "sample", state: "ready", head: HEAD, branch: "main", uncommittedCount: 0 }];
+export const PROJECTS: Project[] = [{ name: PROJECT, checkout: "sample", state: "ready", head: HEAD, branch: "main", uncommittedCount: 0 }];
 const TREE: TreeEntry[] = [{ path: FILE, kind: "file", byteCount: TEXT.length, pinnedRevision: null }];
 const SOURCE: FileSource = { path: FILE, revision: HEAD, byteCount: TEXT.length, text: TEXT, lineCount: 4, cut: false };
 const COMMITS: Commit[] = [{ id: HEAD, shortId: HEAD.slice(0, 7), subject: "Start the sample", authorName: "tester", at: AT, files: [], diff: null, cut: false }];

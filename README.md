@@ -22,13 +22,16 @@ the client vendors, run by bmo-chat's `bmo-console-face` (Bun on the machine), a
 the service's routes takes; the console readers' test in `tests/owners.rs`, which holds over a stand-in agency
 that a member reads only the projects their account owns, an administrator every one, and a member nothing where
 no agency answers; and the screen's select check in `tests/choices.rs`, which holds that every value the
-screen lets be chosen from a list stands in bmo-ui's one select. The console bundle carries one browser test,
-`client/tests/browser/composer-frame.test.ts`, which opens the screen in its dev host `client/dev-app/` over a
-stand-in of the service and reads off the page, in both schemes, that the box a comment is written in has one frame
-among the code at 1280 and in the modal at 360 and at 1280, that the modal asks before throwing written words away
-and closes at once with none, and that its foot stays on a screen as short as a phone's with its keyboard up
-(`docs/screen.md`, 「Reviewing」); the testbed runs it in its browser lane as the client's manifest declares, and
-the bundle's typecheck reads its types through `client/tests/tsconfig.json`.
+screen lets be chosen from a list stands in bmo-ui's one select. The console bundle carries two browser tests.
+`client/tests/browser/composer-frame.test.ts` opens the screen in its dev host `client/dev-app/` over a stand-in of
+the service and reads off the page, in both schemes, that the box a comment is written in has one frame among the
+code at 1280 and in the modal at 360 and at 1280, that the modal asks before throwing written words away and closes
+at once with none, and that its foot stays on a screen as short as a phone's with its keyboard up
+(`docs/screen.md`, 「Reviewing」). `client/tests/browser/list-reads.test.ts` holds the same screen to how the readings
+of its lists end: one line says there is no project where the projects read answers none the reader sees, the reason
+and a read-again button stand where a read cannot be answered, and pressing that button reads the list again and
+stands what answers where the loading display stood (`docs/screen.md`, 「Loading」, 「The explorer」). The testbed runs both in its browser lane as the client's manifest declares, and the bundle's
+typecheck reads their types through `client/tests/tsconfig.json`.
 The other behaviour tests are deferred: they are written and run here once the minimal services stand on the new
 repositories, and `docs/inventory.md` lists what the old behaviour was held to. Until
 they stand, the build check is `cargo check --all-targets` and the bundle's typecheck.

@@ -57,6 +57,10 @@ naming the same placeholders, and the pack's test holds them to it.
 
 - At the top a project is chosen, by name. A project with an unreadable checkout carries a different mark and
   writes the reason beside it. Choosing such a project stands only the reason in the explorer.
+- The projects are read into that choice, and the reading's ending stands under it: where it answers no project
+  the reader sees, the choice keeps its placeholder and one line says there is none; where it cannot be read,
+  the reason and a read-again button stand there. The place below, where the tree will stand, waits on it and
+  on the tree's own reading, and stands its loading display until both have ended.
 - Below is a search box, beside which a dropdown chooses search by name or by content. Searching by name unfolds
   only the matched files and their ancestors and marks the matched letters. Searching by content stands a list of
   matched lines grouped per file instead of the tree, and pressing a line opens that file at that line. Where the
@@ -180,8 +184,13 @@ naming the same placeholders, and the pack's test holds them to it.
 
 ## Loading
 
-- While reading the explorer and files, while waiting on the revision list and search, and while reading a
-  review, bmo-ui's loading display is followed. If it cannot be read the reason and a read-again button stand.
+- While reading the projects, a revision's tree and a file, while waiting on the revision list and search, and while reading a
+  review, bmo-ui's loading display stands in the place that read's own content will stand.
+- A read ends its display when it ends. Where it answers, what it answered stands, and an answer holding nothing is such an answer:
+  its place says in one line that there is nothing there. Where it cannot be read, the reason and a read-again button stand in that
+  same place, and no loading display stands on past the read it waits on.
+- A read asked again after it ended in nothing or in a reason keeps that line or that reason standing, its button spinning until
+  the new answer lands; the loading display is for a place that has never answered.
 
 ## Live updates
 

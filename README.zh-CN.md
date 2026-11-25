@@ -17,11 +17,14 @@
 的 `bmo-console-face`(使用机器上的 Bun)读取服务提供的清单，并确认服务的每条路由接受哪种凭据；`tests/owners.rs` 中的控制台读者测试，它借助替身代理服务确认成员只读到其账户拥有的项目、管理员读到全部、代理服务
 不应答时成员什么也读不到；以及
 `tests/choices.rs` 中的界面选择检查，它确认界面中所有从列表里选择的值都使用 bmo-ui 唯一的 select 组件。控制台包
-带有一个浏览器测试 `client/tests/browser/composer-frame.test.ts`：它在服务的替身之上，通过开发宿主
+带有两个浏览器测试。`client/tests/browser/composer-frame.test.ts` 在服务的替身之上，通过开发宿主
 `client/dev-app/` 打开界面，并在两种配色方案下直接从页面上读取并确认：撰写评论的输入框在宽度 1280 的代码之间、
 以及宽度 360 和 1280 的模态框中都只有一个边框；模态框在丢弃已写内容前会先询问，没有内容时立即关闭；在手机弹出键盘
-那样矮的屏幕上，模态框的底部仍留在屏幕内(`docs/screen.md`，「Reviewing」)。测试台按客户端清单的声明在其浏览器
-通道中运行它，包的类型检查通过 `client/tests/tsconfig.json` 读取其类型。其余的行为测试暂缓：等最小服务集在新仓库
+那样矮的屏幕上，模态框的底部仍留在屏幕内(`docs/screen.md`，「Reviewing」)。`client/tests/browser/list-reads.test.ts`
+让同一个界面在它的列表读取如何结束这件事上接受检验：读者能看见的项目一个也没有时，那里以一行说明收尾；读不到时，
+原因和刷新按钮立在那里；按下该按钮便重新读取列表，落在原处的答案代替加载显示立着(`docs/screen.md`，「Loading」、
+「The explorer」)。测试台按客户端清单的声明在其浏览器通道中运行这两个测试，包的类型检查通过
+`client/tests/tsconfig.json` 读取其类型。其余的行为测试暂缓：等最小服务集在新仓库
 上运转起来后再在这里编写和运行，旧行为需要满足的内容列在 `docs/inventory.md` 中。在此之前，构建检查为
 `cargo check --all-targets` 和包的类型检查。
 

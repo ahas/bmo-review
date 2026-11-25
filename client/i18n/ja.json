@@ -105,6 +105,7 @@
       "no_files_found": "該当するファイルなし",
       "no_lines_found": "該当する行なし",
       "no_path": "パスがありません。",
+      "no_projects": "プロジェクトなし",
       "no_reviews": "レビューなし",
       "not_git": "git リポジトリではありません。",
       "partial": "一部のみ表示",

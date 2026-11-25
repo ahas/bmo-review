@@ -9,8 +9,6 @@
     </template>
 
     <template #body>
-      <p v-if="projectsFailure !== ''" role="alert" class="p-4 text-sm text-error">{{ projectsFailure }}</p>
-
       <!-- On a phone the screen's create button floats over the code, so the code ends the button's room above the
            screen's foot. -->
       <div v-if="narrow" class="flex min-h-0 flex-1 flex-col" :class="{ 'pb-(--bmo-create-room)': creating }">
@@ -45,6 +43,7 @@
               @folder="chooseFolder"
               @comment-folder="newComment({ kind: 'folder', path: $event, line: null, endLine: null })"
               @retry="loadTree"
+              @retry-projects="reread"
             />
           </template>
         </UDrawer>
@@ -62,6 +61,7 @@
               @go-comment="goToComment"
               @new="newReview"
               @changed="onChanged"
+              @retry="loadReviews"
             />
           </template>
         </UDrawer>
@@ -87,6 +87,7 @@
             @folder="chooseFolder"
             @comment-folder="newComment({ kind: 'folder', path: $event, line: null, endLine: null })"
             @retry="loadTree"
+            @retry-projects="reread"
           />
         </template>
 
@@ -120,6 +121,7 @@
             @go-comment="goToComment"
             @new="newReview"
             @changed="onChanged"
+            @retry="loadReviews"
           />
         </template>
       </USplitter>
@@ -180,6 +182,9 @@ const phone = useNarrow();
 
 const projects = ref<Project[]>([]);
 const projectsLoading = ref(false);
+// Whether the projects have answered at all: a reading that answered nothing is an answer, and its place keeps its empty line
+// while the reading is asked again.
+const projectsRead = ref(false);
 const projectsFailure = ref("");
 const tree = ref<RevisionTree | null>(null);
 const treeLoading = ref(false);
@@ -230,7 +235,7 @@ const reviewsTool = computed<BarAction>(() =>
 
 // What the screen offers beside the file's own actions: a fresh read.
 const tools = computed<BarAction[]>(() => [
-  { id: "reread", label: t("code.shared.action.refresh"), icon: "i-material-symbols-refresh", loading: projectsLoading.value || treeLoading.value, onSelect: () => void reread() }
+  { id: "reread", label: t("code.shared.action.refresh"), icon: "i-material-symbols-refresh", loading: projectsLoading.value || treeLoading.value || reviewsLoading.value, onSelect: () => void reread() }
 ]);
 
 const sides = useTemplateRef<{ panelsRef: Array<{ collapse: () => void; expand: () => void; isCollapsed: boolean }> }>("sides");
@@ -275,9 +280,13 @@ const counts = computed(() => commentCounts(placed.value, folders.value ?? new S
 
 const explorerProps = computed(() => ({
   projects: projects.value,
+  projectsLoading: projectsLoading.value,
+  projectsRead: projectsRead.value,
+  projectsFailure: projectsFailure.value,
   project: projectName.value,
   tree: tree.value,
-  failure: treeFailure.value,
+  treeLoading: treeLoading.value,
+  treeFailure: treeFailure.value,
   counts: counts.value,
   file: folder.value === null ? path.value : null,
   folder: folder.value
@@ -323,12 +332,21 @@ async function go(parts: Record<string, string | number | null>, how: "replace" 
   await (how === "push" ? router.push({ query }) : router.replace({ query }));
 }
 
+// The tree place emptied of a reading: what stands there is nothing, and no reason read of another place or revision is said
+// for it while the new reading is on its way.
+function standNoTree(): void {
+  tree.value = null;
+  treeFailure.value = "";
+}
+
+// A reading that cannot be answered keeps its reason standing while it is read again, so only an answer takes it down.
 async function loadProjects(): Promise<void> {
   projectsLoading.value = true;
-  projectsFailure.value = "";
 
   try {
     projects.value = await listProjects();
+    projectsRead.value = true;
+    projectsFailure.value = "";
 
     if (!projects.value.some((one) => one.name === projectName.value)) {
       const first = projects.value.find((one) => one.state === "ready") ?? projects.value[0];
@@ -351,10 +369,8 @@ async function loadTree(): Promise<void> {
   const at = revision.value;
   const mine = ++treeAsked;
 
-  treeFailure.value = "";
-
   if (name === null || project.value?.state !== "ready" || at === null) {
-    tree.value = null;
+    standNoTree();
 
     return;
   }
@@ -370,6 +386,7 @@ async function loadTree(): Promise<void> {
 
     if (mine === treeAsked) {
       tree.value = read;
+      treeFailure.value = "";
     }
   } catch (error) {
     if (mine === treeAsked) {
@@ -393,18 +410,19 @@ async function loadReviews(): Promise<void> {
   if (name === null) {
     reviews.value = [];
     placed.value = [];
+    reviewsFailure.value = "";
 
     return;
   }
 
   reviewsLoading.value = true;
-  reviewsFailure.value = "";
 
   try {
     const read = await listReviews(name);
 
     if (mine === reviewsAsked) {
       reviews.value = read;
+      reviewsFailure.value = "";
       await loadPlaced();
     }
   } catch (error) {
@@ -437,7 +455,7 @@ async function loadPlaced(): Promise<void> {
 }
 
 async function reread(): Promise<void> {
-  tree.value = null;
+  standNoTree();
   await loadProjects();
   await Promise.all([loadTree(), loadReviews()]);
 }
@@ -450,9 +468,10 @@ function openProject(name: string): void {
   const kept = keptTabs.value.projects[name];
   const standing = kept?.tabs.find((one) => one.path === kept.active) ?? null;
 
-  tree.value = null;
+  standNoTree();
   reviews.value = [];
   placed.value = [];
+  reviewsFailure.value = "";
   go({ project: name, revision: standing?.revision ?? null, path: standing?.path ?? null, line: null, folder: null, review: null });
 }
 
@@ -664,7 +683,7 @@ function onSideFold(index: unknown, open: boolean): void {
 }
 
 watch(projectName, () => {
-  tree.value = null;
+  standNoTree();
   void loadReviews();
   standKept();
 });

@@ -42,7 +42,9 @@
         <ChoiceSelect v-model="mode" :items="MODES" value-key="value" size="sm" class="shrink-0" :aria-label="$t('code.shared.aria.search_scope')" />
       </div>
 
-      <ContentSkeleton v-if="props.tree === null && props.failure === ''" class="px-3" :rows="10" listClass="flex flex-col" :label="$t('code.status.files_loading')">
+      <!-- The place the tree will stand waits on both readings that fill it: the projects' until one stands chosen, then the
+           tree's until its entries land (docs/screen.md, 「Loading」). -->
+      <ContentSkeleton v-if="reading" class="px-3" :rows="10" listClass="flex flex-col" :label="$t('code.status.files_loading')">
         <template #default="{ index }">
         <div class="flex h-8 items-center gap-2 px-2">
             <SkeletonBar class="size-4 shrink-0 rounded-sm" />
@@ -50,10 +52,15 @@
           </div>
         </template>
       </ContentSkeleton>
-      <div v-else-if="props.failure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
-        <p class="text-sm text-error">{{ props.failure }}</p>
-        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" @click="emit('retry')" />
+      <div v-else-if="props.projectsFailure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
+        <p class="text-sm text-error">{{ props.projectsFailure }}</p>
+        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" :loading="props.projectsLoading" @click="emit('retry-projects')" />
       </div>
+      <div v-else-if="props.treeFailure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
+        <p class="text-sm text-error">{{ props.treeFailure }}</p>
+        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" :loading="props.treeLoading" @click="emit('retry')" />
+      </div>
+      <p v-else-if="props.projects.length === 0" class="px-3 text-sm text-muted">{{ $t("code.status.no_projects") }}</p>
 
       <template v-else-if="props.tree !== null">
         <p v-if="props.tree.cut" class="px-3 text-sm text-warning" role="status">
@@ -169,9 +176,16 @@ import type { Match, Project, ProjectState, RevisionTree } from "../../shared/ty
 
 interface Props {
   projects: Project[];
+  // How the reading of those projects stands: it fills the choice above and holds the place below until it ends. Once it has
+  // answered, its place keeps what it answered, its nothing or its reason, while it is read again.
+  projectsLoading: boolean;
+  projectsRead: boolean;
+  projectsFailure: string;
   project: string | null;
   tree: RevisionTree | null;
-  failure: string;
+  treeLoading: boolean;
+  // Why the revision's tree could not be read, where it could not.
+  treeFailure: string;
   // How many comments at the revision shown stand on each row.
   counts: Map<string, number>;
   // The file open and the folder chosen.
@@ -187,6 +201,7 @@ const emit = defineEmits<{
   folder: [path: string];
   "comment-folder": [path: string];
   retry: [];
+  "retry-projects": [];
 }>();
 
 const NAMES_SHOWN = 200;
@@ -206,6 +221,13 @@ let asked = 0;
 let waiting: ReturnType<typeof setTimeout> | null = null;
 
 const current = computed(() => props.projects.find((one) => one.name === props.project) ?? null);
+
+// What the place under the choice waits on: the projects' reading until it has answered, then the tree's own until its entries
+// land. Where a reading has answered, its place keeps what it answered, its nothing or its reason, and reads again on a spinner
+// rather than taking its content back down under a fresh display.
+const reading = computed(
+  () => props.tree === null && props.treeFailure === "" && props.projectsFailure === "" && (!props.projectsRead || props.projects.length > 0)
+);
 
 function stateText(state: ProjectState): string {
   switch (state) {

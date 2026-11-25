@@ -105,6 +105,7 @@
       "no_files_found": "未找到文件",
       "no_lines_found": "未找到行",
       "no_path": "路径不存在。",
+      "no_projects": "暂无项目",
       "no_reviews": "暂无评审",
       "not_git": "不是 git 仓库。",
       "partial": "仅显示部分",

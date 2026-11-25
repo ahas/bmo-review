@@ -10,7 +10,10 @@
         <CreateButton :label="$t('code.action.open_review')" @click="emit('new')" />
       </div>
 
-      <p v-if="props.failure !== ''" class="px-3 text-sm text-error" role="alert">{{ props.failure }}</p>
+      <div v-if="props.failure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
+        <p class="text-sm text-error">{{ props.failure }}</p>
+        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" :loading="props.loading" @click="emit('retry')" />
+      </div>
       <ContentSkeleton v-else-if="props.loading && props.reviews.length === 0" class="px-3" :rows="4" listClass="flex flex-col gap-1" :label="$t('code.status.reviews_loading')">
         <div class="flex h-5 items-center gap-2 py-1">
           <SkeletonBar class="h-4 w-16" />
@@ -90,7 +93,7 @@
       </ContentSkeleton>
       <div v-else-if="readFailure !== ''" role="alert" class="flex flex-wrap items-center gap-2 px-3">
         <p class="text-sm text-error">{{ readFailure }}</p>
-        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" @click="load" />
+        <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" :loading="reviewLoading" @click="load" />
       </div>
 
       <template v-if="review !== null">
@@ -201,10 +204,13 @@ const emit = defineEmits<{
   new: [];
   // The open review changed here: a comment, a state, an item filed.
   changed: [];
+  // The project's reviews read again, asked for under the reason its reading gave.
+  retry: [];
 }>();
 
 const review = ref<Review | null>(null);
 const comments = ref<Comment[]>([]);
+const reviewLoading = ref(false);
 const readFailure = ref("");
 const text = ref("");
 const author = useAuthorName();
@@ -237,19 +243,22 @@ function placeOf(comment: Comment): string {
   return placeText(t, comment, placeKind(comment));
 }
 
+// The open review and its comments. A reading that cannot be answered keeps its reason standing while it is read again, so only
+// an answer takes it down.
 async function load(): Promise<void> {
   const id = props.openId;
 
   if (id === null) {
     review.value = null;
     comments.value = [];
+    readFailure.value = "";
 
     return;
   }
 
   const mine = ++asked;
 
-  readFailure.value = "";
+  reviewLoading.value = true;
 
   try {
     const [read, written] = await Promise.all([readReview(id), listComments(id)]);
@@ -257,10 +266,15 @@ async function load(): Promise<void> {
     if (mine === asked) {
       review.value = read;
       comments.value = written;
+      readFailure.value = "";
     }
   } catch (error) {
     if (mine === asked) {
       readFailure.value = refusalText(t, error, t("code.error.review_read_failed"));
+    }
+  } finally {
+    if (mine === asked) {
+      reviewLoading.value = false;
     }
   }
 }
