@@ -14,7 +14,7 @@
         <p class="text-sm text-error">{{ props.failure }}</p>
         <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" :label="$t('code.shared.action.refresh')" :loading="props.loading" @click="emit('retry')" />
       </div>
-      <ContentSkeleton v-else-if="props.loading && props.reviews.length === 0" class="px-3" :rows="4" listClass="flex flex-col gap-1" :label="$t('code.status.reviews_loading')">
+      <ContentSkeleton v-else-if="props.loading && !props.reviewsRead" class="px-3" :rows="4" listClass="flex flex-col gap-1" :label="$t('code.status.reviews_loading')">
         <div class="flex h-5 items-center gap-2 py-1">
           <SkeletonBar class="h-4 w-16" />
           <SkeletonBar class="h-4 min-w-0 flex-1" />
@@ -180,7 +180,10 @@ import type { Comment, Review } from "../../shared/types";
 
 interface Props {
   reviews: Review[];
+  // How the reading of those reviews stands: the display holds the place until the reading ends, and once it has
+  // answered its place keeps what it answered, its nothing or its reason, while it is read again.
   loading: boolean;
+  reviewsRead: boolean;
   failure: string;
   // The revision shown, and its folders, which tell a folder comment from a file comment.
   revision: string | null;

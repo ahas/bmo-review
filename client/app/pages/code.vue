@@ -191,6 +191,9 @@ const treeLoading = ref(false);
 const treeFailure = ref("");
 const reviews = ref<Review[]>([]);
 const reviewsLoading = ref(false);
+// Whether the reviews have answered at all: a reading that answered nothing is an answer, and its place keeps its
+// empty line while the reading is asked again.
+const reviewsRead = ref(false);
 const reviewsFailure = ref("");
 // The comments of the reviews of the revision shown, each beside its review.
 const placed = ref<PlacedComment[]>([]);
@@ -310,6 +313,7 @@ const viewerProps = computed(() => ({
 const paneProps = computed(() => ({
   reviews: reviews.value,
   loading: reviewsLoading.value,
+  reviewsRead: reviewsRead.value,
   failure: reviewsFailure.value,
   revision: revision.value,
   folders: folders.value,
@@ -400,6 +404,16 @@ async function loadTree(): Promise<void> {
   }
 }
 
+// The reviews place emptied of a reading: what stands there is nothing, and no answer of another project is said
+// for it while the new reading is on its way; the comments beside the code were read from those reviews and go
+// with them.
+function standNoReviews(): void {
+  reviews.value = [];
+  placed.value = [];
+  reviewsFailure.value = "";
+  reviewsRead.value = false;
+}
+
 let reviewsAsked = 0;
 
 // The project's reviews, then the comments of those of the revision shown.
@@ -408,9 +422,7 @@ async function loadReviews(): Promise<void> {
   const mine = ++reviewsAsked;
 
   if (name === null) {
-    reviews.value = [];
-    placed.value = [];
-    reviewsFailure.value = "";
+    standNoReviews();
 
     return;
   }
@@ -423,6 +435,7 @@ async function loadReviews(): Promise<void> {
     if (mine === reviewsAsked) {
       reviews.value = read;
       reviewsFailure.value = "";
+      reviewsRead.value = true;
       await loadPlaced();
     }
   } catch (error) {
@@ -469,9 +482,7 @@ function openProject(name: string): void {
   const standing = kept?.tabs.find((one) => one.path === kept.active) ?? null;
 
   standNoTree();
-  reviews.value = [];
-  placed.value = [];
-  reviewsFailure.value = "";
+  standNoReviews();
   go({ project: name, revision: standing?.revision ?? null, path: standing?.path ?? null, line: null, folder: null, review: null });
 }
 
