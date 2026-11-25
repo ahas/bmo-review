@@ -138,7 +138,7 @@
       "not-a-name": "No definition can be found for this word.",
       "filing-refused": "The TODO service didn't accept the item. Check the queue name.",
       "failed": "The code review service ran into an error.",
-      "upstream-failed": "The graph service or the TODO service didn't respond."
+      "upstream-failed": "A service the screen depends on didn't respond."
     },
     "shared": {
       "action": {

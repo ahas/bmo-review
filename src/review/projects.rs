@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 use super::workspace::{head_of, resolve_commit};
 use crate::http::{Refused, Standing};
+use crate::owners::Seen;
 use crate::wire::ProjectState;
 
 /// One project's checkout.
@@ -17,12 +18,13 @@ pub struct Checkout {
   pub root: PathBuf,
 }
 
-/// Every project the settings name, in the order of their names.
-fn named(standing: &Standing) -> Vec<Checkout> {
+/// Every project the settings name that the reader sees, in the order of their names.
+fn named(standing: &Standing, seen: &Seen) -> Vec<Checkout> {
   let mut checkouts: Vec<Checkout> = standing
     .settings
     .projects
     .iter()
+    .filter(|project| seen.holds(&project.name))
     .map(|project| Checkout {
       name: project.name.clone(),
       root: PathBuf::from(&project.checkout),
@@ -33,9 +35,10 @@ fn named(standing: &Standing) -> Vec<Checkout> {
   checkouts
 }
 
-/// A page of the projects in the order of their names, past the one `after` names, and whether more stand.
-pub fn page(standing: &Standing, after: Option<&str>, limit: usize) -> (Vec<Checkout>, bool) {
-  let mut checkouts: Vec<Checkout> = named(standing)
+/// A page of the projects the reader sees in the order of their names, past the one `after` names, and whether
+/// more stand.
+pub fn page(standing: &Standing, seen: &Seen, after: Option<&str>, limit: usize) -> (Vec<Checkout>, bool) {
+  let mut checkouts: Vec<Checkout> = named(standing, seen)
     .into_iter()
     .filter(|checkout| after.is_none_or(|after| checkout.name.as_str() > after))
     .collect();
@@ -45,14 +48,15 @@ pub fn page(standing: &Standing, after: Option<&str>, limit: usize) -> (Vec<Chec
   (checkouts, more)
 }
 
-/// The checkout of the project a request names, or none where the settings name no such project.
-pub fn find(standing: &Standing, name: &str) -> Option<Checkout> {
-  named(standing).into_iter().find(|checkout| checkout.name == name)
+/// The checkout of the project a request names, or none where the settings name no such project or the reader
+/// does not see it.
+pub fn find(standing: &Standing, seen: &Seen, name: &str) -> Option<Checkout> {
+  named(standing, seen).into_iter().find(|checkout| checkout.name == name)
 }
 
-/// The checkout of the project a route's path names.
-pub fn require(standing: &Standing, name: &str) -> Result<Checkout, Refused> {
-  find(standing, name).ok_or_else(|| Refused::not_found(format!("no project is named {name}")))
+/// The checkout of the project a route's path names, a project the reader does not see being none.
+pub fn require(standing: &Standing, seen: &Seen, name: &str) -> Result<Checkout, Refused> {
+  find(standing, seen, name).ok_or_else(|| Refused::not_found(format!("no project is named {name}")))
 }
 
 /// Why a checkout with no HEAD to read cannot be read.

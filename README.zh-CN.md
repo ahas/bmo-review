@@ -4,8 +4,8 @@
 
 基于 git 检出目录进行代码审查的单一服务，带有自己的 API。它按设置中列出的检出目录，在某个修订版本上读取每一个
 (目录树、文件、提交及每个提交的 diff、内容搜索和定义搜索)；管理针对修订版本的审查，以及挂在其中行、文件和文件夹上的
-评论；并能从审查向作业服务提交条目。它从不向检出目录写入任何内容。对作业服务的访问只通过对方发布的客户端进行，
-如 `docs/api.md` 所列。
+评论；并能从审查向作业服务提交条目。它从不向检出目录写入任何内容。控制台的成员只能看到代理服务记录为其账户所有的项目。对作业服务和代理服务的访问
+只通过对方发布的客户端进行，如 `docs/api.md` 所列。
 
 该服务发布自己的客户端(`bmo_review::client`)、OpenAPI 文档(`docs/openapi.json`，由 `bmo-review openapi`
 输出)以及 harness 插件：MCP 服务器 `bmo-review mcp` 和 `plugin/skills/` 下的 `bmo-review` 技能。
@@ -14,7 +14,8 @@
 
 个人数据规则(`PERSONAL-DATA.md`)由测试台的 `personal-data` 检查来保证。仓库包含以下测试：`tests/import.rs`
 中的导入测试；`tests/screen.rs` 中的控制台入口测试，它按照客户端 vendor 中 bmo-ui 发行版的读取方式，通过 bmo-chat
-的 `bmo-console-face`(使用机器上的 Bun)读取服务提供的清单，并确认服务的每条路由接受哪种凭据；以及
+的 `bmo-console-face`(使用机器上的 Bun)读取服务提供的清单，并确认服务的每条路由接受哪种凭据；`tests/owners.rs` 中的控制台读者测试，它借助替身代理服务确认成员只读到其账户拥有的项目、管理员读到全部、代理服务
+不应答时成员什么也读不到；以及
 `tests/choices.rs` 中的界面选择检查，它确认界面中所有从列表里选择的值都使用 bmo-ui 唯一的 select 组件。控制台包
 带有一个浏览器测试 `client/tests/browser/composer-frame.test.ts`：它在服务的替身之上，通过开发宿主
 `client/dev-app/` 打开界面，并在两种配色方案下直接从页面上读取并确认：撰写评论的输入框在宽度 1280 的代码之间、

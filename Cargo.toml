@@ -22,6 +22,8 @@ test = false
 
 [dependencies]
 axum = { version = "0.8.9", features = ["macros", "multipart", "ws"] }
+# The agency's published client: whose the repositories are, for a member's call through the console.
+bmo-agency-client = { path = "../agency/crates/client" }
 # The console face, by bmo-ui's console plugin contract: the manifest, the bundle's files and their guard.
 bmo-console-face = { path = "../../base/chat/console-face" }
 # The job service's published client: the items filed from a review.

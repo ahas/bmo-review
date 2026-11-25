@@ -4,6 +4,7 @@
 use sqlx::{FromRow, Sqlite, SqlitePool, Transaction};
 
 use crate::http::Refused;
+use crate::owners::Seen;
 use crate::wire::{Comment, CommentQuery, Filing, Review, ReviewQuery, ReviewState};
 
 /// A review as one row reads it, with its count of comments and the items filed from it.
@@ -104,18 +105,25 @@ pub async fn review_in(
   Ok(row.map(ReviewRow::review))
 }
 
-/// The reviews a query narrows to, newest first, past the cursor: at most `limit`, and one more to tell whether
-/// more stand.
-pub async fn reviews(pool: &SqlitePool, query: &ReviewQuery, limit: usize) -> Result<Vec<Review>, Refused> {
+/// The reviews of the projects the reader sees a query narrows to, newest first, past the cursor: at most
+/// `limit`, and one more to tell whether more stand.
+pub async fn reviews(
+  pool: &SqlitePool,
+  query: &ReviewQuery,
+  seen: &Seen,
+  limit: usize,
+) -> Result<Vec<Review>, Refused> {
   let rows: Vec<ReviewRow> = sqlx::query_as(&format!(
     "{REVIEW} WHERE (?1 IS NULL OR r.project_name = ?1) AND (?2 IS NULL OR r.revision = ?2) \
-     AND (?3 IS NULL OR r.state = ?3) AND (?4 IS NULL OR r.id < ?4) ORDER BY r.id DESC LIMIT ?5"
+     AND (?3 IS NULL OR r.state = ?3) AND (?4 IS NULL OR r.id < ?4) \
+     AND (?6 IS NULL OR r.project_name IN (SELECT value FROM json_each(?6))) ORDER BY r.id DESC LIMIT ?5"
   ))
   .bind(query.project_name.as_deref())
   .bind(query.revision.as_deref())
   .bind(query.state.map(ReviewState::as_str))
   .bind(query.after)
   .bind(i64::try_from(limit + 1).unwrap_or(i64::MAX))
+  .bind(seen.names_json())
   .fetch_all(pool)
   .await
   .map_err(failed)?;

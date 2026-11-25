@@ -32,7 +32,8 @@ file = "env/review-console.token"
 # The release's settings.local.toml. The store stands under the data root. The one project at first is the index
 # checkout the install ran from; more are added as further [[projects]] tables and a restart
 # (docs/code-review.md, 「Where the projects come from」). Items filed from a review go to bmo-job under the
-# token it gives this service.
+# token it gives this service, and a member of the console sees the projects the agency records as theirs, the
+# agency asked on its control port with the token its own file holds (docs/api.md, 「The console face」).
 [[settings]]
 file = "env/review.toml"
 text = """
@@ -50,6 +51,10 @@ checkout = "{{index}}"
 [job]
 address = "http://127.0.0.1:{{port.job.server}}"
 token = "{{token.job.review}}"
+
+[agency]
+address = "http://127.0.0.1:{{port.agency.control}}"
+token_file = "{{data_root}}/env/agency.token"
 
 [console]
 token = "{{token.review.console}}"

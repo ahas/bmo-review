@@ -14,9 +14,10 @@ The common wire format and the API design rules are bmo-chat's `docs/conventions
 - **Every route needs `Authorization: Bearer <token>`,** the service token (`[server] token`); a missing or wrong
   token is answered 401 `unauthorized`. An empty token in the settings lets no caller in.
 - **Every route is answered again under `/screen`,** the console's prefix (「The console face」), to the console
-  credential (`[console] token`) alone and held there to the screen's role, as the console face guards it. A
-  route answers under the prefix exactly as it answers at its own path. Where no console face stands, nothing is
-  answered under the prefix.
+  credential (`[console] token`) alone and held there to the screen's role and owner key, as the console face
+  guards it. A route answers under the prefix as it answers at its own path, but that a member reads only the
+  projects their account owns (「The console face」, 「Whose projects a reader sees」). Where no console face
+  stands, nothing is answered under the prefix.
 - **Bodies are JSON, both ways, with field names in camelCase.**
 - **Times are integers of epoch milliseconds,** each field ending in `At`, and a commit's time is `at`.
 - **A failure** is a non-2xx answer whose body is `code`, a kebab-case code a caller matches on, and `error`, an
@@ -49,7 +50,8 @@ open and migrated.
 - **A project:** `name`, `checkout` (the absolute path the settings name), `state` (`ready`, `missing`, `not-git` or
   `no-commits`), `head` (HEAD's full hash, null unless `ready`), `branch` (the branch HEAD names, null where it
   names none or the project is not `ready`) and `uncommittedCount` (the tracked files' uncommitted changes). The
-  cursor is the last project's `name`. Every project the settings name stands, an unreadable one with its state.
+  cursor is the last project's `name`. Every project the settings name that the caller sees stands, an unreadable
+  one with its state.
 - **A tree entry:** `path`, `kind` (`file`, `folder`, `link` or `submodule`), `byteCount` (a file's bytes, null
   otherwise) and `pinnedRevision` (a submodule's revision, null otherwise). The entries are every one under
   `path`, at any depth, in path order, the excluded ones left out; the cursor is the last entry's `path`, and
@@ -74,8 +76,9 @@ open and migrated.
   empty page.
 - **The cursor of matches and definitions** is the count of items already read, since a search keeps nothing to
   key on; `more` is true where items stand past the page or a ceiling or the time cut the search.
-- **A project the settings do not name** is answered `not-found`, and so is a revision that resolves to no commit
-  of it; a checkout that cannot be read is answered `unreadable-checkout`, its state in the sentence.
+- **A project the settings do not name,** or one the caller does not see, is answered `not-found`, and so is a
+  revision that resolves to no commit of it; a checkout that cannot be read is answered `unreadable-checkout`, its
+  state in the sentence.
 
 ## Reviews
 
@@ -92,9 +95,9 @@ open and migrated.
 - **A review:** `id`, `projectName`, `revision` (the full hash), `title`, `state` (`open`, `answered` or
   `closed`), `authorName`, `commentCount`, `itemIds` (the job service's items filed from it, oldest first),
   `createdAt` and `changedAt`. The list's cursor is the last review's `id`, and each filter given narrows it.
-- **Opening a review** resolves the revision in the project's checkout; a project the settings do not name is
-  refused `unknown-project`, a revision that resolves to no commit `unknown-revision`, and a checkout that cannot
-  be read `unreadable-checkout`. The title and the author's name are refused `bad-request` where empty or past
+- **Opening a review** resolves the revision in the project's checkout; a project the settings do not name, or
+  one the caller does not see, is refused `unknown-project`, a revision that resolves to no commit
+  `unknown-revision`, and a checkout that cannot be read `unreadable-checkout`. The title and the author's name are refused `bad-request` where empty or past
   their ceilings.
 - **Changing a review** is a change of its state, `open` or `closed`; a move its states do not allow, `answered`
   among them, is refused `conflict` (`docs/code-review.md`, 「Its states」).
@@ -111,7 +114,8 @@ open and migrated.
   creates the item in the job service (「Calls this service makes」); the job service's refusal is answered
   `filing-refused`, its code and sentence in this service's sentence, and a job service that cannot be reached
   or fails `upstream-failed`.
-- **An unknown review** is answered `not-found`.
+- **An unknown review,** or a review of a project the caller does not see, is answered `not-found`; a list leaves
+  out the reviews of the projects the caller does not see.
 
 ## Events
 
@@ -126,6 +130,9 @@ open and migrated.
   last 1,000 events in its store; a resume from before them is answered 410 `gone`, and the reader reads the
   collections again.
 - **A page** takes `after` and `limit`. The stream says a comment line every fifteen seconds.
+- **What a reader hears** is the events of the reviews of the projects they see: a page, and the part of a stream
+  read from the store, by the projects they see as it is read; each event a stream hears live, by the projects
+  they see as it is heard.
 - **A stream ends when the service is told to stop,** so a stop waits on no reader; the reader resumes with the
   number of the last event it read.
 
@@ -144,7 +151,7 @@ open and migrated.
 | 401 | `unauthorized` | no token, or not the one the settings name for the route |
 | 403 | `forbidden` | under `/screen`, the console's call names no role that opens the screen |
 | 404 | `no-route` | no route answers the method and path |
-| 404 | `not-found` | nothing stands at the project, the revision, the path or the review the request names |
+| 404 | `not-found` | nothing stands at the project, the revision, the path or the review the request names, or the caller does not see its project |
 | 409 | `conflict` | the review's states do not allow the change |
 | 410 | `gone` | the events since the number asked for are no longer kept |
 | 422 | `unreadable-checkout` | the project's checkout is missing, not in a git repository or without commits |
@@ -154,16 +161,21 @@ open and migrated.
 | 422 | `not-a-name` | the definition search does not take the word |
 | 422 | `filing-refused` | the job service refused the item |
 | 500 | `failed` | the service failed; the sentence is the failure |
-| 502 | `upstream-failed` | the job service could not be reached or failed |
+| 502 | `upstream-failed` | the job service could not be reached or failed, or, for a member's call under `/screen`, the agency |
 
 ## Calls this service makes
 
 Each unit is reached only through the client it publishes, at the base address and with the token the settings
-name, and its contract is that unit's own document.
+name, or the file they name holds, and its contract is that unit's own document.
 
 - **bmo-job,** through `bmo-job-client`, taken from its checkout beside this one: `POST /items` for a filing, with the caller's `title`,
   `brief` and `queueName`, and as `labels` the review's `reviewId`, `projectName` and `revision`; this service
   reads the item's `id`.
+- **The agency,** through `bmo-agency-client`, taken from its checkout beside this one: `GET /repositories`, with
+  no owner's headers, as the deployment's own caller, for a member's call under `/screen` alone; this service reads
+  each repository's `name` and `ownerAccount` (「Whose projects a reader sees」). What it answered is kept two
+  seconds at most and shared by every member's call, and a call it has not answered in five seconds counts as not
+  answered.
 - **git,** run in a project's checkout as `docs/code-review.md` 「How git is called」 states, reading only.
 - **Its own store,** the SQLite file the settings name, migrated from `migrations/` at start.
 
@@ -207,8 +219,16 @@ review chooses within it.
 - **The bundle.** Named `code`, its title the word `code.title.screen` and a review icon, its one screen under
   `/code`, relayed as the service `review` with its calls under the prefix `/screen`, its entry standing in the
   console sidebar's `administration` section, among the services an administrator runs the system with.
-- **Its readers.** Every member and administrator, with no owner key: no route reads the reader's account, and
-  a review or a comment is signed with the name its writer gives.
+- **Its readers.** Every member and administrator holding an owner key, the account the console names with
+  `Owner-Key`. A review or a comment is signed with the name its writer gives, never the account.
+- **Whose projects a reader sees.** A call under the prefix whose `Owner-Role` is `administrator` sees every
+  project the settings name, and the service asks the agency nothing for it. A member sees a project only where a
+  repository of the same name stands among the agency's repositories with its `ownerAccount` the account
+  `Owner-Key` names: a repository with no owner, one another account owns or one an organisation unit owns is not
+  theirs. Every route under the prefix holds a member to it (「Projects」, 「Reviews」, 「Events」). Where the
+  settings name no agency, or name a token file that cannot be read, a member sees no project; where the agency
+  refuses or does not answer, a member's call is answered `upstream-failed`, which the screen says in its pack's
+  words. A call at a route's own path, with the service token, sees every project.
 - **What it reads.** The event stream (「Events」), under the prefix like every call the screen makes. No
   notice a console raises, no WebSocket, no share page, no sidebar count, no other service called and no route
   relayed outside the prefix.
@@ -239,6 +259,8 @@ binary (a deployment's root); then `BMO_REVIEW_<TABLE>__<KEY>` in the environmen
 | `store` | `path` | the SQLite file the reviews, comments, filings and events stand in |
 | `projects` | a list of `name`, `checkout` | the projects: each checkout that can be read, under the name it is asked by |
 | `job` | `address`, `token` | bmo-job's base address and the token it takes |
+| `agency` | `address` | the agency's base address, the port it answers its routes on; empty, no agency is asked |
+| `agency` | `token_file` | the file holding the token the agency takes, read once at start, from where the process starts where it is relative; empty or unreadable, no agency is asked |
 | `console` | `token` | the console credential; empty, the console reaches nothing |
 | `console` | `folder` | the folder the console bundle's build writes, read from where the process starts where it is relative |
 | `limits` | `file_bytes`, `binary_probe` | the body ceiling, and how far into a file a NUL marks it binary |

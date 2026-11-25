@@ -28,6 +28,7 @@ pub struct Settings {
   #[serde(default)]
   pub projects: Vec<Project>,
   pub job: Peer,
+  pub agency: Agency,
   pub console: Console,
   pub limits: Limits,
 }
@@ -70,6 +71,17 @@ pub struct Project {
 pub struct Peer {
   pub address: String,
   pub token: String,
+}
+
+/// The agency, asked whose the repositories are for a member's call through the console (`docs/api.md`, 「The
+/// console face」).
+#[derive(Clone, Debug, Deserialize)]
+pub struct Agency {
+  /// Its base address; an empty one leaves no agency to ask.
+  pub address: String,
+  /// The file holding the token it takes, read once at start; a relative one is read from where the process
+  /// starts, and an empty one leaves no agency to ask.
+  pub token_file: PathBuf,
 }
 
 /// The ceilings of reading a checkout and of what a review and a comment take (`docs/code-review.md`).

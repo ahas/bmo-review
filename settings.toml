@@ -19,6 +19,13 @@ path = "review.db"
 address = "http://127.0.0.1:7841"
 token = ""
 
+# The agency, asked whose the repositories are for a member's call through the console (docs/api.md, 「The console
+# face」): its base address, and the file holding the token it takes, so no token is copied here. Either left
+# empty, no agency is asked and a member sees no project.
+[agency]
+address = "http://127.0.0.1:3220"
+token_file = ""
+
 # The console face (docs/api.md, 「The console face」).
 [console]
 # The console's credential; empty, the console reaches nothing.

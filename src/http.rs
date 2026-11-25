@@ -21,6 +21,7 @@ use serde::de::DeserializeOwned;
 use crate::console;
 use crate::events::Events;
 use crate::openapi::Stated;
+use crate::owners::{self, Owners, Reader, Seen};
 use crate::settings::Settings;
 use crate::store::Store;
 use crate::wire::WireError;
@@ -174,6 +175,8 @@ pub struct Standing {
   pub events: Events,
   /// The job service's client, at the address the settings name.
   pub job: JobClient,
+  /// The agency, asked whose the repositories are for a member's call through the console.
+  pub owners: Arc<Owners>,
   /// The console face, where a console credential is set and the bundle's folder holds a bundle.
   pub face: Option<ConsoleFace>,
 }
@@ -184,6 +187,7 @@ impl Standing {
   pub fn new(settings: Settings, store: Store) -> Result<Self, String> {
     let job = JobClient::new(&settings.job.address, &settings.job.token)
       .map_err(|why| format!("the job service's address does not read: {why}"))?;
+    let owners = Owners::new(&settings.agency)?;
     let face = console_face(&settings);
 
     Ok(Self {
@@ -191,6 +195,7 @@ impl Standing {
       events: Events::new(store.clone()),
       store,
       job,
+      owners: Arc::new(owners),
       face,
     })
   }
@@ -226,6 +231,20 @@ impl Call {
   /// What the service stands on.
   pub fn standing(&self) -> &Standing {
     &self.standing
+  }
+
+  /// Who the call reads for: the reader the console names on a call through it, everyone at a route's own path.
+  pub fn reader(&self) -> Reader {
+    self.request.extensions().get::<Reader>().cloned().unwrap_or(Reader::Everyone)
+  }
+
+  /// The projects the call's reader sees (`docs/api.md`, 「The console face」). What it waits on holds nothing of
+  /// the call, so a route may wait on it while it holds the call.
+  pub fn seen(&self) -> impl Future<Output = Result<Seen, Refused>> + Send + 'static {
+    let owners = self.standing.owners.clone();
+    let reader = self.reader();
+
+    async move { owners.seen(&reader).await }
   }
 
   /// The parameters the route's path names, by name, percent-decoded.
@@ -354,7 +373,8 @@ async fn no_route(request: Request) -> Response {
 
 /// The router answering every registered route behind the service token, and, where a console face stands, its
 /// routes and every registered route again under the console's prefix, behind the console credential and the
-/// face's guard of the screen's role; or what is wrong with the routes linked in.
+/// face's guard of the screen's role, each call there marked with the reader the console names; or what is wrong
+/// with the routes linked in.
 pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
   let faults = route_faults();
 
@@ -398,6 +418,7 @@ pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
     let screens = face
       .guard_screens(routes)
       .fallback(no_route)
+      .layer(middleware::from_fn(owners::mark_reader))
       .layer(middleware::from_fn_with_state(standing.clone(), require_console_credential));
 
     router = router.nest(prefix, screens).merge(face.router());

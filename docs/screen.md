@@ -11,7 +11,10 @@ naming the same placeholders, and the pack's test holds them to it.
 ## Where it stands
 
 - **The place a reader browses, reads and reviews** each project's checkout. A console serves it at `/code`,
-  under the title and icon the manifest names, to a reader holding the `member` role or the `administrator`. Its
+  under the title and icon the manifest names, to a reader holding the `member` role or the `administrator` and an
+  owner key. An administrator reads every project the service names; a member reads only the projects whose
+  repository the agency records as their own account's, and sees no other project's reviews (`docs/api.md`,
+  「The console face」). Its
   sidebar entry stands in the console's administration section, among the services an administrator runs the
   system with, as the manifest's `sidebarSection` names it. Code is only read; what is written is reviews,
   comments and filed items.

@@ -138,7 +138,7 @@
       "not-a-name": "找不到此词的定义。",
       "filing-refused": "TODO 服务未接受该事项。请检查队列名称。",
       "failed": "代码评审服务出错。",
-      "upstream-failed": "图谱服务或 TODO 服务未响应。"
+      "upstream-failed": "界面依赖的服务未响应。"
     },
     "shared": {
       "action": {

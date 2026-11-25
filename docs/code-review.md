@@ -23,6 +23,10 @@
 - **The checkout** is the absolute path the settings name. Its tree is the whole repository the checkout stands
   in, as git reads it from that directory.
 - **A name the settings do not give** is no project.
+- **Who sees which project.** A caller with the service token and an administrator of the console see every
+  project. A member of the console sees only the projects whose repository the agency records as owned by their
+  own account, the repository of the same name; to a member every other project, its reviews, their comments and
+  filings, and their events stand nowhere (`docs/api.md`, 「The console face」).
 
 ### Unreadable checkouts are listed with the reason
 

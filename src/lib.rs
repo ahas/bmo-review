@@ -10,6 +10,7 @@ pub mod http;
 pub mod import;
 pub mod mcp;
 pub mod openapi;
+pub mod owners;
 pub mod review;
 pub mod settings;
 pub mod store;

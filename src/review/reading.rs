@@ -22,8 +22,9 @@ use crate::wire::{
 /// The project a route's path names.
 async fn project_of(call: &mut Call) -> Result<Checkout, Refused> {
   let name = call.path_param("projectName").await?;
+  let seen = call.seen().await?;
 
-  require(call.standing(), &name)
+  require(call.standing(), &seen, &name)
 }
 
 /// A page of a search's items, its cursor the count already read: whether more stand past the page, or the
@@ -38,7 +39,7 @@ fn search_page<T>(found: Found<T>, after: Option<u32>, limit: Option<u32>) -> Re
   Ok(Page { items, more })
 }
 
-/// `GET /projects`: the projects, each with whether there is anything in it to read and where it
+/// `GET /projects`: the projects the reader sees, each with whether there is anything in it to read and where it
 /// stands. A project whose checkout cannot be read stays in the list with its state rather than vanishing.
 pub struct Projects;
 
@@ -49,7 +50,8 @@ impl Route for Projects {
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let query: ProjectQuery = call.query()?;
     let limit = page_size(query.limit, PAGE, MOST_PAGE)?;
-    let (checkouts, more) = projects::page(call.standing(), query.after.as_deref(), limit);
+    let seen = call.seen().await?;
+    let (checkouts, more) = projects::page(call.standing(), &seen, query.after.as_deref(), limit);
     let items = join_all(checkouts.into_iter().map(|checkout| async move {
       let standing = checkout_state(&checkout.root).await;
 

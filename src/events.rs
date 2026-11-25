@@ -1,6 +1,6 @@
 //! The service's one event stream (`docs/api.md`, 「Events」): each write numbered and kept in the store with the
 //! member it moved, a window of the latest kept for a reader resuming, and handed to every live reader in the
-//! order the numbers run.
+//! order the numbers run, each reader hearing the events of the projects they see.
 
 use std::convert::Infallible;
 use std::sync::Arc;
@@ -19,6 +19,7 @@ use tokio_stream::wrappers::BroadcastStream;
 
 use crate::http::{Call, MOST_PAGE, PAGE, Refused, Route, answer, page_size};
 use crate::openapi::{Stated, query};
+use crate::owners::Seen;
 use crate::store::{Store, now_ms};
 use crate::wire::{Event, EventQuery, Page};
 
@@ -35,11 +36,18 @@ pub const REVIEW_CHANGED: &str = "review.changed";
 pub const COMMENT_CREATED: &str = "comment.created";
 pub const FILING_CREATED: &str = "filing.created";
 
+/// An event as the live readers hear it, with the project its review is of.
+#[derive(Clone, Debug)]
+struct Heard {
+  event: Event,
+  project_name: String,
+}
+
 /// The event log of the service.
 #[derive(Clone)]
 pub struct Events {
   store: Store,
-  live: broadcast::Sender<Event>,
+  live: broadcast::Sender<Heard>,
   // Held from a write's start to its events' announcement, so live readers hear the numbers in order.
   writing: Arc<Mutex<()>>,
   // Set once the service is told to stop: every live stream ends then, so the stop waits on no reader.
@@ -50,7 +58,7 @@ pub struct Events {
 pub struct Writing<'a> {
   events: &'a Events,
   _held: MutexGuard<'a, ()>,
-  recorded: Vec<Event>,
+  recorded: Vec<Heard>,
 }
 
 impl Writing<'_> {
@@ -63,6 +71,11 @@ impl Writing<'_> {
     data: &impl Serialize,
   ) -> Result<(), Refused> {
     let data = serde_json::to_value(data).map_err(Refused::failed)?;
+    let project_name: String = sqlx::query_scalar("SELECT project_name FROM reviews WHERE id = ?")
+      .bind(review_id)
+      .fetch_one(&mut **transaction)
+      .await
+      .map_err(Refused::failed)?;
     let at = now_ms();
     let id: i64 =
       sqlx::query_scalar("INSERT INTO events (kind, review_id, at, data) VALUES (?, ?, ?, ?) RETURNING id")
@@ -80,11 +93,14 @@ impl Writing<'_> {
       .await
       .map_err(Refused::failed)?;
 
-    self.recorded.push(Event {
-      id,
-      kind: kind.to_owned(),
-      at,
-      data,
+    self.recorded.push(Heard {
+      event: Event {
+        id,
+        kind: kind.to_owned(),
+        at,
+        data,
+      },
+      project_name,
     });
 
     Ok(())
@@ -92,9 +108,9 @@ impl Writing<'_> {
 
   /// Hands the events recorded to the live readers, once their transaction is committed.
   pub fn announce(self) {
-    for event in self.recorded {
+    for heard in self.recorded {
       // No reader listening is no failure: the window keeps it for the next one.
-      let _ = self.events.live.send(event);
+      let _ = self.events.live.send(heard);
     }
   }
 }
@@ -118,15 +134,16 @@ impl Row {
   }
 }
 
-/// What a reader narrowed the stream to.
-#[derive(Clone, Debug, Default)]
+/// What a reader narrowed the stream to, and the projects they see as it is read.
+#[derive(Clone, Debug)]
 struct Narrowing {
   kinds: Vec<String>,
   review_id: Option<i64>,
+  seen: Seen,
 }
 
 impl Narrowing {
-  fn of(query: &EventQuery) -> Self {
+  fn of(query: &EventQuery, seen: Seen) -> Self {
     let kinds = query
       .kinds
       .iter()
@@ -139,6 +156,7 @@ impl Narrowing {
     Self {
       kinds,
       review_id: query.review_id,
+      seen,
     }
   }
 
@@ -211,12 +229,15 @@ impl Events {
       "SELECT id, kind, at, data FROM events WHERE id > ?1 \
        AND (?2 IS NULL OR review_id = ?2) \
        AND (?3 IS NULL OR kind IN (SELECT value FROM json_each(?3))) \
+       AND (?5 IS NULL OR review_id IN (SELECT id FROM reviews \
+         WHERE project_name IN (SELECT value FROM json_each(?5)))) \
        ORDER BY id LIMIT ?4",
     )
     .bind(after)
     .bind(narrowing.review_id)
     .bind(narrowing.kinds_json())
     .bind(limit.map_or(-1, |limit| i64::try_from(limit + 1).unwrap_or(i64::MAX)))
+    .bind(narrowing.seen.names_json())
     .fetch_all(self.store.pool())
     .await
     .map_err(Refused::failed)?;
@@ -236,7 +257,7 @@ impl Route for EventStream {
     let query: EventQuery = call.query()?;
     let resumed = call.header("last-event-id").and_then(|id| id.trim().parse::<i64>().ok());
     let after = query.after.or(resumed).unwrap_or(0);
-    let narrowing = Narrowing::of(&query);
+    let narrowing = Narrowing::of(&query, call.seen().await?);
     let events = &call.standing().events;
 
     if call.accepts_json() {
@@ -254,13 +275,24 @@ impl Route for EventStream {
     let mut stopping = events.stopping.subscribe();
     let kept = events.since(after, &narrowing, None).await?;
     let replayed = kept.last().map_or(after, |event| event.id);
+    let owners = call.standing().owners.clone();
+    let reader = call.reader();
     let live = live
       // A reader too slow for the channel is let go; it resumes from the window with the last number it read.
       .take_while(|heard| std::future::ready(heard.is_ok()))
       .filter_map(move |heard| {
-        let wanted = heard.ok().filter(|event| event.id > replayed && narrowing.wants(event));
+        let wanted = heard.ok().filter(|heard| heard.event.id > replayed && narrowing.wants(&heard.event));
+        let owners = owners.clone();
+        let reader = reader.clone();
 
-        std::future::ready(wanted)
+        // Each event heard live is judged by the projects the reader sees as it is heard; where that cannot be
+        // read, the event is not sent.
+        async move {
+          let heard = wanted?;
+          let seen = owners.seen(&reader).await.ok()?;
+
+          seen.holds(&heard.project_name).then_some(heard.event)
+        }
       });
     let sent = stream::iter(kept)
       .chain(live)

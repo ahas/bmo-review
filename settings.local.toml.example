@@ -16,5 +16,9 @@ checkout = "/srv/checkouts/example"
 address = "http://127.0.0.1:7841"
 token = "job-token"
 
+[agency]
+address = "http://127.0.0.1:3220"
+token_file = "/srv/bmo/env/agency.token"
+
 [console]
 token = "console-token"

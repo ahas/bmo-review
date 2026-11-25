@@ -5,8 +5,9 @@
 Code review over git checkouts as one service with its own API: the checkouts its settings name, each
 read at a revision (its tree, its files, its commits and each commit's diff, a content search and a definition
 search), reviews of a revision with their comments on its lines, files and folders, and items filed from a
-review into the job service. Nothing is written to a checkout. The job service is reached
-only through the clients they publish, as `docs/api.md` lists.
+review into the job service. Nothing is written to a checkout. A member of the console sees only the projects the
+agency records as their account's. The job service and the agency are reached only through the clients they
+publish, as `docs/api.md` lists.
 
 The service publishes its own client (`bmo_review::client`), its OpenAPI document (`docs/openapi.json`, printed
 by `bmo-review openapi`), and its harness plugin: the MCP server `bmo-review mcp` and the `bmo-review` skill
@@ -18,7 +19,9 @@ The testbed's `personal-data` check holds the personal-data rule (`PERSONAL-DATA
 the import's test in `tests/import.rs`; and the console face's
 test in `tests/screen.rs`, which reads the manifest the service serves through bmo-ui's own reading on the release
 the client vendors, run by bmo-chat's `bmo-console-face` (Bun on the machine), and holds which credential each of
-the service's routes takes; and the screen's select check in `tests/choices.rs`, which holds that every value the
+the service's routes takes; the console readers' test in `tests/owners.rs`, which holds over a stand-in agency
+that a member reads only the projects their account owns, an administrator every one, and a member nothing where
+no agency answers; and the screen's select check in `tests/choices.rs`, which holds that every value the
 screen lets be chosen from a list stands in bmo-ui's one select. The console bundle carries one browser test,
 `client/tests/browser/composer-frame.test.ts`, which opens the screen in its dev host `client/dev-app/` over a
 stand-in of the service and reads off the page, in both schemes, that the box a comment is written in has one frame

@@ -24,7 +24,8 @@ const DESCRIPTION: &str = "Code review over git checkouts: projects named as the
   A revision is seven to sixty-four hex characters, HEAD where absent. A file's path stands as the rest of the \
   path. Every failure is answered in the error shape with its status. Every route takes the service token; \
   where a console face stands, every route is answered again under `/screen`, the console's prefix, to the \
-  console credential alone and guarded as bmo-ui's console plugin contract states, and the console face's \
+  console credential alone and guarded as bmo-ui's console plugin contract states, a member reading there only \
+  the projects whose repository the agency records as owned by their account, and the console face's \
   manifest and files are stated under the `console` tag. The \
   harness plugin's tools, each a thin call of one route, are stated under `x-tools`.";
 
@@ -43,7 +44,7 @@ const CODES: &[(&str, u16, &str)] = &[
     "not-found",
     404,
     "nothing stands at the project, the revision, the path, the review or the console bundle's file the request \
-     names",
+     names, or the caller does not see its project",
   ),
   ("conflict", 409, "the review's states do not allow the change"),
   ("gone", 410, "the events since the number asked for are no longer kept"),
@@ -66,7 +67,11 @@ const CODES: &[(&str, u16, &str)] = &[
   ("not-a-name", 422, "the definition search does not take the word"),
   ("filing-refused", 422, "the job service refused the item"),
   ("failed", 500, "the service failed"),
-  ("upstream-failed", 502, "the job service could not be reached or failed"),
+  (
+    "upstream-failed",
+    502,
+    "the job service could not be reached or failed, or, for a member's call under /screen, the agency",
+  ),
 ];
 
 /// The codes every route reading a project can answer.

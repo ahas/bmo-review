@@ -7,7 +7,7 @@
   "apiPrefix": "/screen",
   "role": "member",
   "sidebarSection": "administration",
-  "ownerKey": false,
+  "ownerKey": true,
   "events": true,
   "websocket": false,
   "pushKinds": []

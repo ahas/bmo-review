@@ -11,6 +11,7 @@ use super::workspace::{cut_units, find_entry, head_of, read_tree_file, resolve_c
 use crate::events::{COMMENT_CREATED, REVIEW_CHANGED, REVIEW_CREATED};
 use crate::http::{Call, MOST_PAGE, PAGE, Refused, Route, Standing, answer, page_size};
 use crate::openapi::{Stated, json_of, query, review_key, schema_of};
+use crate::owners::Seen;
 use crate::settings::Limits;
 use crate::store::now_ms;
 use crate::wire::{
@@ -31,16 +32,18 @@ pub fn required(field: &str, text: &str, most: usize) -> Result<(), Refused> {
   Ok(())
 }
 
-/// The review a route's path names.
+/// The review a route's path names, a review of a project the reader does not see being none.
 pub async fn review_of(call: &mut Call) -> Result<Review, Refused> {
   let id = call.path_id("reviewId").await?;
+  let seen = call.seen().await?;
 
   records::review(call.standing().store.pool(), id)
     .await?
+    .filter(|review| seen.holds(&review.project_name))
     .ok_or_else(|| Refused::not_found(format!("no review has id {id}")))
 }
 
-/// `GET /reviews`: the reviews a query narrows to, newest first.
+/// `GET /reviews`: the reviews of the projects the reader sees a query narrows to, newest first.
 pub struct Reviews;
 
 impl Route for Reviews {
@@ -50,7 +53,8 @@ impl Route for Reviews {
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let query: ReviewQuery = call.query()?;
     let limit = page_size(query.limit, PAGE, MOST_PAGE)?;
-    let mut items = records::reviews(call.standing().store.pool(), &query, limit).await?;
+    let seen = call.seen().await?;
+    let mut items = records::reviews(call.standing().store.pool(), &query, &seen, limit).await?;
     let more = items.len() > limit;
 
     items.truncate(limit);
@@ -88,7 +92,8 @@ impl Route for OpenReview {
     required("title", &asked.title, limits.title)?;
     required("authorName", &asked.author_name, limits.author_name)?;
 
-    let checkout = projects::find(standing, &asked.project_name).ok_or_else(|| {
+    let seen = call.seen().await?;
+    let checkout = projects::find(standing, &seen, &asked.project_name).ok_or_else(|| {
       Refused::unprocessable("unknown-project", format!("no project is named {}", asked.project_name))
     })?;
     let revision = projects::revision(&checkout, Some(&asked.revision)).await?.ok_or_else(|| {
@@ -195,7 +200,7 @@ impl Route for ChangeReview {
   const PATH: &'static str = "/reviews/{reviewId}";
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("reviewId").await?;
+    let id = review_of(&mut call).await?.id;
     let change: ReviewChange = call.body().await?;
     let standing = call.standing();
     let mut writing = standing.events.write().await;
@@ -305,7 +310,8 @@ async fn place_of(
       excerpt: None,
     });
   };
-  let checkout = projects::find(standing, &review.project_name).ok_or_else(|| {
+  // The review's own project, which the reader sees since they reached the review.
+  let checkout = projects::find(standing, &Seen::All, &review.project_name).ok_or_else(|| {
     Refused::unprocessable("unknown-project", format!("no project is named {}", review.project_name))
   })?;
 

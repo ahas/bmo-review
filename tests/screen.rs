@@ -18,7 +18,7 @@ const CONSOLE: &str = "console-test-credential";
 /// The client's folder.
 const CLIENT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/client");
 
-fn scratch(name: &str) -> PathBuf {
+pub(crate) fn scratch(name: &str) -> PathBuf {
   let folder = std::env::temp_dir().join(format!("bmo-review-screen-{}-{name}", std::process::id()));
   let _ = std::fs::remove_dir_all(&folder);
   std::fs::create_dir_all(&folder).expect("the scratch folder is made");
@@ -27,7 +27,7 @@ fn scratch(name: &str) -> PathBuf {
 }
 
 /// A bundle as bmo-ui's bundle build writes one, built on `layer`.
-fn build(folder: &Path, layer: &str) {
+pub(crate) fn build(folder: &Path, layer: &str) {
   std::fs::create_dir_all(folder.join("chunks")).expect("the bundle's folders are made");
   std::fs::write(folder.join("review.js"), "export default { routes: [] };")
     .expect("the module is written");
@@ -43,7 +43,7 @@ fn build(folder: &Path, layer: &str) {
 }
 
 /// The release of bmo-ui the client has installed, as its own layer file names it.
-fn installed_layer() -> String {
+pub(crate) fn installed_layer() -> String {
   let path = Path::new(CLIENT).join("node_modules/bmo-ui/shared/layer.json");
   let file: Value =
     serde_json::from_slice(&std::fs::read(path).expect("the client's packages are installed"))
@@ -82,12 +82,13 @@ async fn serve(scratch: &Path, folder: &Path) -> String {
   address
 }
 
-// A GET of `path` under `bearer`, with `Owner-Role: role` where given: its status and its body.
+// A GET of `path` under `bearer`, with `Owner-Role: role` and an owner key where a role is given: its status and
+// its body.
 async fn get(address: &str, path: &str, bearer: &str, role: Option<&str>) -> (u16, String) {
   let mut request = reqwest::Client::new().get(format!("{address}{path}")).bearer_auth(bearer);
 
   if let Some(role) = role {
-    request = request.header("Owner-Role", role);
+    request = request.header("Owner-Role", role).header("Owner-Key", "7");
   }
 
   let answered = request.send().await.expect("the service answers");
@@ -115,7 +116,7 @@ async fn the_served_manifest_is_read_by_the_contract_on_the_vendored_release() {
   assert_eq!(read["apiPrefix"], "/screen");
   assert_eq!(read["role"], "member");
   assert_eq!(read["sidebarSection"], "administration");
-  assert_eq!(read["ownerKey"], false);
+  assert_eq!(read["ownerKey"], true);
   assert_eq!(read["events"], true);
 }
 
