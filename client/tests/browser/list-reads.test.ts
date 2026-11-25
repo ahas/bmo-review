@@ -67,12 +67,10 @@ function answered(body: unknown, status = 200): Parameters<Route["fulfill"]>[0] 
   return { status, contentType: "application/json", body: JSON.stringify(body) };
 }
 
-/** The places of the screen that announce themselves as still reading what they show, by the name each reads under. */
-async function reading(page: Page): Promise<number> {
-  const files = await page.getByRole("status", { name: ko.code.status.files_loading, exact: true }).count();
-  const reviews = await page.getByRole("status", { name: ko.code.status.reviews_loading, exact: true }).count();
-
-  return files + reviews;
+// Whether the place that reads under `name` still stands its loading display. Each place ends with its own read, and a region
+// whose answer has landed stands it while another reads on, so a test names the place its own read was.
+async function stillReading(page: Page, name: string): Promise<number> {
+  return page.getByRole("status", { name, exact: true }).count();
 }
 
 // A list read answered as refusing until the test opens it to `then`, and to nothing before that: the caller's own retry of a
@@ -105,9 +103,9 @@ test.skipIf(!ready)(
   async () => {
     const page = await screenWith(PROJECTS_PATH, async (route) => await route.fulfill(answered({ items: [], more: false })));
 
-    // The read ended answering nothing the reader sees: that is said, and no place is left reading.
+    // The read ended answering nothing the reader sees: that is said, and the tree's place is no longer reading.
     await page.getByText(ko.code.status.no_projects, { exact: true }).waitFor({ timeout: FOLLOWS_MS });
-    expect(await reading(page)).toBe(0);
+    expect(await stillReading(page, ko.code.status.files_loading)).toBe(0);
 
     await page.context().close();
   },
@@ -121,7 +119,7 @@ test.skipIf(!ready)(
 
     await reason(page).waitFor({ timeout: FOLLOWS_MS });
     await again(reason(page)).waitFor({ timeout: FOLLOWS_MS });
-    expect(await reading(page)).toBe(0);
+    expect(await stillReading(page, ko.code.status.files_loading)).toBe(0);
 
     await page.context().close();
   },
@@ -141,7 +139,7 @@ test.skipIf(!ready)(
     // The list answered on the second reading: the tree it makes room for stands where the display stood.
     await page.getByText(FILE, { exact: true }).first().waitFor({ timeout: FOLLOWS_MS });
     expect(await reason(page).count()).toBe(0);
-    expect(await reading(page)).toBe(0);
+    expect(await stillReading(page, ko.code.status.files_loading)).toBe(0);
 
     await page.context().close();
   },
@@ -161,7 +159,7 @@ test.skipIf(!ready)(
     // The reviews answered empty: its own line stands where the reason stood, and the reason is gone.
     await page.getByText(ko.code.status.no_reviews, { exact: true }).waitFor({ timeout: FOLLOWS_MS });
     expect(await reason(page).count()).toBe(0);
-    expect(await reading(page)).toBe(0);
+    expect(await stillReading(page, ko.code.status.reviews_loading)).toBe(0);
 
     await page.context().close();
   },

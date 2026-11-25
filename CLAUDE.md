@@ -82,5 +82,5 @@ These hold every bmo repository, and every change here (archive document #301, i
 3. **Verification:** the tests touched, then the whole suite once, output written to a file and the
    file read. The behaviour tests are deferred, so the suite holds the import's test,
    the console face's test, which reads the served manifest through bmo-ui's own reading on the release
-   `client/vendor/` holds, run by Bun, the screen's select check, and the client's browser tests: the writing
-   box's frame, and how the screen ends when the readings of its lists end.
+   `client/vendor/` holds, run by Bun, the screen's select check, the language pack's test, and the client's
+   browser tests: the writing box's frame, and how the screen ends when the readings of its lists end.

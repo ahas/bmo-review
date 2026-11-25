@@ -14,7 +14,7 @@
     "api": "openapi-typescript ../docs/openapi.json -o shared/openapi.ts",
     "bundle": "vite build -c bundle/vite.config.ts",
     "typecheck": "nuxi typecheck && tsc -p tests/tsconfig.json",
-    "check": "bun run typecheck"
+    "check": "bun test tests/words && bun run typecheck"
   },
   "dependencies": {
     "@nuxt/ui": "4.12.2",

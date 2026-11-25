@@ -14,10 +14,10 @@ setup = ["cd client && bun install --frozen-lockfile"]
 
 [projects]
 # The console plugin bundle under client/ is a project of its own: its manifest stands outside any package
-# workspace. Bun runs its check script in the suite, and the client-typecheck step below runs the same
-# install and typecheck in the static check.
+# workspace. Bun runs its check script, the language pack's test and the typecheck, in the suite, and the
+# client-typecheck step below runs the install and the typecheck in the static check.
 paths = ["client"]
-check_script = "typecheck"
+check_script = "check"
 
 [check]
 # The sweeps that read the tree before anything runs: Korean in the code, the README's folder table and the
