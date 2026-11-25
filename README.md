@@ -42,7 +42,7 @@ they stand, the build check is `cargo check --all-targets` and the bundle's type
 | `docs/` | The canonical statements of what the service does, and its OpenAPI document |
 | `tests/` | The import's test, the console face's test and the screen's select check |
 
-At the root stand the Cargo manifest, `LICENSE`, `VERSION`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
+At the root stand the Cargo manifest, `LICENSE`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `PERSONAL-DATA.md`, `korean-ledger.json`, `settings.toml` and `settings.local.toml.example`, the example of the
 local settings a deployment gives.
 
@@ -70,5 +70,5 @@ document by `bun run api`. The bundle's check is `bun install --frozen-lockfile 
 
 ## Version
 
-`VERSION` holds the repository's version, the crate's own, `0.1.0-rev.<n>` before the first release. It moves
-only at a release the owner declares (`docs/api.md`, 「Versions」).
+The version is the set's, read off the git tags when a build is made; the crate's manifest version is a
+placeholder that never moves. A version moves only at a release the owner declares (`docs/api.md`, 「Versions」).

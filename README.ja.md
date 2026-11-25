@@ -42,7 +42,7 @@ git チェックアウトを対象にコードレビューを行う、独自の 
 | `docs/` | サービスの動作を定める正典ドキュメントと OpenAPI ドキュメント |
 | `tests/` | インポートテスト、コンソールフェイスのテスト、画面の選択チェック |
 
-ルートには Cargo マニフェスト、`LICENSE`、`VERSION`、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、
+ルートには Cargo マニフェスト、`LICENSE`、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、
 `PERSONAL-DATA.md`、`korean-ledger.json`、`settings.toml`、そしてデプロイ時に与えるローカル設定の例である
 `settings.local.toml.example` があります。
 
@@ -70,5 +70,5 @@ git チェックアウトを対象にコードレビューを行う、独自の 
 
 ## バージョン
 
-`VERSION` にはリポジトリのバージョン、つまりクレート自身のバージョンが入っており、最初のリリースまでは
-`0.1.0-rev.<n>` です。バージョンはオーナーが宣言したリリースでのみ変わります(`docs/api.md`、「Versions」)。
+バージョンはセットのもので、ビルド時に git タグから読み取ります。クレートのマニフェストのバージョンは動かない
+プレースホルダーです。バージョンはオーナーが宣言したリリースでのみ変わります(`docs/api.md`、「Versions」)。

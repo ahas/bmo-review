@@ -23,6 +23,13 @@ use crate::http::Standing;
 use crate::settings::Settings;
 use crate::store::Store;
 
+/// The version this build answers with: the set's, which the testbed hands the build as `BMO_VERSION`, else
+/// the manifest's placeholder (bmo-chat's `docs/conventions.md`, 「Versions」).
+pub const VERSION: &str = match option_env!("BMO_VERSION") {
+  Some(version) => version,
+  None => env!("CARGO_PKG_VERSION"),
+};
+
 /// Opens the store, then answers the routes on the settings' address until the process is told to stop. A stop
 /// ends the event streams and waits for the requests in hand to finish.
 pub async fn serve(settings: Settings) -> Result<(), String> {

@@ -10,7 +10,7 @@ use bmo_review::settings::Settings;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "bmo-review", version, about = "Code review over git checkouts")]
+#[command(name = "bmo-review", version = bmo_review::VERSION, about = "Code review over git checkouts")]
 struct Command {
   #[command(subcommand)]
   word: Word,

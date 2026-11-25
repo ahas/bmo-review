@@ -251,8 +251,10 @@ binary (a deployment's root); then `BMO_REVIEW_<TABLE>__<KEY>` in the environmen
 
 ## Versions
 
-The repository has one version, the crate's, which its health, its OpenAPI document and its MCP server answer.
-It moves only at a release the owner declares, as bmo-chat's `docs/conventions.md` 「Versions」 states: before the
-first release it is `0.1.0-rev.<n>`, `n` counting the releases since `0.1.0`, and a commit, a deploy or a change to
-this document's routes, fields, codes, events, tools or settings moves none. A deployment is told apart by its
+The version is the set's, read off the git tags when a build is made, as bmo-chat's `docs/conventions.md`
+「Versions」 states: the testbed hands it to the build as `BMO_VERSION`, and the health, the MCP server and
+`bmo-review --version` answer it. The crate's manifest version and the OpenAPI document's `info.version` are a
+placeholder that never moves. A version moves only at a release the owner declares, which tags the commit and
+makes none; a commit, a deploy or a change to this document's routes, fields, codes, events, tools or settings
+moves none. A deployment is told apart by its
 commit. A sibling unit is taken from its checkout by path, never pinned to a version.

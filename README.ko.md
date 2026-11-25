@@ -40,7 +40,7 @@ git 체크아웃 위에서 코드 리뷰를 하는, 자체 API를 갖춘 하나�
 | `docs/` | 서비스 동작에 대한 기준 문서와 OpenAPI 문서 |
 | `tests/` | 가져오기 테스트, 콘솔 페이스 테스트, 화면 선택 검사 |
 
-루트에는 Cargo 매니페스트, `LICENSE`, `VERSION`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
+루트에는 Cargo 매니페스트, `LICENSE`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `PERSONAL-DATA.md`, `korean-ledger.json`, `settings.toml`, 그리고 배포 시 주는 로컬 설정의 예시인
 `settings.local.toml.example`이 있습니다.
 
@@ -67,5 +67,5 @@ Nuxt 프로젝트로서 타입 검사를 받으며, 그 타입은 `bun run api`�
 
 ## 버전
 
-`VERSION`에는 저장소의 버전이자 크레이트의 버전이 들어 있으며, 첫 릴리스 전에는 `0.1.0-rev.<n>`입니다. 버전은
-소유자가 선언한 릴리스에서만 바뀝니다(`docs/api.md`, 「Versions」).
+버전은 세트의 버전이며, 빌드할 때 git 태그에서 읽습니다. 크레이트 매니페스트의 버전은 움직이지 않는 자리표시자입니다.
+버전은 소유자가 선언한 릴리스에서만 바뀝니다(`docs/api.md`, 「Versions」).
