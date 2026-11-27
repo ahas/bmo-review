@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-agency-client"
-version = "0.1.0-rev.81"
+version = "0.0.0"
 dependencies = [
  "reqwest",
  "schemars",
@@ -266,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-console-face"
-version = "0.1.0-rev.10"
+version = "0.0.0"
 dependencies = [
  "axum",
  "headers",
@@ -279,7 +279,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-job-client"
-version = "0.1.0-rev.8"
+version = "0.0.0"
 dependencies = [
  "futures-util",
  "hex",
@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-review"
-version = "0.1.0-rev.2"
+version = "0.0.0"
 dependencies = [
  "axum",
  "bmo-agency-client",
@@ -322,7 +322,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-text"
-version = "0.1.0-rev.5"
+version = "0.0.0"
 dependencies = [
  "base64 0.23.1",
  "fancy-regex",
