@@ -1,6 +1,6 @@
 ---
 name: bmo-review
-description: Review a change in a git checkout through the bmo-review MCP server: read a commit's diff, open a review of a revision, write findings as comments on its lines, files or folders, and file a follow-up item into the job service. Use when asked to review a commit or a branch of a project registered with the graph service, to read or answer an open review, or to turn a review's findings into an item of work.
+description: How the bmo-review MCP tools read a commit's diff, open a review of a revision, write findings as comments on its lines, files or folders, and file a follow-up item into the job service.
 ---
 
 # bmo-review
