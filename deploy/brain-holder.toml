@@ -3,7 +3,7 @@
 held_by = "review"
 
 [[memory]]
-key = "when"
+key = "review.when"
 type = "tip"
 recall_condition = "reviewing a commit's diff and its findings"
 text = "Open one review per revision with review_create and write each finding as a review_comment on its line."
