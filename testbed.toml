@@ -83,3 +83,15 @@ brain="$HOME/.local/share/bmo-brain/deploy/bin/bmo-brain"
 [ -x "$brain" ] || exit 0
 "$brain" holder declare deploy/brain-holder.toml
 '''
+
+# The same set withdrawn from every agent's brain when the service is taken off this machine (the testbed's
+# docs/deploy.md, 「Taking a repository off: `deploy remove`」); a machine with no brain passes.
+[[deploy.step]]
+id = "holder-withdraw"
+phase = "removal"
+command = '''
+set -eu
+brain="$HOME/.local/share/bmo-brain/deploy/bin/bmo-brain"
+[ -x "$brain" ] || exit 0
+"$brain" holder withdraw review
+'''
